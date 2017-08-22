@@ -1,18 +1,26 @@
 import sklearn.metrics.pairwise
 import numpy as np
+import pandas as pd
 
 
 def get_nearest_neighbors(examples, neighbors):
-    print(list(examples), list(neighbors))
     assert len(examples) > 0
     assert len(neighbors) > 0
-    example_matrix = np.array(examples)
-    neighbor_matrix = np.array(neighbors)
+    example_matrix = np.array(list(examples))
+    neighbor_matrix = np.array(list(neighbors))
     # Gives us |samples| x |neighbors| matrix.
     distances = sklearn.metrics.pairwise.cosine_distances(
         example_matrix, neighbor_matrix)
     # Get the indices of the nearest neighbor for each test sample.
     return np.argmin(distances, axis=1)
+
+
+def update_confusion_matrix(confusion_matrix, label_table, actual_labels,
+                            predicted_labels):
+    actual_indices = label_table.loc[actual_labels]['index']
+    predicted_indices = label_table.loc[predicted_labels]['index']
+    for actual, predicted in zip(actual_indices, predicted_indices):
+        confusion_matrix[actual, predicted] += 1
 
 
 # Performs leave-one-compound-out cross-validation
@@ -24,9 +32,12 @@ def get_nearest_neighbors(examples, neighbors):
 # - MOA
 def score_profiles(dataset):
     accuracies = []
-    unique_labels = len(dataset['moa'].unique())
-    confusion_matrix = np.zeros([unique_labels, unique_labels])
-    for holdout_compound in dataset['compound']:
+    labels = dataset['moa'].unique()
+    confusion_matrix = np.zeros([len(labels), len(labels)])
+    # vectorized map from MOA label -> MOA index
+    label_table = pd.DataFrame(dict(index=range(len(labels))), index=labels)
+    for holdout_compound in dataset['compound'].unique():
+        print('Holding out {0} ...'.format(holdout_compound))
         test_mask = dataset['compound'] == holdout_compound
         test_data = dataset[test_mask]
         training_data = dataset[~test_mask]
@@ -37,14 +48,14 @@ def score_profiles(dataset):
                                                  training_data['profile'])
 
         # Get the MOAs of those nearest neighbors as our predictions.
-        predicted_labels = training_data['moa'][neighbor_indices]
-        actual_labels = test_data['moa']
+        predicted_labels = np.array(training_data['moa'][neighbor_indices])
+        actual_labels = np.array(test_data['moa'])
         assert actual_labels.shape == predicted_labels.shape
-        # Check where the prediction equals the label, and sum over the
-        # resulting binary values to get the accuracy.
         accuracy = np.mean(predicted_labels == actual_labels)
+        print('Accuracy for {0} is {1:.3f}'.format(holdout_compound, accuracy))
         accuracies.append(accuracy)
 
-        confusion_matrix[actual_labels, predicted_labels] += 1
+        update_confusion_matrix(confusion_matrix, label_table, actual_labels,
+                                predicted_labels)
 
     return confusion_matrix, np.mean(accuracies)

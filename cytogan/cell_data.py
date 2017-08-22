@@ -21,7 +21,6 @@ def get_single_cell_names(root_path, plate_names, file_names, patterns):
     for index, components in enumerate(zip(plate_names, file_names)):
         image_path = os.path.join(*components)
         if patterns and not any(p.search(image_path) for p in patterns):
-            print('Skipping {0}'.format(image_path))
             continue
         full_path = os.path.join(root_path, image_path)
         assert os.path.isabs(full_path)
@@ -54,6 +53,7 @@ def preprocess_metadata(metadata, patterns, root_path):
         patterns = [re.compile(pattern) for pattern in patterns]
     indices, image_keys = get_single_cell_names(root_path, plate_names,
                                                 file_names, patterns)
+    print('Found {0} images ...'.format(len(image_keys)))
 
     compounds = metadata['Image_Metadata_Compound'].iloc[indices]
     concentrations = metadata['Image_Metadata_Concentration'].iloc[indices]
@@ -149,8 +149,6 @@ class CellData(object):
         concentrations = relevant_metadata['concentration']
         # The keys to the labels dataframe are (compound, concentration) pairs.
         labels = self.labels.loc[list(zip(compounds, concentrations))]
-
-        print(labels)
 
         dataset = pd.DataFrame(
             index=keys,

@@ -15,10 +15,6 @@ ImagePath = namedtuple('ImagePath', 'dna, tubulin, actin, mask, prefix')
 Image = namedtuple('Image', 'dna, tubulin, actin, mask')
 
 
-def crop_and_mask(image, mask, output_dimension):
-    pass
-
-
 def filter_metadata(metadata, patterns):
     regex_pattern = '|'.join(patterns)
     plate = metadata['Image_Metadata_Plate_DAPI']
@@ -181,7 +177,6 @@ def save_single_cell(output_directory, image_prefix, index, image):
         os.makedirs(most_specific_directory)
         print('Creating {0}'.format(most_specific_directory))
     scipy.misc.imsave(output_path, image)
-    print('Saved ' + output_path)
 
 
 def mask_images(image_paths, args):
@@ -192,6 +187,7 @@ def mask_images(image_paths, args):
             image = read_images(image_path)
             try:
                 cells = process_image(image, args.size, args.display)
+                cells_at_start = cells_processed
                 for cell_index, cell in enumerate(cells):
                     if not args.display:
                         save_single_cell(args.output, image_path.prefix,
@@ -199,6 +195,8 @@ def mask_images(image_paths, args):
                     cells_processed += 1
                     if cells_processed == args.cell_limit:
                         return images_processed, cells_processed
+                print('Generated {0:>2} cells for {1} ...'.format(
+                    cells_processed - cells_at_start, image_path.prefix))
                 images_processed += 1
                 if images_processed == args.image_limit:
                     break
