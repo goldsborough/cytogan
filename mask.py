@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import numpy as np
 import glob
+import os.path
+import time
+from collections import namedtuple
+
+import matplotlib.pyplot as plot
+import numpy as np
 import pandas as pd
 import scipy.misc
-import matplotlib.pyplot as plot
-import os.path
-
-from collections import namedtuple
 
 ImagePath = namedtuple('ImagePath', 'dna, tubulin, actin, mask, prefix')
 Image = namedtuple('Image', 'dna, tubulin, actin, mask')
@@ -24,23 +25,26 @@ def filter_metadata(metadata, patterns):
     return metadata.loc[labels]
 
 
-def parse_paths(metadata_path, patterns, mask_path, image_root_path):
+def parse_paths(metadata_path, patterns, mask_root_path, image_root_path):
     metadata = pd.read_csv(metadata_path)
     filtered_metadata = filter_metadata(metadata, patterns)
 
     images_paths = []
     for index, row in filtered_metadata.iterrows():
         plate = row['Image_Metadata_Plate_DAPI']
-        image_prefix = os.path.join(image_root_path, plate)
+        image_path_prefix = os.path.join(image_root_path, plate)
 
-        dna_image_path = os.path.join(image_prefix, row['Image_FileName_DAPI'])
-        actin_image_path = os.path.join(image_prefix,
+        dna_image_path = os.path.join(image_path_prefix,
+                                      row['Image_FileName_DAPI'])
+        actin_image_path = os.path.join(image_path_prefix,
                                         row['Image_FileName_Actin'])
-        tubulin_image_path = os.path.join(image_prefix,
+        tubulin_image_path = os.path.join(image_path_prefix,
                                           row['Image_FileName_Tubulin'])
 
-        mask_name = os.path.splitext(row['Image_FileName_DAPI'])[0]
-        mask_glob = os.path.join(mask_path, '{0}_Cell.*'.format(mask_name))
+        mask_name = os.path.join(
+            plate, os.path.splitext(row['Image_FileName_DAPI'])[0])
+        mask_glob = os.path.join(mask_root_path,
+                                 '{0}_Cell.*'.format(mask_name))
         glob_result = glob.glob(mask_glob)
         if not glob_result:
             continue
@@ -130,7 +134,8 @@ def clip_crop_slices(slices, clip):
 def process_channel(image, mask, output_size):
     minima, maxima = get_mask_boundaries(image, mask)
 
-    for mask_index in range(1, len(maxima)):
+    # The first mask is the entire segmentation
+    for mask_index in range(1, min(len(minima), len(maxima))):
         slices = get_crop_slices(minima, maxima, mask_index)
         row_slice, column_slice = clip_crop_slices(slices, output_size)
         crops = crop_channel(row_slice, column_slice, image, mask, output_size)
@@ -168,8 +173,39 @@ def process_image(image, output_size, display):
 def save_single_cell(output_directory, image_prefix, index, image):
     filename = '{0}-{1}.png'.format(image_prefix, index)
     output_path = os.path.join(output_directory, filename)
+    most_specific_directory = os.path.dirname(output_path)
+    if not os.path.exists(most_specific_directory):
+        os.makedirs(most_specific_directory)
+        print('Creating {0}'.format(most_specific_directory))
     scipy.misc.imsave(output_path, image)
     print('Saved ' + output_path)
+
+
+def mask_images(image_paths, args):
+    images_processed = 0
+    cells_processed = 0
+    try:
+        for image_index, image_path in enumerate(image_paths):
+            image = read_images(image_path)
+            try:
+                cells = process_image(image, args.size, args.display)
+            except Exception as e:
+                print('Failed to process {0}: {1}', image_path, e)
+                continue
+            for cell_index, cell in enumerate(cells):
+                if not args.display:
+                    save_single_cell(args.output, image_path.prefix, cell_index,
+                                     cell)
+                cells_processed += 1
+                if cells_processed == args.cell_limit:
+                    return images_processed, cells_processed
+            images_processed += 1
+            if images_processed == args.image_limit:
+                break
+    except KeyboardInterrupt:
+        print()
+
+    return images_processed, cells_processed
 
 
 def parse():
@@ -180,27 +216,24 @@ def parse():
     parser.add_argument('-d', '--metadata', required=True)
     parser.add_argument('-s', '--size', type=int, default=128)
     parser.add_argument('-m', '--masks', required=True)
-    parser.add_argument('-l', '--limit', type=int)
+    parser.add_argument('--cell-limit', type=int)
+    parser.add_argument('--image-limit', type=int)
     parser.add_argument('--display', action='store_true')
     return parser.parse_args()
 
 
 def main():
     args = parse()
-    if args.limit == 0:
+    if args.cell_limit == 0 or args.image_limit == 0:
         return
     image_paths = parse_paths(args.metadata, args.pattern, args.masks,
                               args.image_path)
-    cells_processed = 0
-    for image_path in image_paths:
-        image = read_images(image_path)
-        cells = process_image(image, args.size, args.display)
-        for index, cell in enumerate(cells):
-            if not args.display:
-                save_single_cell(args.output, image_path.prefix, index, cell)
-            cells_processed += 1
-            if cells_processed == args.limit:
-                break
+
+    start = time.time()
+    images_processed, cells_processed = mask_images(image_paths, args)
+    elapsed = time.time() - start
+    print('Processed {0} images into {1} cells in {2:.2f}s'.format(
+        images_processed, cells_processed, elapsed))
 
 
 if __name__ == '__main__':
