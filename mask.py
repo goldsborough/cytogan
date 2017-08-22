@@ -21,7 +21,10 @@ def crop_and_mask(image, mask, output_dimension):
 
 def filter_metadata(metadata, patterns):
     regex_pattern = '|'.join(patterns)
-    labels = metadata['Image_Metadata_Plate_DAPI'].str.contains(regex_pattern)
+    plate = metadata['Image_Metadata_Plate_DAPI']
+    filename = metadata['Image_FileName_DAPI']
+    key = plate + '/' + filename
+    labels = key.str.contains(regex_pattern)
     return metadata.loc[labels]
 
 
@@ -189,19 +192,19 @@ def mask_images(image_paths, args):
             image = read_images(image_path)
             try:
                 cells = process_image(image, args.size, args.display)
-            except Exception as e:
-                print('Failed to process {0}: {1}', image_path, e)
-                continue
-            for cell_index, cell in enumerate(cells):
-                if not args.display:
-                    save_single_cell(args.output, image_path.prefix, cell_index,
-                                     cell)
-                cells_processed += 1
-                if cells_processed == args.cell_limit:
-                    return images_processed, cells_processed
-            images_processed += 1
-            if images_processed == args.image_limit:
-                break
+                for cell_index, cell in enumerate(cells):
+                    if not args.display:
+                        save_single_cell(args.output, image_path.prefix,
+                                         cell_index, cell)
+                    cells_processed += 1
+                    if cells_processed == args.cell_limit:
+                        return images_processed, cells_processed
+                images_processed += 1
+                if images_processed == args.image_limit:
+                    break
+            except Exception as error:
+                print('Failed to process {0}: {1}'.format(
+                    image_path.prefix, repr(error)))
     except KeyboardInterrupt:
         print()
 

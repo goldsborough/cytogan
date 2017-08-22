@@ -1,3 +1,4 @@
+import collections
 import glob
 import os
 import re
@@ -20,6 +21,7 @@ def get_single_cell_names(root_path, plate_names, file_names, patterns):
     for index, components in enumerate(zip(plate_names, file_names)):
         image_path = os.path.join(*components)
         if patterns and not any(p.search(image_path) for p in patterns):
+            print('Skipping {0}'.format(image_path))
             continue
         full_path = os.path.join(root_path, image_path)
         assert os.path.isabs(full_path)
@@ -75,11 +77,28 @@ class LazyImageLoader(object):
         self.loaded_images = {}
 
     def __getitem__(self, image_key):
+        if isinstance(image_key, collections.Iterable):
+            return self.get_all_images(image_key)
+        return self.get_image(image_key)
+
+    def get_image(self, image_key):
         image = self.loaded_images.get(image_key)
         if image is None:
             image = load_image(self.root_path, image_key, self.extension)
             self.loaded_images[image_key] = image
         return image
+
+    def get_all_images(self, image_keys):
+        images = {}
+        for key in image_keys:
+            try:
+                image = self.get_image(key)
+            except Exception as error:
+                print('Error loading image {0}: {1}'.format(key, repr(error)))
+                continue
+            images[key] = image
+
+        return images
 
 
 class CellData(object):
@@ -90,6 +109,7 @@ class CellData(object):
                  patterns=None):
         self.image_root = os.path.realpath(image_root)
         self.labels = pd.read_csv(labels_file_path)
+        self.labels.set_index(['compound', 'concentration'], inplace=True)
 
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = preprocess_metadata(all_metadata, patterns,
@@ -111,7 +131,7 @@ class CellData(object):
         keys = self.metadata.iloc[self.batch_index:last_index].index
         self.batch_index = last_index
 
-        return {key: self.images[key] for key in keys}
+        return self.images[keys]
 
     def reset_batching_state(self):
         self.batch_index = 0
@@ -119,13 +139,28 @@ class CellData(object):
         self.metadata = self.metadata.sample(frac=1)
 
     def all_images(self):
-        return {key: self.images[key] for key in self.metadata.index}
+        return self.images[self.metadata.index]
 
     def create_dataset_from_profiles(self, profiles):
-        return pd.DataFrame(
-            index=self.metadata.index,
+        keys = list(profiles.keys())
+        # First filter out metadata for irrelevant keys.
+        relevant_metadata = self.metadata.loc[keys]
+        compounds = relevant_metadata['compound']
+        concentrations = relevant_metadata['concentration']
+        # The keys to the labels dataframe are (compound, concentration) pairs.
+        labels = self.labels.loc[list(zip(compounds, concentrations))]
+
+        print(labels)
+
+        dataset = pd.DataFrame(
+            index=keys,
             data=dict(
-                compound=self.metadata['compound'],
-                concentration=self.metadata['concentration'],
-                profile=profiles,
-                label=self.labels))
+                compound=compounds,
+                concentration=concentrations,
+                moa=list(labels.moa),
+                profile=list(profiles.values())))
+
+        # Ignore (compound, concentration) pairs for which we don't have labels.
+        dataset.dropna(inplace=True)
+
+        return dataset
