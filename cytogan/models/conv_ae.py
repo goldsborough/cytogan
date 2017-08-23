@@ -34,16 +34,23 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
 
 class ConvAE(cytogan.models.ae.AE):
     def __init__(self, image_shape, filter_sizes, latent_size):
-        assert 2 <= len(image_shape) <= 3
-        original_images = Input(shape=image_shape)
+        super(ConvAE, self).__init__(image_shape, latent_size)
+        self.filter_sizes = filter_sizes
 
-        conv, conv_flat = build_encoder(original_images, filter_sizes)
-        latent = Dense(latent_size, activation='relu')(conv_flat)
-        deconv = build_decoder(conv, latent, filter_sizes)
+    def compile(self, learning_rate, decay_learning_rate_after,
+                learning_rate_decay):
+        original_images = Input(shape=self.image_shape)
+
+        conv, conv_flat = build_encoder(original_images, self.filter_sizes)
+        latent = Dense(self.latent_size, activation='relu')(conv_flat)
+        deconv = build_decoder(conv, latent, self.filter_sizes)
 
         reconstruction = Conv2D(
-            image_shape[2], (3, 3), activation='sigmoid',
+            self.image_shape[2], (3, 3), activation='sigmoid',
             padding='same')(deconv)
 
         self.encoder = Model(original_images, latent)
         self.model = Model(original_images, reconstruction)
+
+        self._attach_optimizer(learning_rate, decay_learning_rate_after,
+                               learning_rate_decay)

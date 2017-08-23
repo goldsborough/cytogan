@@ -8,7 +8,7 @@ import cytogan.models.ae
 from cytogan.models import conv_ae
 
 
-def reuse_decoder_layers(model, latent, filter_sizes):
+def reuse_decoder_layers(model, latent):
     # Find the index of the latent layer, then reuse all layers after that.
     latent_index = [l.name for l in model.layers].index('latent')
     decoder_input = Input(shape=[int(latent.shape[1])])
@@ -20,28 +20,43 @@ def reuse_decoder_layers(model, latent, filter_sizes):
 
 class VAE(cytogan.models.ae.AE):
     def __init__(self, batch_size, image_shape, filter_sizes, latent_size):
-        assert 2 <= len(image_shape) <= 3
+        super(VAE, self).__init__(image_shape, latent_size)
         self.batch_size = batch_size
-        self.latent_size = latent_size
+        self.filter_sizes = filter_sizes
+        self.decoder = None
 
-        original_images = Input(shape=image_shape)
-        conv, conv_flat = conv_ae.build_encoder(original_images, filter_sizes)
+        # Tensor handles
+        self.mean = None
+        self.sigma = None
+        self.log_sigma = None
 
-        self.mean = Dense(latent_size)(conv_flat)
-        self.log_sigma = Dense(latent_size)(conv_flat)
+    def compile(self, learning_rate, decay_learning_rate_after,
+                learning_rate_decay):
+        original_images = Input(shape=self.image_shape)
+        conv, conv_flat = conv_ae.build_encoder(original_images,
+                                                self.filter_sizes)
+
+        self.mean = Dense(self.latent_size)(conv_flat)
+        self.log_sigma = Dense(self.latent_size)(conv_flat)
         self.sigma = K.exp(self.log_sigma)
 
         latent = Lambda(
             self._sample_latent, name='latent')([self.mean, self.log_sigma])
-        deconv = conv_ae.build_decoder(conv, latent, filter_sizes)
+        deconv = conv_ae.build_decoder(conv, latent, self.filter_sizes)
 
         reconstruction = Conv2D(
-            image_shape[2], (3, 3), activation='sigmoid',
+            self.image_shape[2], (3, 3), activation='sigmoid',
             padding='same')(deconv)
 
         self.encoder = Model(original_images, latent)
         self.model = Model(original_images, reconstruction)
-        self.decoder = reuse_decoder_layers(self.model, latent, filter_sizes)
+        self.decoder = reuse_decoder_layers(self.model, latent)
+
+        self._attach_optimizer(
+            learning_rate,
+            decay_learning_rate_after,
+            learning_rate_decay,
+            loss=self._loss)
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors
