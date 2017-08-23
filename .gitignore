@@ -1,6 +1,7 @@
 # Mine
 
 data/
+MNIST_data/
 
 # Created by https://www.gitignore.io/api/python,emacs
 
