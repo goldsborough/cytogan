@@ -1,11 +1,17 @@
-import os.path
-import scipy.misc
 import collections
+import os.path
+
+import scipy.misc
+import numpy as np
 
 
 def _load_image(root_path, image_key, extension):
     full_path = os.path.join(root_path, '{0}.{1}'.format(image_key, extension))
-    return scipy.misc.imread(full_path)
+    image = scipy.misc.imread(full_path).astype(np.float32) / 255.
+    if np.ndim(image) == 2:
+        image = np.expand_dims(image, axis=-1)
+    assert np.ndim(image) == 3
+    return image
 
 
 class LazyImageLoader(object):
@@ -27,13 +33,15 @@ class LazyImageLoader(object):
         return image
 
     def get_all_images(self, image_keys):
-        images = {}
+        ok_keys = []
+        ok_images = []
         for key in image_keys:
             try:
                 image = self.get_image(key)
             except Exception as error:
                 print('Error loading image {0}: {1}'.format(key, repr(error)))
-                continue
-            images[key] = image
+            else:
+                ok_keys.append(key)
+                ok_images.append(image)
 
-        return images
+        return ok_keys, np.array(ok_images)

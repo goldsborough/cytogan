@@ -93,11 +93,13 @@ def generative_samples(model,
         _save_figure(save_to, 'generative-samples.png')
 
 
-def confusion_matrix(matrix, title=None, accuracy=None):
+def confusion_matrix(matrix, title=None, accuracy=None, save_to=None):
     if title is not None:
         accuracy *= 100
         plot.suptitle('{0} ({1:.1f}% Accuracy)'.format(title, accuracy))
     seaborn.heatmap(matrix, annot=True)
+    if save_to is not None:
+        _save_figure(save_to, 'confusion-matrix.png')
 
 
 def disable_display():

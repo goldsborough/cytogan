@@ -95,7 +95,8 @@ class CellData(object):
         keys = self.metadata.iloc[self.batch_index:last_index].index
         self.batch_index = last_index
 
-        return self.images[keys]
+        _, ok_images = self.images[keys]
+        return ok_images
 
     def reset_batching_state(self):
         self.batch_index = 0
@@ -105,8 +106,7 @@ class CellData(object):
     def all_images(self):
         return self.images[self.metadata.index]
 
-    def create_dataset_from_profiles(self, profiles):
-        keys = list(profiles.keys())
+    def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
         relevant_metadata = self.metadata.loc[keys]
         compounds = relevant_metadata['compound']
@@ -120,7 +120,7 @@ class CellData(object):
                 compound=compounds,
                 concentration=concentrations,
                 moa=list(labels.moa),
-                profile=list(profiles.values())))
+                profile=list(profiles)))
 
         # Ignore (compound, concentration) pairs for which we don't have labels.
         dataset.dropna(inplace=True)

@@ -56,13 +56,15 @@ def parse_paths(metadata_path, patterns, mask_root_path, image_root_path):
     return images_paths
 
 
+def load_image(path):
+    image = scipy.misc.imread(path, 'L')
+    return image / image.max() * 255.0
+
+
 def read_images(image_path):
-    dna_image = scipy.misc.imread(image_path.dna, 'L')
-    dna_image = dna_image / dna_image.max() * 255
-    tubulin_image = scipy.misc.imread(image_path.tubulin, 'L')
-    tubulin_image = tubulin_image / tubulin_image.max() * 255
-    actin_image = scipy.misc.imread(image_path.actin, 'L')
-    actin_image = actin_image / actin_image.max() * 255
+    dna_image = load_image(image_path.dna)
+    tubulin_image = load_image(image_path.tubulin)
+    actin_image = load_image(image_path.actin)
     mask_image = scipy.misc.imread(image_path.mask, 'L').astype(np.uint8)
     return Image(dna_image, tubulin_image, actin_image, mask_image)
 
