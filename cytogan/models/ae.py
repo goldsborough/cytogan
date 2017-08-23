@@ -6,15 +6,15 @@ from keras.models import Model
 
 
 class AE(object):
-    def __init__(self, image_shape, latent_size=32):
+    def __init__(self, image_shape, latent_size):
         original_images = Input(shape=image_shape)
         flat_images = Flatten()(original_images)
         latent = Dense(latent_size, activation='relu')(flat_images)
         decoded = Dense(np.prod(image_shape), activation='sigmoid')(latent)
         reconstruction = Reshape(image_shape)(decoded)
 
-        self.latent_model = Model(original_images, latent)
-        self.reconstruction_model = Model(original_images, reconstruction)
+        self.encoder = Model(original_images, latent)
+        self.model = Model(original_images, reconstruction)
 
     @property
     def learning_rate(self):
@@ -27,13 +27,13 @@ class AE(object):
         # in lr^(1 / (1 + d * iterations)).
         self.optimizer = keras.optimizers.Adam(
             lr=learning_rate, decay=1 - learning_rate_decay)
-        self.reconstruction_model.compile(
+        self.model.compile(
             loss='binary_crossentropy', optimizer=self.optimizer)
 
     def train_on_batch(self, images):
-        return self.reconstruction_model.train_on_batch(images, images)
+        return self.model.train_on_batch(images, images)
 
-    def generate(self, images):
-        latent_vectors = self.latent_model.predict(images)
-        reconstructions = self.reconstruction_model.predict(images)
+    def reconstruct(self, images):
+        latent_vectors = self.encoder.predict(images)
+        reconstructions = self.model.predict(images)
         return latent_vectors, reconstructions
