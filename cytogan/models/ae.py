@@ -7,8 +7,9 @@ from keras.models import Model
 
 class AE(object):
     def __init__(self, image_shape, latent_size):
-        assert 2 <= len(image_shape) <= 3
+        assert len(image_shape) == 3
         self.image_shape = image_shape
+        self.flat_image_shape = np.prod(image_shape)
         self.latent_size = latent_size
         self.encoder = None
         self.model = None
@@ -19,8 +20,7 @@ class AE(object):
         original_images = Input(shape=self.image_shape)
         flat_images = Flatten()(original_images)
         latent = Dense(self.latent_size, activation='relu')(flat_images)
-        decoded = Dense(
-            np.prod(self.image_shape), activation='sigmoid')(latent)
+        decoded = Dense(self.flat_image_shape, activation='sigmoid')(latent)
         reconstruction = Reshape(self.image_shape)(decoded)
 
         self.encoder = Model(original_images, latent)
@@ -30,20 +30,26 @@ class AE(object):
                                learning_rate_decay)
 
     @property
+    def is_ready(self):
+        return self.model is not None
+
+    @property
     def learning_rate(self):
         assert hasattr(self, 'optimizer'), 'must call compile() first'
         exp = (1. / (1. + self.optimizer.decay * self.optimizer.iterations))
         return K.eval(self.optimizer.lr * exp)
 
     def train_on_batch(self, images):
-        assert hasattr(self, 'model'), 'must call compile() first'
+        assert self.is_ready
         return self.model.train_on_batch(images, images)
 
+    def encode(self, images):
+        assert self.is_ready
+        return self.encoder.predict(images)
+
     def reconstruct(self, images):
-        assert hasattr(self, 'model'), 'must call compile() first'
-        latent_vectors = self.encoder.predict(images)
-        reconstructions = self.model.predict(images)
-        return latent_vectors, reconstructions
+        assert self.is_ready
+        return self.model.predict(images)
 
     def _attach_optimizer(self,
                           learning_rate,

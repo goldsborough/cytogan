@@ -29,10 +29,7 @@ elif options.model == 'conv_ae':
         image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
 elif options.model == 'vae':
     model = vae.VAE(
-        batch_size=options.batch_size,
-        image_shape=[28, 28, 1],
-        filter_sizes=[8, 8],
-        latent_size=32)
+        image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
 
 model.compile(
     options.lr,
@@ -41,12 +38,11 @@ model.compile(
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size)
-print(trainer)
 trainer.train(model, get_batch)
+
 original_images, labels = data.test.next_batch(options.sample)
 original_images = original_images.reshape(-1, 28, 28, 1)
-latent_vectors, reconstructed_images = model.reconstruct(original_images)
-
-visualize.reconstructions(original_images, reconstructed_images, gray=True)
-# visualize.latent_space(latent_vectors, labels)
+visualize.reconstructions(model, original_images, gray=True)
+visualize.latent_space(model, original_images, labels)
+visualize.generative_samples(model, number_of_samples=10, gray=True)
 visualize.show()
