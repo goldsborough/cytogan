@@ -45,7 +45,7 @@ class Trainer(object):
         for epoch_index in range(1, self.number_of_epochs + 1):
             batch_range = tqdm.trange(self.number_of_batches, unit=' batches')
             batch_range.set_description('Epoch {0}'.format(epoch_index))
-            for batch_index in batch_range:
+            for _ in batch_range:
                 batch = batch_generator(self.batch_size)
                 current_loss = model.train_on_batch(batch)
                 batch_range.set_postfix(

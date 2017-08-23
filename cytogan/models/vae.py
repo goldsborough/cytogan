@@ -19,6 +19,12 @@ def _reuse_decoder_layers(model, latent_size):
     return Model(decoder_input, decoder_layer)
 
 
+def _binary_cross_entropy(p, q):
+    e = 1e-10  # numerical stability
+    pointwise = p * K.log(e + q) + (1 - p) * K.log(e + 1 - q)
+    return -K.sum(pointwise, axis=1)
+
+
 class VAE(cytogan.models.ae.AE):
     def __init__(self, image_shape, filter_sizes, latent_size):
         super(VAE, self).__init__(image_shape, latent_size)
@@ -75,30 +81,14 @@ class VAE(cytogan.models.ae.AE):
         original_images_flat = K.reshape(original_images, flat_shape)
         reconstructed_images_flat = K.reshape(reconstructed_images, flat_shape)
 
-        e = 1e-10  # numerical stability
-        binary_cross_entropies = original_images_flat * tf.log(
-            e + reconstructed_images_flat) + (
-                1 - original_images_flat
-            ) * tf.log(e + 1 - reconstructed_images_flat)
-        reconstruction_loss = -tf.reduce_sum(binary_cross_entropies, axis=1)
+        reconstruction_loss = _binary_cross_entropy(original_images_flat,
+                                                    reconstructed_images_flat)
 
-        regularization_loss = -0.5 * tf.reduce_sum(
-            1 + tf.log(e + tf.square(self.sigma)) - tf.square(self.mean) -
-            tf.square(self.sigma),
+        # https://arxiv.org/abs/1312.6114, Appendix B
+        regularization_loss = -0.5 * K.sum(
+            1 + K.log(1e-10 + K.square(self.sigma)) - K.square(self.mean) -
+            K.square(self.sigma),
             axis=1)
+        assert len(regularization_loss.shape) == 1
 
-        return tf.reduce_mean(regularization_loss + reconstruction_loss)
-
-        # reconstruction_loss = -tf.reduce_mean(binary_cross_entropies, axis=1)
-        # # reconstruction_loss = keras.losses.binary_crossentropy(
-        # #     original_images_flat, reconstructed_images_flat)
-        # assert len(reconstruction_loss.shape) == 1
-        #
-        # # https://arxiv.org/abs/1312.6114, Appendix B
-        # regularization_loss = -0.5 * K.sum(
-        #     1 + K.log(1e-10 + K.square(self.sigma)) - K.square(self.mean) -
-        #     K.square(self.sigma),
-        #     axis=1)
-        # assert len(regularization_loss.shape) == 1
-        #
-        # return K.mean(regularization_loss + reconstruction_loss)
+        return K.mean(regularization_loss + reconstruction_loss)
