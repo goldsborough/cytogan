@@ -1,6 +1,6 @@
 # Mine
 
-data/
+ignore/
 MNIST_data/
 out/
 

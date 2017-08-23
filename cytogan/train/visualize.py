@@ -5,6 +5,7 @@ import matplotlib.pyplot as plot
 import numpy as np
 import scipy.stats
 import sklearn.manifold
+import seaborn
 
 plot.style.use('ggplot')
 
@@ -90,6 +91,14 @@ def generative_samples(model,
 
     if save_to is not None:
         _save_figure(save_to, 'generative-samples.png')
+
+
+def confusion_matrix(matrix, title=None, accuracy=None):
+    if title is not None:
+        accuracy *= 100
+        plot.suptitle('{0} ({1:.1f}% Accuracy)'.format(title, accuracy))
+    seaborn.heatmap(matrix, annot=True)
+
 
 def disable_display():
     plot.switch_backend('Agg')

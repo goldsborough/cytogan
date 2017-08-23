@@ -22,7 +22,7 @@ def _reuse_decoder_layers(model, latent_size):
 def _binary_cross_entropy(p, q):
     e = 1e-10  # numerical stability
     pointwise = p * K.log(e + q) + (1 - p) * K.log(e + 1 - q)
-    return -K.sum(pointwise, axis=1)
+    return -K.mean(pointwise, axis=1)
 
 
 class VAE(cytogan.models.ae.AE):

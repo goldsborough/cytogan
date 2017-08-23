@@ -1,10 +1,10 @@
-import collections
 import glob
-import os
+import os.path
 import re
 
 import pandas as pd
-import scipy.misc
+
+from cytogan.data.image_loader import LazyImageLoader
 
 
 def _image_key_for_path(path, root_path):
@@ -53,7 +53,7 @@ def _preprocess_metadata(metadata, patterns, root_path):
         patterns = [re.compile(pattern) for pattern in patterns]
     indices, image_keys = _get_single_cell_names(root_path, plate_names,
                                                  file_names, patterns)
-    print('Found {0} images ...'.format(len(image_keys)))
+    print('Found {0} images (will load them lazily)'.format(len(image_keys)))
 
     compounds = metadata['Image_Metadata_Compound'].iloc[indices]
     concentrations = metadata['Image_Metadata_Concentration'].iloc[indices]
@@ -63,42 +63,6 @@ def _preprocess_metadata(metadata, patterns, root_path):
     processed.index.name = 'key'
 
     return processed
-
-
-def _load_image(root_path, image_key, extension):
-    full_path = os.path.join(root_path, '{0}.{1}'.format(image_key, extension))
-    return scipy.misc.imread(full_path)
-
-
-class LazyImageLoader(object):
-    def __init__(self, root_path, extension='png'):
-        self.root_path = root_path
-        self.extension = extension
-        self.loaded_images = {}
-
-    def __getitem__(self, image_key):
-        if isinstance(image_key, collections.Iterable):
-            return self.get_all_images(image_key)
-        return self.get_image(image_key)
-
-    def get_image(self, image_key):
-        image = self.loaded_images.get(image_key)
-        if image is None:
-            image = _load_image(self.root_path, image_key, self.extension)
-            self.loaded_images[image_key] = image
-        return image
-
-    def get_all_images(self, image_keys):
-        images = {}
-        for key in image_keys:
-            try:
-                image = self.get_image(key)
-            except Exception as error:
-                print('Error loading image {0}: {1}'.format(key, repr(error)))
-                continue
-            images[key] = image
-
-        return images
 
 
 class CellData(object):

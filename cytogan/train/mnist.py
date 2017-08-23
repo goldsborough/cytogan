@@ -1,24 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse
-
 from tensorflow.examples.tutorials import mnist
 
 from cytogan.models import ae, conv_ae, vae
 from cytogan.train import trainer, visualize
+from cytogan.train import common
 
-parser = argparse.ArgumentParser(description='cytogan-mnist')
-parser.add_argument('-e', '--epochs', type=int, default=5)
-parser.add_argument('-b', '--batch-size', type=int, default=256)
-parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--lr-decay', type=float, default=1)
-parser.add_argument('-r', '--reconstruction-samples', type=int)
-parser.add_argument('-l', '--latent-samples', type=int)
-parser.add_argument('-g', '--generative-samples', type=int)
-parser.add_argument('--gpus', type=int, nargs='+')
-parser.add_argument('--save-figures-to')
-parser.add_argument(
-    '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
+options = common.make_parser(name='cytogan-mnist')
 options = parser.parse_args()
 
 print(options)

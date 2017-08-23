@@ -33,9 +33,10 @@ def update_confusion_matrix(confusion_matrix, label_table, actual_labels,
 def score_profiles(dataset):
     accuracies = []
     labels = dataset['moa'].unique()
-    confusion_matrix = np.zeros([len(labels), len(labels)])
-    # vectorized map from MOA label -> MOA index
-    label_table = pd.DataFrame(dict(index=range(len(labels))), index=labels)
+    confusion_matrix = pd.DataFrame(
+        index=labels,
+        data=np.zeros([len(labels), len(labels)]),
+        columns=labels)
     for holdout_compound in dataset['compound'].unique():
         print('Holding out {0} ...'.format(holdout_compound))
         test_mask = dataset['compound'] == holdout_compound
@@ -55,7 +56,6 @@ def score_profiles(dataset):
         print('Accuracy for {0} is {1:.3f}'.format(holdout_compound, accuracy))
         accuracies.append(accuracy)
 
-        update_confusion_matrix(confusion_matrix, label_table, actual_labels,
-                                predicted_labels)
+        confusion_matrix.loc[actual_labels, predicted_labels] += 1
 
     return confusion_matrix, np.mean(accuracies)
