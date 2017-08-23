@@ -15,9 +15,12 @@ class AE(object):
 
         self.encoder = Model(original_images, latent)
         self.model = Model(original_images, reconstruction)
+        # Can be overriden as a method by subclasses.
+        self._loss = 'binary_crossentropy'
 
     @property
     def learning_rate(self):
+        assert hasattr(self, 'optimizer'), 'must call prepare() first'
         exp = (1. / (1. + self.optimizer.decay * self.optimizer.iterations))
         return K.eval(self.optimizer.lr * exp)
 
@@ -27,8 +30,8 @@ class AE(object):
         # in lr^(1 / (1 + d * iterations)).
         self.optimizer = keras.optimizers.Adam(
             lr=learning_rate, decay=1 - learning_rate_decay)
-        self.model.compile(
-            loss='binary_crossentropy', optimizer=self.optimizer)
+        print('Using {0} loss'.format(self._loss))
+        self.model.compile(loss=self._loss, optimizer=self.optimizer)
 
     def train_on_batch(self, images):
         return self.model.train_on_batch(images, images)
