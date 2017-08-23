@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plot
+import numpy as np
 import sklearn.manifold
 
 
@@ -25,7 +26,7 @@ def reconstructions(original_images, reconstructed_images, gray=False):
 def latent_space(latent_vectors,
                  labels,
                  reduction_method=sklearn.manifold.TSNE):
-    assert latent_vectors.rank == 2
+    assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
         print('Reducing dimensionality ...')
         reduction = reduction_method(n_components=2)
