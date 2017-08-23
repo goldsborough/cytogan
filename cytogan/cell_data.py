@@ -7,14 +7,14 @@ import pandas as pd
 import scipy.misc
 
 
-def image_key_for_path(path, root_path):
+def _image_key_for_path(path, root_path):
     # We use the path relative to the root_path, without the file extension, as
     # the image key.
     relative_path = os.path.relpath(path, start=root_path)
     return os.path.splitext(relative_path)[0]
 
 
-def get_single_cell_names(root_path, plate_names, file_names, patterns):
+def _get_single_cell_names(root_path, plate_names, file_names, patterns):
     assert os.path.isabs(root_path)
     original_indices = []
     single_cell_names = []
@@ -28,7 +28,7 @@ def get_single_cell_names(root_path, plate_names, file_names, patterns):
         # as prefix and then '-{digit}' suffixes, where {digit} is the id/number
         # of the cell within the image.
         glob_paths = glob.glob('{0}-*'.format(full_path))
-        image_keys = [image_key_for_path(p, root_path) for p in glob_paths]
+        image_keys = [_image_key_for_path(p, root_path) for p in glob_paths]
         single_cell_names.extend(image_keys)
         original_indices.extend([index] * len(image_keys))
 
@@ -43,7 +43,7 @@ def get_single_cell_names(root_path, plate_names, file_names, patterns):
 # Note that for a particular image path in the original dataframe, we will not
 # actually use the path of that image, but of the single cell images, assumed to
 # have the original image name as a prefix.
-def preprocess_metadata(metadata, patterns, root_path):
+def _preprocess_metadata(metadata, patterns, root_path):
     plate_names = list(metadata['Image_Metadata_Plate_DAPI'])
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
@@ -51,8 +51,8 @@ def preprocess_metadata(metadata, patterns, root_path):
     if patterns:
         assert not isinstance(patterns, str)
         patterns = [re.compile(pattern) for pattern in patterns]
-    indices, image_keys = get_single_cell_names(root_path, plate_names,
-                                                file_names, patterns)
+    indices, image_keys = _get_single_cell_names(root_path, plate_names,
+                                                 file_names, patterns)
     print('Found {0} images ...'.format(len(image_keys)))
 
     compounds = metadata['Image_Metadata_Compound'].iloc[indices]
@@ -65,7 +65,7 @@ def preprocess_metadata(metadata, patterns, root_path):
     return processed
 
 
-def load_image(root_path, image_key, extension):
+def _load_image(root_path, image_key, extension):
     full_path = os.path.join(root_path, '{0}.{1}'.format(image_key, extension))
     return scipy.misc.imread(full_path)
 
@@ -84,7 +84,7 @@ class LazyImageLoader(object):
     def get_image(self, image_key):
         image = self.loaded_images.get(image_key)
         if image is None:
-            image = load_image(self.root_path, image_key, self.extension)
+            image = _load_image(self.root_path, image_key, self.extension)
             self.loaded_images[image_key] = image
         return image
 
@@ -112,8 +112,8 @@ class CellData(object):
         self.labels.set_index(['compound', 'concentration'], inplace=True)
 
         all_metadata = pd.read_csv(metadata_file_path)
-        self.metadata = preprocess_metadata(all_metadata, patterns,
-                                            self.image_root)
+        self.metadata = _preprocess_metadata(all_metadata, patterns,
+                                             self.image_root)
 
         self.images = LazyImageLoader(self.image_root)
 

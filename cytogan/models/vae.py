@@ -37,11 +37,11 @@ class VAE(cytogan.models.ae.AE):
                                                 self.filter_sizes)
 
         self.mean = Dense(self.latent_size)(conv_flat)
-        self.log_sigma = Dense(self.latent_size)(conv_flat)
-        self.sigma = K.exp(self.log_sigma)
+        log_sigma = Dense(self.latent_size)(conv_flat)
+        self.sigma = K.exp(log_sigma)
 
         latent = Lambda(
-            self._sample_latent, name='latent')([self.mean, self.log_sigma])
+            self._sample_latent, name='latent')([self.mean, log_sigma])
         deconv = conv_ae.build_decoder(conv, latent, self.filter_sizes)
 
         reconstruction = Conv2D(
@@ -80,17 +80,25 @@ class VAE(cytogan.models.ae.AE):
             e + reconstructed_images_flat) + (
                 1 - original_images_flat
             ) * tf.log(e + 1 - reconstructed_images_flat)
+        reconstruction_loss = -tf.reduce_sum(binary_cross_entropies, axis=1)
 
-        reconstruction_loss = -tf.reduce_mean(binary_cross_entropies, axis=1)
-        # reconstruction_loss = keras.losses.binary_crossentropy(
-        #     original_images_flat, reconstructed_images_flat)
-        assert len(reconstruction_loss.shape) == 1
-
-        # https://arxiv.org/abs/1312.6114, Appendix B
-        regularization_loss = -0.5 * K.sum(
-            1 + K.log(1e-10 + K.square(self.sigma)) - K.square(self.mean) -
-            K.square(self.sigma),
+        regularization_loss = -0.5 * tf.reduce_sum(
+            1 + tf.log(e + tf.square(self.sigma)) - tf.square(self.mean) -
+            tf.square(self.sigma),
             axis=1)
-        assert len(regularization_loss.shape) == 1
 
-        return K.mean(regularization_loss + reconstruction_loss)
+        return tf.reduce_mean(regularization_loss + reconstruction_loss)
+
+        # reconstruction_loss = -tf.reduce_mean(binary_cross_entropies, axis=1)
+        # # reconstruction_loss = keras.losses.binary_crossentropy(
+        # #     original_images_flat, reconstructed_images_flat)
+        # assert len(reconstruction_loss.shape) == 1
+        #
+        # # https://arxiv.org/abs/1312.6114, Appendix B
+        # regularization_loss = -0.5 * K.sum(
+        #     1 + K.log(1e-10 + K.square(self.sigma)) - K.square(self.mean) -
+        #     K.square(self.sigma),
+        #     axis=1)
+        # assert len(regularization_loss.shape) == 1
+        #
+        # return K.mean(regularization_loss + reconstruction_loss)
