@@ -16,6 +16,7 @@ def _image_key_for_path(path, root_path):
 
 def _get_single_cell_names(root_path, plate_names, file_names, patterns):
     assert os.path.isabs(root_path)
+    assert os.path.exists(root_path)
     original_indices = []
     single_cell_names = []
     for index, components in enumerate(zip(plate_names, file_names)):

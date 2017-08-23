@@ -15,9 +15,10 @@ def _load_image(root_path, image_key, extension):
 
 
 class LazyImageLoader(object):
-    def __init__(self, root_path, extension='png'):
+    def __init__(self, root_path, extension='png', cache=True):
         self.root_path = root_path
         self.extension = extension
+        self.do_cache = cache
         self.loaded_images = {}
 
     def __getitem__(self, image_key):
@@ -29,7 +30,8 @@ class LazyImageLoader(object):
         image = self.loaded_images.get(image_key)
         if image is None:
             image = _load_image(self.root_path, image_key, self.extension)
-            self.loaded_images[image_key] = image
+            if self.do_cache:
+                self.loaded_images[image_key] = image
         return image
 
     def get_all_images(self, image_keys):

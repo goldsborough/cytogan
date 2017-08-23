@@ -26,10 +26,11 @@ def filter_metadata(metadata, patterns):
 
 def parse_paths(metadata_path, patterns, mask_root_path, image_root_path):
     metadata = pd.read_csv(metadata_path)
-    filtered_metadata = filter_metadata(metadata, patterns)
+    if patterns:
+        metadata = filter_metadata(metadata, patterns)
 
     images_paths = []
-    for index, row in filtered_metadata.iterrows():
+    for index, row in metadata.iterrows():
         plate = row['Image_Metadata_Plate_DAPI']
         image_path_prefix = os.path.join(image_root_path, plate)
 

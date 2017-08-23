@@ -50,8 +50,8 @@ class Trainer(object):
                 current_loss = model.train_on_batch(batch)
                 batch_range.set_postfix(
                     loss=current_loss, lr=model.learning_rate)
-            if np.isnan(current_loss):
-                raise RuntimeError('Loss was NaN')
+                if np.isnan(current_loss):
+                    raise RuntimeError('Loss was NaN')
 
     def __repr__(self):
         return 'Trainer<{0} epochs x {1} batches @ {2} examples>'.format(
