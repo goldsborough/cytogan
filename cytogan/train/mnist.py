@@ -15,6 +15,7 @@ parser.add_argument('--lr-decay', type=float, default=1)
 parser.add_argument('-r', '--reconstruction-samples', type=int)
 parser.add_argument('-l', '--latent-samples', type=int)
 parser.add_argument('-g', '--generative-samples', type=int)
+parser.add_argument('--gpus', type=int, nargs='+')
 parser.add_argument('--save-figures-to')
 parser.add_argument(
     '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
@@ -41,8 +42,13 @@ model.compile(
     learning_rate_decay=options.lr_decay)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
-                          options.batch_size)
+                          options.batch_size, options.gpus)
 trainer.train(model, get_batch)
+
+# Visualization Code
+
+if options.save_figures_to is not None:
+    visualize.disable_display()
 
 if options.reconstruction_samples is not None:
     original_images, _ = data.test.next_batch(options.reconstruction_samples)
@@ -63,5 +69,5 @@ if options.generative_samples is not None:
         gray=True,
         save_to=options.save_figures_to)
 
-if not options.save_figures_to:
+if options.save_figures_to is None:
     visualize.show()

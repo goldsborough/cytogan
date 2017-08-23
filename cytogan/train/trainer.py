@@ -8,16 +8,28 @@ import tqdm
 
 # Supress warnings about wrong compilation of TensorFlow.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-gpu_options = tf.GPUOptions(allow_growth=True, visible_device_list='0')
-session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-keras.backend.set_session(session)
+
+
+def use_gpus(visible_devices):
+    gpu_options = tf.GPUOptions(
+        allow_growth=True, visible_device_list=visible_devices)
+    session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    keras.backend.set_session(session)
 
 
 class Trainer(object):
-    def __init__(self, number_of_epochs, number_of_batches, batch_size):
+    def __init__(self,
+                 number_of_epochs,
+                 number_of_batches,
+                 batch_size,
+                 gpus=None):
         self.number_of_epochs = number_of_epochs
         self.number_of_batches = number_of_batches
         self.batch_size = batch_size
+
+        gpus = None if gpus is None else ','.join(map(str, gpus))
+        print('Using GPUs: {0}'.format(gpus))
+        use_gpus(gpus)
 
     def train(self, model, batch_generator):
         start_time = time.time()

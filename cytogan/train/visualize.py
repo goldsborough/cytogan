@@ -1,7 +1,9 @@
+import os
+
+import matplotlib
 import matplotlib.pyplot as plot
 import numpy as np
 import scipy.stats
-import os
 import sklearn.manifold
 
 plot.style.use('ggplot')
@@ -88,6 +90,9 @@ def generative_samples(model,
 
     if save_to is not None:
         _save_figure(save_to, 'generative-samples.png')
+
+def disable_display():
+    plot.switch_backend('Agg')
 
 
 def show():
