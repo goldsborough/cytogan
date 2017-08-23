@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.train import trainer, visualize
 from cytogan.models import ae, conv_ae, vae
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+from cytogan.train import trainer, visualize
 
 parser = argparse.ArgumentParser(description='cytogan-mnist')
 parser.add_argument('-e', '--epochs', type=int, default=5)

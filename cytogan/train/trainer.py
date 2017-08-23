@@ -1,7 +1,16 @@
+import os
 import time
 
+import keras
 import numpy as np
+import tensorflow as tf
 import tqdm
+
+# Supress warnings about wrong compilation of TensorFlow.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+gpu_options = tf.GPUOptions(allow_growth=True, visible_device_list='0')
+session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+keras.backend.set_session(session)
 
 
 class Trainer(object):
