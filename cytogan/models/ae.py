@@ -65,5 +65,9 @@ class AE(object):
     def __repr__(self):
         assert self.is_ready
         lines = []
-        self.model.summary(print_fn=lambda l: lines.append(l))
-        return '\n'.join(lines)
+        try:
+            # >= Keras 2.0.6
+            self.model.summary(print_fn=lambda l: lines.append(l))
+        except TypeError:
+            lines = self.model.layers
+        return '\n'.join(map(str, lines))
