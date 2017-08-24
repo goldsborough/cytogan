@@ -182,26 +182,30 @@ def save_single_cell(output_directory, image_prefix, index, image):
     scipy.misc.imsave(output_path, image)
 
 
-def mask_images(image_paths, args):
+def mask_images(image_paths, options):
     images_processed = 0
     cells_processed = 0
+    cell_counts = {}
     try:
         for image_index, image_path in enumerate(image_paths):
             image = read_images(image_path)
             try:
-                cells = process_image(image, args.size, args.display)
+                cells = process_image(image, options.size, options.display)
                 cells_at_start = cells_processed
                 for cell_index, cell in enumerate(cells):
-                    if not args.display:
-                        save_single_cell(args.output, image_path.prefix,
+                    if not options.display:
+                        save_single_cell(options.output, image_path.prefix,
                                          cell_index, cell)
                     cells_processed += 1
-                    if cells_processed == args.cell_limit:
-                        return images_processed, cells_processed
-                print('Generated {0:>2} cells for {1} ...'.format(
-                    cells_processed - cells_at_start, image_path.prefix))
+                    if cells_processed == options.cell_limit:
+                        break
+                count = cells_processed - cells_at_start
+                cell_counts[image_path.prefix] = count
+                print('Generated {0:>3} cells for {1} ...'.format(
+                    count, image_path.prefix))
                 images_processed += 1
-                if images_processed == args.image_limit:
+                if cells_processed == options.cell_limit or \
+                   images_processed == options.image_limit:
                     break
             except Exception as error:
                 print('Failed to process {0}: {1}'.format(
@@ -209,7 +213,7 @@ def mask_images(image_paths, args):
     except KeyboardInterrupt:
         print()
 
-    return images_processed, cells_processed
+    return images_processed, cells_processed, cell_counts
 
 
 def parse():
@@ -221,23 +225,31 @@ def parse():
     parser.add_argument('-s', '--size', type=int, default=128)
     parser.add_argument('-m', '--masks', required=True)
     parser.add_argument('--cell-limit', type=int)
+    parser.add_argument('--cell-count-csv')
     parser.add_argument('--image-limit', type=int)
     parser.add_argument('--display', action='store_true')
     return parser.parse_args()
 
 
 def main():
-    args = parse()
-    if args.cell_limit == 0 or args.image_limit == 0:
+    options = parse()
+    if options.cell_limit == 0 or options.image_limit == 0:
         return
-    image_paths = parse_paths(args.metadata, args.pattern, args.masks,
-                              args.image_path)
+    image_paths = parse_paths(options.metadata, options.pattern, options.masks,
+                              options.image_path)
 
     start = time.time()
-    images_processed, cells_processed = mask_images(image_paths, args)
+    images_processed, cells_processed, cell_counts = mask_images(
+        image_paths, options)
     elapsed = time.time() - start
     print('Processed {0} images into {1} cells in {2:.2f}s'.format(
         images_processed, cells_processed, elapsed))
+
+    if options.cell_count_csv:
+        with open(options.cell_count_csv, 'w') as file:
+            file.write('key, number_of_cells\n')
+            lines = ['{0},{1}\n'.format(k, c) for k, c in cell_counts.items()]
+            file.writelines(lines)
 
 
 if __name__ == '__main__':
