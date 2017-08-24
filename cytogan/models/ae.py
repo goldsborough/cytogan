@@ -61,3 +61,9 @@ class AE(object):
         self.optimizer = keras.optimizers.Adam(
             lr=learning_rate, decay=1 - learning_rate_decay)
         self.model.compile(loss=loss, optimizer=self.optimizer)
+
+    def __repr__(self):
+        assert self.is_ready
+        lines = []
+        self.model.summary(print_fn=lambda l: lines.append(l))
+        return '\n'.join(lines)

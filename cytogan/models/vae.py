@@ -53,7 +53,8 @@ class VAE(cytogan.models.ae.AE):
         reconstruction = Conv2D(
             self.image_shape[-1], (3, 3), activation='sigmoid',
             padding='same')(deconv)
-        assert reconstruction.shape[1:] == self.image_shape
+        assert reconstruction.shape[
+            1:] == self.image_shape, reconstruction.shape
 
         self.encoder = Model(original_images, latent)
         self.model = Model(original_images, reconstruction)

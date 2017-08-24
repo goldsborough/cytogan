@@ -19,7 +19,7 @@ def build_encoder(original_images, filter_sizes):
 
 
 def build_decoder(last_encoder_layer, latent, filter_sizes):
-    first_shape = list(map(int, last_encoder_layer.shape[1:]))
+    first_shape = [int(d) for d in last_encoder_layer.shape[1:]]
     deconv_flat = Dense(np.prod(first_shape))(latent)
     previous_layer = Reshape(first_shape)(deconv_flat)
     for filter_size in filter_sizes[::-1]:

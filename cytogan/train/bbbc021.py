@@ -41,6 +41,8 @@ model.compile(
     decay_learning_rate_after=number_of_batches,
     learning_rate_decay=options.lr_decay)
 
+print(model)
+
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size, options.gpus)
 trainer.train(model, cell_data.next_batch_of_images)

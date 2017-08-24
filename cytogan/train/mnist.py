@@ -22,12 +22,14 @@ elif options.model == 'conv_ae':
         image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
 elif options.model == 'vae':
     model = vae.VAE(
-        image_shape=[28, 28, 1], filter_sizes=[32, 32, 32], latent_size=256)
+        image_shape=[28, 28, 1], filter_sizes=[32, 32], latent_size=256)
 
 model.compile(
     options.lr,
     decay_learning_rate_after=number_of_batches,
     learning_rate_decay=options.lr_decay)
+
+print(model)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size, options.gpus)
