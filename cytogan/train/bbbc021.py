@@ -51,6 +51,7 @@ trainer.train(model, cell_data.next_batch_of_images)
 
 # Evaluation
 
+print('Evaluating ...')
 keys, images = cell_data.all_images()
 profiles = model.encode(images)
 outcome = cell_data.create_dataset_from_profiles(keys, profiles)

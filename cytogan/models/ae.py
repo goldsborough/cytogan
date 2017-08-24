@@ -69,5 +69,5 @@ class AE(object):
             # >= Keras 2.0.6
             self.model.summary(print_fn=lambda l: lines.append(l))
         except TypeError:
-            lines = self.model.layers
+            lines = [layer.name for layer in self.model.layers]
         return '\n'.join(map(str, lines))
