@@ -3,6 +3,7 @@ import os.path
 import re
 
 import pandas as pd
+import tqdm
 
 from cytogan.data.image_loader import LazyImageLoader
 
@@ -19,7 +20,9 @@ def _get_single_cell_names(root_path, plate_names, file_names, patterns):
     assert os.path.exists(root_path)
     original_indices = []
     single_cell_names = []
-    for index, components in enumerate(zip(plate_names, file_names)):
+    file_range = tqdm.tqdm(enumerate(zip(plate_names, file_names)))
+    file_range.unit = ' files'
+    for index, components in file_range:
         image_path = os.path.join(*components)
         if patterns and not any(p.search(image_path) for p in patterns):
             continue
@@ -43,13 +46,12 @@ def _load_single_cell_names_from_cell_count_file(metadata,
     single_cell_names = []
     with open(cell_count_path) as cell_count_file:
         next(cell_count_file)  # skip header
-        for line in cell_count_file:
+        for line in tqdm.tqdm(cell_count_file, unit=' files'):
             key, count = line.split(',')
             plate, file_name = os.path.split(key)
             file_name += '.tif'
             plate_index = metadata['Image_Metadata_Plate_DAPI'] == plate
             file_index = metadata['Image_FileName_DAPI'] == file_name
-            print(plate, file_name)
             index = metadata[plate_index & file_index].index[0]
             for cell_index in range(int(count)):
                 indices.append(index)
@@ -71,6 +73,7 @@ def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
 
+    print('Reading single-cell names ...')
     if cell_count_path is None:
         if patterns:
             assert not isinstance(patterns, str)
