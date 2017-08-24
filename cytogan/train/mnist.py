@@ -6,7 +6,7 @@ from cytogan.models import ae, conv_ae, vae
 from cytogan.train import trainer, visualize
 from cytogan.train import common
 
-options = common.make_parser(name='cytogan-mnist')
+parser = common.make_parser(name='cytogan-mnist')
 options = parser.parse_args()
 
 print(options)
@@ -22,7 +22,7 @@ elif options.model == 'conv_ae':
         image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
 elif options.model == 'vae':
     model = vae.VAE(
-        image_shape=[28, 28, 1], filter_sizes=[32], latent_size=256)
+        image_shape=[28, 28, 1], filter_sizes=[32, 32, 32], latent_size=256)
 
 model.compile(
     options.lr,

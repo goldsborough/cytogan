@@ -27,9 +27,11 @@ class Trainer(object):
         self.number_of_batches = number_of_batches
         self.batch_size = batch_size
 
-        gpus = None if gpus is None else ','.join(map(str, gpus))
         print('Using GPUs: {0}'.format(gpus))
-        use_gpus(gpus)
+        if gpus is None:
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
+        else:
+            use_gpus(','.join(map(str, gpus)))
 
     def train(self, model, batch_generator):
         start_time = time.time()
