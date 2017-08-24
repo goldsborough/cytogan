@@ -10,6 +10,7 @@ from cytogan.score import score_profiles
 from cytogan.train import common
 
 parser = common.make_parser('cytogan-bbbc021')
+parser.add_argument('--cell-count-file')
 parser.add_argument('--metadata', required=True)
 parser.add_argument('--labels', required=True)
 parser.add_argument('--images', required=True)
@@ -22,6 +23,7 @@ cell_data = CellData(
     metadata_file_path=options.metadata,
     labels_file_path=options.labels,
     image_root=options.images,
+    cell_count_path=options.cell_count_file,
     patterns=options.pattern)
 
 number_of_batches = cell_data.number_of_images // options.batch_size

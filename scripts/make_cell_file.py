@@ -16,6 +16,6 @@ for directory, _, filenames in os.walk(options.image_path):
         last_count = counts.get(key, 0)
         counts[key] = last_count + 1
 
-print('key, number_of_cells')
+print('key,number_of_cells')
 for key, count in counts.items():
     print('{0},{1}'.format(key, count))

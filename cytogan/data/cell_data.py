@@ -36,6 +36,28 @@ def _get_single_cell_names(root_path, plate_names, file_names, patterns):
     return original_indices, single_cell_names
 
 
+def _load_single_cell_names_from_cell_count_file(metadata,
+                                                 cell_count_path):
+    print('Using cell count file {0}'.format(cell_count_path))
+    indices = []
+    single_cell_names = []
+    with open(cell_count_path) as cell_count_file:
+        next(cell_count_file)  # skip header
+        for line in cell_count_file:
+            key, count = line.split(',')
+            plate, file_name = os.path.split(key)
+            file_name += '.tif'
+            plate_index = metadata['Image_Metadata_Plate_DAPI'] == plate
+            file_index = metadata['Image_FileName_DAPI'] == file_name
+            print(plate, file_name)
+            index = metadata[plate_index & file_index].index[0]
+            for cell_index in range(int(count)):
+                indices.append(index)
+                single_cell_names.append('{0}-{1}'.format(key, cell_index))
+
+    return indices, single_cell_names
+
+
 # Takes all metadata as a dataframe and returns a new dataframe with only the
 # relevant information, which has columns:
 # - key (Image_Metadata_Plate_DAPI/Image_FileName_DAPI-0),
@@ -44,17 +66,22 @@ def _get_single_cell_names(root_path, plate_names, file_names, patterns):
 # Note that for a particular image path in the original dataframe, we will not
 # actually use the path of that image, but of the single cell images, assumed to
 # have the original image name as a prefix.
-def _preprocess_metadata(metadata, patterns, root_path):
+def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     plate_names = list(metadata['Image_Metadata_Plate_DAPI'])
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
 
-    if patterns:
-        assert not isinstance(patterns, str)
-        patterns = [re.compile(pattern) for pattern in patterns]
-    indices, image_keys = _get_single_cell_names(root_path, plate_names,
-                                                 file_names, patterns)
-    print('Found {0} images (will load them lazily)'.format(len(image_keys)))
+    if cell_count_path is None:
+        if patterns:
+            assert not isinstance(patterns, str)
+            patterns = [re.compile(pattern) for pattern in patterns]
+        indices, image_keys = _get_single_cell_names(root_path, plate_names,
+                                                     file_names, patterns)
+    else:
+        indices, image_keys = _load_single_cell_names_from_cell_count_file(
+            metadata, cell_count_path)
+    print('Found {0} single-cell images (will load them lazily)'.format(
+        len(image_keys)))
 
     compounds = metadata['Image_Metadata_Compound'].iloc[indices]
     concentrations = metadata['Image_Metadata_Concentration'].iloc[indices]
@@ -71,6 +98,7 @@ class CellData(object):
                  metadata_file_path,
                  labels_file_path,
                  image_root,
+                 cell_count_path=None,
                  patterns=None):
         self.image_root = os.path.realpath(image_root)
         self.labels = pd.read_csv(labels_file_path)
@@ -78,7 +106,7 @@ class CellData(object):
 
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = _preprocess_metadata(all_metadata, patterns,
-                                             self.image_root)
+                                             self.image_root, cell_count_path)
 
         self.images = LazyImageLoader(self.image_root)
 
