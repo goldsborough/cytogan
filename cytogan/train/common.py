@@ -1,6 +1,8 @@
 import collections
 import numpy as np
 import argparse
+import tensorflow as tf
+import os
 
 Dataset = collections.namedtuple('Dataset', 'images, labels')
 
@@ -36,7 +38,23 @@ def make_parser(name):
     parser.add_argument('-g', '--generative-samples', type=int)
     parser.add_argument('--gpus', type=int, nargs='+')
     parser.add_argument('--save-figures-to')
+    parser.add_argument('--summary-dir')
+    parser.add_argument('--summary-freq', default=20, type=int)
     parser.add_argument(
         '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
 
     return parser
+
+
+def get_session(gpus):
+    print('Using GPUs: {0}'.format(gpus))
+    if gpus is None:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
+    else:
+        gpus = ','.join(map(str, gpus))
+    gpu_options = tf.GPUOptions(allow_growth=True, visible_device_list=gpus)
+
+    session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    tf.global_variables_initializer().run(session=session)
+
+    return session

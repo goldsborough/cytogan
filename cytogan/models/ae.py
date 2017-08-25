@@ -1,8 +1,15 @@
 import keras.backend as K
-import keras.optimizers
 import numpy as np
+import tensorflow as tf
 from keras.layers import Dense, Flatten, Input, Reshape
 from keras.models import Model
+
+
+def binary_crossentropy(original_flat, reconstructed_flat):
+    e = 1e-10  # numerical stability
+    pointwise = original_flat * K.log(e + reconstructed_flat) + \
+               (1 - original_flat) * K.log(e + 1 - reconstructed_flat)
+    return -K.mean(pointwise)
 
 
 class AE(object):
@@ -11,63 +18,92 @@ class AE(object):
         self.image_shape = image_shape
         self.flat_image_shape = np.prod(image_shape)
         self.latent_size = latent_size
+
+        # Variables expected to be set by all models in compile().
+        self.session = None
+        self.original_images = None
+        self.reconstructed_images = None
+        self.latent = None
+        self.loss = None
+        self.optimize = None
+        self.learning_rate = None
+        self.summary = None
         self.encoder = None
         self.model = None
-        self.optimizer = None
+
+        self.global_step = tf.Variable(0, trainable=False)
 
     def compile(self, learning_rate, decay_learning_rate_after,
                 learning_rate_decay):
-        original_images = Input(shape=self.image_shape)
-        flat_images = Flatten()(original_images)
-        latent = Dense(self.latent_size, activation='relu')(flat_images)
-        decoded = Dense(self.flat_image_shape, activation='sigmoid')(latent)
-        reconstruction = Reshape(self.image_shape)(decoded)
+        self.original_images = Input(shape=self.image_shape)
+        flat_input = Flatten()(self.original_images)
+        self.latent = Dense(self.latent_size, activation='relu')(flat_input)
+        decoded = Dense(
+            self.flat_image_shape, activation='sigmoid')(self.latent)
+        self.reconstructed_images = Reshape(self.image_shape)(decoded)
 
-        self.encoder = Model(original_images, latent)
-        self.model = Model(original_images, reconstruction)
+        self.loss = binary_crossentropy(flat_input, decoded)
 
-        self._attach_optimizer(learning_rate, decay_learning_rate_after,
-                               learning_rate_decay)
+        self.encoder = Model(self.original_images, self.latent)
+        self.model = Model(self.original_images, self.reconstructed_images)
+
+        self.optimize = self._add_optimization_target(
+            learning_rate, decay_learning_rate_after, learning_rate_decay)
+        self.summary = self._add_summary()
 
     @property
     def is_ready(self):
         return self.model is not None
 
-    @property
-    def learning_rate(self):
-        assert hasattr(self, 'optimizer'), 'must call compile() first'
-        exp = (1. / (1. + self.optimizer.decay * self.optimizer.iterations))
-        return K.eval(self.optimizer.lr * exp)
-
-    def train_on_batch(self, images):
+    def train_on_batch(self, images, summary_writer=None):
         assert self.is_ready
-        return self.model.train_on_batch(images, images)
+        fetches = [self.optimize, self.loss]
+        if summary_writer is not None:
+            fetches += [self.summary, self.global_step]
+        outputs = self.session.run(
+            fetches, feed_dict={self.original_images: images})
+        if summary_writer is not None:
+            summary_writer.add_summary(
+                summary=outputs[2], global_step=outputs[3])
+        return outputs[1]  # loss
 
     def encode(self, images):
         assert self.is_ready
-        return self.encoder.predict(images)
+        return self.session.run(
+            self.encoder.output, feed_dict={self.original_images: images})
 
     def reconstruct(self, images):
         assert self.is_ready
-        return self.model.predict(images)
+        return self.session.run(
+            self.model.output, feed_dict={self.original_images: images})
 
-    def _attach_optimizer(self,
-                          learning_rate,
-                          decay_learning_rate_after,
-                          learning_rate_decay,
-                          loss='binary_crossentropy'):
-        # TF treats the decay as a factor every N steps, while for Keras it's d
-        # in lr^(1 / (1 + d * iterations)).
-        self.optimizer = keras.optimizers.Adam(
-            lr=learning_rate, decay=1 - learning_rate_decay)
-        self.model.compile(loss=loss, optimizer=self.optimizer)
+    def _add_optimization_target(self, learning_rate,
+                                 decay_learning_rate_after,
+                                 learning_rate_decay):
+        self.learning_rate = tf.train.exponential_decay(
+            learning_rate,
+            decay_steps=decay_learning_rate_after,
+            decay_rate=learning_rate_decay,
+            global_step=self.global_step,
+            staircase=True)
+        return tf.train.AdamOptimizer(self.learning_rate).minimize(
+            self.loss, global_step=self.global_step)
+
+    def _add_summary(self):
+        tf.summary.histogram('latent', self.latent)
+        tf.summary.scalar('loss', self.loss)
+        tf.summary.scalar('learning_rate', self.learning_rate)
+        tf.summary.image('original', self.original_images, max_outputs=4)
+        tf.summary.image(
+            'reconstructions', self.reconstructed_images, max_outputs=4)
+        return tf.summary.merge_all()
 
     def __repr__(self):
         assert self.is_ready
         lines = []
         try:
             # >= Keras 2.0.6
-            self.model.summary(print_fn=lambda l: lines.append(l))
+            self.model.summary(print_fn=lines.append)
         except TypeError:
             lines = [layer.name for layer in self.model.layers]
         return '\n'.join(map(str, lines))

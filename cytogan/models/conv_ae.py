@@ -1,9 +1,11 @@
+import keras.backend as K
+import keras.losses
 import numpy as np
 from keras.layers import (Conv2D, Dense, Flatten, Input, MaxPooling2D, Reshape,
                           UpSampling2D)
 from keras.models import Model
 
-import cytogan.models.ae
+from cytogan.models import ae
 
 
 def build_encoder(original_images, filter_sizes):
@@ -32,25 +34,37 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
     return deconv
 
 
-class ConvAE(cytogan.models.ae.AE):
+def binary_crossentropy(original_images, reconstructed_images):
+    flat_shape = [-1, int(np.prod(original_images.shape[1:]))]
+    original_flat = K.reshape(original_images, flat_shape)
+    reconstructed_flat = K.reshape(reconstructed_images, flat_shape)
+    return ae.binary_crossentropy(original_flat, reconstructed_flat)
+
+
+class ConvAE(ae.AE):
     def __init__(self, image_shape, filter_sizes, latent_size):
         super(ConvAE, self).__init__(image_shape, latent_size)
         self.filter_sizes = filter_sizes
 
     def compile(self, learning_rate, decay_learning_rate_after,
                 learning_rate_decay):
-        original_images = Input(shape=self.image_shape)
+        self.original_images = Input(shape=self.image_shape)
 
-        conv, conv_flat = build_encoder(original_images, self.filter_sizes)
-        latent = Dense(self.latent_size, activation='relu')(conv_flat)
-        deconv = build_decoder(conv, latent, self.filter_sizes)
+        conv, conv_flat = build_encoder(self.original_images,
+                                        self.filter_sizes)
+        self.latent = Dense(self.latent_size, activation='relu')(conv_flat)
+        deconv = build_decoder(conv, self.latent, self.filter_sizes)
 
-        reconstruction = Conv2D(
+        self.reconstructed_images = Conv2D(
             self.image_shape[2], (3, 3), activation='sigmoid',
             padding='same')(deconv)
 
-        self.encoder = Model(original_images, latent)
-        self.model = Model(original_images, reconstruction)
+        self.loss = binary_crossentropy(self.original_images,
+                                        self.reconstructed_images)
 
-        self._attach_optimizer(learning_rate, decay_learning_rate_after,
-                               learning_rate_decay)
+        self.encoder = Model(self.original_images, self.latent)
+        self.model = Model(self.original_images, self.reconstructed_images)
+
+        self.optimize = self._add_optimization_target(
+            learning_rate, decay_learning_rate_after, learning_rate_decay)
+        self.summary = self._add_summary()
