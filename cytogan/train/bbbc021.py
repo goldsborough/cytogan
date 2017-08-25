@@ -19,6 +19,9 @@ parser.add_argument('--confusion', action='store_true')
 options = parser.parse_args()
 print(options)
 
+if options.save_figures_to is not None:
+    visualize.disable_display()
+
 cell_data = CellData(
     metadata_file_path=options.metadata,
     labels_file_path=options.labels,
@@ -46,49 +49,44 @@ model.compile(
 print(model)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
-                          options.batch_size, options.gpus)
-trainer.train(model, cell_data.next_batch_of_images)
+                          options.batch_size, options.summary_dir,
+                          options.summary_freq)
+with common.get_session(options.gpus) as session:
+    trainer.train(session, model, cell_data.next_batch_of_images)
 
-# Evaluation
+    print('Evaluating ...')
+    keys, images = cell_data.all_images()
+    profiles = model.encode(images)
+    outcome = cell_data.create_dataset_from_profiles(keys, profiles)
+    confusion_matrix, accuracy = score_profiles(outcome)
+    print('Final Accuracy: {0}'.format(accuracy))
 
-print('Evaluating ...')
-keys, images = cell_data.all_images()
-profiles = model.encode(images)
-outcome = cell_data.create_dataset_from_profiles(keys, profiles)
-confusion_matrix, accuracy = score_profiles(outcome)
-print('Final Accuracy: {0}'.format(accuracy))
+    if options.confusion:
+        visualize.confusion_matrix(
+            confusion_matrix,
+            title='MOA Confusion Matrix',
+            accuracy=accuracy,
+            save_to=options.save_figures_to)
 
-# Visualization Code
+    if options.reconstruction_samples is not None:
+        visualize.reconstructions(
+            model,
+            images[:options.reconstruction_samples],
+            save_to=options.save_figures_to)
 
-if options.save_figures_to is not None:
-    visualize.disable_display()
+    if options.latent_samples is not None:
+        visualize.latent_space(
+            model,
+            images[:options.latent_samples],
+            cell_data.labels.values,
+            save_to=options.save_figures_to)
 
-if options.confusion:
-    visualize.confusion_matrix(
-        confusion_matrix,
-        title='MOA Confusion Matrix',
-        accuracy=accuracy,
-        save_to=options.save_figures_to)
-
-if options.reconstruction_samples is not None:
-    visualize.reconstructions(
-        model,
-        images[:options.reconstruction_samples],
-        save_to=options.save_figures_to)
-
-if options.latent_samples is not None:
-    visualize.latent_space(
-        model,
-        images[:options.latent_samples],
-        cell_data.labels.values,
-        save_to=options.save_figures_to)
-
-if options.generative_samples is not None:
-    visualize.generative_samples(
-        model,
-        options.generative_samples,
-        gray=True,
-        save_to=options.save_figures_to)
+    if options.generative_samples is not None:
+        visualize.generative_samples(
+            model,
+            options.generative_samples,
+            gray=True,
+            save_to=options.save_figures_to)
 
 if options.save_figures_to is None:
     visualize.show()
