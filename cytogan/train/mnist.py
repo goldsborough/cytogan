@@ -24,7 +24,7 @@ elif options.model == 'conv_ae':
         image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
 elif options.model == 'vae':
     model = vae.VAE(
-        image_shape=[28, 28, 1], filter_sizes=[128, 64], latent_size=256)
+        image_shape=[28, 28, 1], filter_sizes=[128, 64], latent_size=512)
 
 model.compile(
     options.lr,
