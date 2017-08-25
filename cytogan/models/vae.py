@@ -83,3 +83,8 @@ class VAE(cytogan.models.ae.AE):
         assert len(regularization_loss.shape) == 1
 
         return K.mean(regularization_loss + reconstruction_loss)
+
+    def _add_summary(self):
+        tf.summary.histogram('latent_mean', self.mean)
+        tf.summary.histogram('latent_stddev', self.sigma)
+        return super(VAE, self)._add_summary()

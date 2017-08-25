@@ -6,10 +6,12 @@ from keras.models import Model
 
 
 def binary_crossentropy(original_flat, reconstructed_flat):
-    e = 1e-10  # numerical stability
-    pointwise = original_flat * K.log(e + reconstructed_flat) + \
-               (1 - original_flat) * K.log(e + 1 - reconstructed_flat)
-    return -K.mean(pointwise)
+    with K.name_scope('binary_crossentropy'):
+        e = 1e-10  # numerical stability
+        pointwise = original_flat * K.log(e + reconstructed_flat) + \
+                   (1 - original_flat) * K.log(e + 1 - reconstructed_flat)
+        value = -K.mean(pointwise)
+    return value
 
 
 class AE(object):
