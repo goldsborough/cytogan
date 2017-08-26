@@ -26,8 +26,10 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
     deconv_flat = Dense(np.prod(first_shape))(latent)
     deconv = Reshape(first_shape)(deconv_flat)
     deconv = UpSampling2D((2, 2))(deconv)
-    # Go through encoder layers in reverse order and skip the first layer.
-    for filter_size in filter_sizes[:0:-1]:
+    # Go through encoder layers in reverse order and skip the last layer.
+    # [-2::-1] means start at the second to last (inclusive) and go to 0 in
+    # steps of -1.
+    for filter_size in filter_sizes[-2::-1]:
         deconv = Conv2D(
             filter_size, kernel_size=(3, 3), activation='relu',
             padding='same')(deconv)
