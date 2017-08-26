@@ -10,27 +10,27 @@ from cytogan.metrics import losses
 
 
 def build_encoder(original_images, filter_sizes):
-    previous_layer = original_images
+    assert len(filter_sizes) > 0
+    conv = original_images
     for filter_size in filter_sizes:
         conv = Conv2D(
             filter_size, kernel_size=(3, 3), activation='relu',
-            padding='same')(previous_layer)
+            padding='same')(conv)
         conv = MaxPooling2D((2, 2), padding='same')(conv)
-        previous_layer = conv
 
     return conv, Flatten()(conv)
 
 
 def build_decoder(last_encoder_layer, latent, filter_sizes):
-    first_shape = [int(d) for d in last_encoder_layer.shape[1:]]
+    first_shape = list(map(int, last_encoder_layer.shape[1:]))
     deconv_flat = Dense(np.prod(first_shape))(latent)
-    previous_layer = Reshape(first_shape)(deconv_flat)
-    for filter_size in filter_sizes[::-1]:
+    deconv = Reshape(first_shape)(deconv_flat)
+    deconv = UpSampling2D((2, 2))(deconv)
+    # Go through encoder layers in reverse order and skip the first layer.
+    for filter_size in filter_sizes[:0:-1]:
         deconv = Conv2D(
             filter_size, kernel_size=(3, 3), activation='relu',
-            padding='same')(previous_layer)
-        deconv = UpSampling2D((2, 2))(deconv)
-        previous_layer = deconv
+            padding='same')(deconv)
 
     return deconv
 

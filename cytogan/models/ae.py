@@ -75,12 +75,14 @@ class AE(object):
     def _add_optimization_target(self, learning_rate,
                                  decay_learning_rate_after,
                                  learning_rate_decay):
-        self.learning_rate = tf.train.exponential_decay(
-            learning_rate,
-            decay_steps=decay_learning_rate_after,
-            decay_rate=learning_rate_decay,
-            global_step=self.global_step,
-            staircase=True)
+        self.learning_rate = learning_rate
+        if learning_rate_decay is not None:
+            self.learning_rate = tf.train.exponential_decay(
+                learning_rate,
+                decay_steps=decay_learning_rate_after,
+                decay_rate=learning_rate_decay,
+                global_step=self.global_step,
+                staircase=True)
         return tf.train.AdamOptimizer(self.learning_rate).minimize(
             self.loss, global_step=self.global_step)
 
