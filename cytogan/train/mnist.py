@@ -26,10 +26,8 @@ elif options.model == 'vae':
     model = vae.VAE(
         image_shape=[28, 28, 1], filter_sizes=[32, 32], latent_size=512)
 
-model.compile(
-    options.lr,
-    decay_learning_rate_after=number_of_batches,
-    learning_rate_decay=options.lr_decay)
+model.compile(options.lr, number_of_batches, options.lr_decay,
+              options.load_weights)
 
 print(model)
 

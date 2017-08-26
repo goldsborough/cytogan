@@ -50,8 +50,11 @@ class ConvAE(ae.AE):
         super(ConvAE, self).__init__(image_shape, latent_size)
         self.filter_sizes = filter_sizes
 
-    def compile(self, learning_rate, decay_learning_rate_after,
-                learning_rate_decay):
+    def compile(self,
+                learning_rate,
+                decay_learning_rate_after,
+                learning_rate_decay,
+                weights_path=None):
         self.original_images = Input(shape=self.image_shape)
 
         conv, conv_flat = build_encoder(self.original_images,
@@ -73,3 +76,4 @@ class ConvAE(ae.AE):
         self.optimize = self._add_optimization_target(
             learning_rate, decay_learning_rate_after, learning_rate_decay)
         self.summary = self._add_summary()
+        self._load_weights(weights_path)

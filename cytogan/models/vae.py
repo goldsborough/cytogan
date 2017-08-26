@@ -30,8 +30,11 @@ class VAE(ae.AE):
         self.sigma = None
         self.log_sigma = None
 
-    def compile(self, learning_rate, decay_learning_rate_after,
-                learning_rate_decay):
+    def compile(self,
+                learning_rate,
+                decay_learning_rate_after,
+                learning_rate_decay,
+                weights_path=None):
         self.original_images = Input(shape=self.image_shape)
         conv, conv_flat = conv_ae.build_encoder(self.original_images,
                                                 self.filter_sizes)
@@ -60,6 +63,7 @@ class VAE(ae.AE):
         self.optimize = self._add_optimization_target(
             learning_rate, decay_learning_rate_after, learning_rate_decay)
         self.summary = self._add_summary()
+        self._load_weights(weights_path)
 
     def decode(self, samples):
         assert self.is_ready

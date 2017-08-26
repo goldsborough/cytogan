@@ -31,8 +31,11 @@ class AE(object):
 
         self.global_step = tf.Variable(0, trainable=False)
 
-    def compile(self, learning_rate, decay_learning_rate_after,
-                learning_rate_decay):
+    def compile(self,
+                learning_rate,
+                decay_learning_rate_after,
+                learning_rate_decay,
+                weights_path=None):
         self.original_images = Input(shape=self.image_shape)
         flat_input = Flatten()(self.original_images)
         self.latent = Dense(self.latent_size, activation='relu')(flat_input)
@@ -48,15 +51,14 @@ class AE(object):
         self.optimize = self._add_optimization_target(
             learning_rate, decay_learning_rate_after, learning_rate_decay)
         self.summary = self._add_summary()
+        self._load_weights(weights_path)
 
-    def save(self, directory):
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(os.path.join(directory, 'model.json'), 'w') as model_file:
-            model_file.write(self.model.to_json())
+    def save(self, checkpoint_directory):
+        if not os.path.exists(checkpoint_directory):
+            os.makedirs(checkpoint_directory)
         class_name = self.__class__.__name__
         timestamp = time.strftime('%H-%M-%S_%d-%m-%Y')
-        weights_path = os.path.join(directory, '{0}-{1}.h5'.format(
+        weights_path = os.path.join(checkpoint_directory, '{0}-{1}.h5'.format(
             class_name, timestamp))
         self.model.save_weights(weights_path)
 
@@ -110,6 +112,11 @@ class AE(object):
         tf.summary.image(
             'reconstructions', self.reconstructed_images, max_outputs=4)
         return tf.summary.merge_all()
+
+    def _load_weights(self, weights_path):
+        if weights_path is not None:
+            print('Loading model weights from {0} ...'.format(weights_path))
+            self.model.load_weights(weights_path)
 
     def __repr__(self):
         assert self.is_ready
