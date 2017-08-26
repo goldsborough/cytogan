@@ -31,6 +31,7 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
         deconv = Conv2D(
             filter_size, kernel_size=(3, 3), activation='relu',
             padding='same')(deconv)
+        deconv = UpSampling2D((2, 2))(deconv)
 
     return deconv
 
