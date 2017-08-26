@@ -86,7 +86,7 @@ def generative_samples(model,
     figure.suptitle('Decoded Samples')
     figure_rows = int(np.ceil(np.sqrt(number_of_samples)))
     figure_columns = int(np.ceil(number_of_samples / figure_rows))
-    for index, image in enumerate(images):
+    for index, image in enumerate(images[:number_of_samples]):
         _plot_image_tile(figure_rows, figure_columns, index, image, gray)
 
     if save_to is not None:

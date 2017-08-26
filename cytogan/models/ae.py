@@ -4,14 +4,7 @@ import tensorflow as tf
 from keras.layers import Dense, Flatten, Input, Reshape
 from keras.models import Model
 
-
-def binary_crossentropy(original_flat, reconstructed_flat):
-    with K.name_scope('binary_crossentropy'):
-        e = 1e-10  # numerical stability
-        pointwise = original_flat * K.log(e + reconstructed_flat) + \
-                   (1 - original_flat) * K.log(e + 1 - reconstructed_flat)
-        value = -K.mean(pointwise)
-    return value
+from cytogan.metrics import losses
 
 
 class AE(object):
@@ -44,7 +37,7 @@ class AE(object):
             self.flat_image_shape, activation='sigmoid')(self.latent)
         self.reconstructed_images = Reshape(self.image_shape)(decoded)
 
-        self.loss = binary_crossentropy(flat_input, decoded)
+        self.loss = losses.reconstruction_loss(flat_input, decoded)
 
         self.encoder = Model(self.original_images, self.latent)
         self.model = Model(self.original_images, self.reconstructed_images)

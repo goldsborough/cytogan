@@ -5,8 +5,8 @@ import tensorflow as tf
 from keras.layers import Conv2D, Dense, Input, Lambda
 from keras.models import Model
 
-import cytogan.models.ae
-from cytogan.models import conv_ae
+from cytogan.models import ae, conv_ae
+from cytogan.metrics import losses
 
 
 def _reuse_decoder_layers(model, latent_size):
@@ -19,7 +19,7 @@ def _reuse_decoder_layers(model, latent_size):
     return Model(decoder_input, decoder_layer)
 
 
-class VAE(cytogan.models.ae.AE):
+class VAE(ae.AE):
     def __init__(self, image_shape, filter_sizes, latent_size):
         super(VAE, self).__init__(image_shape, latent_size)
         self.filter_sizes = filter_sizes
@@ -72,7 +72,7 @@ class VAE(cytogan.models.ae.AE):
         return mean + K.exp(log_sigma) * noise
 
     def _add_loss(self, original_images, reconstructed_images):
-        reconstruction_loss = conv_ae.binary_crossentropy(
+        reconstruction_loss = losses.reconstruction_loss(
             original_images, reconstructed_images)
 
         # https://arxiv.org/abs/1312.6114, Appendix B

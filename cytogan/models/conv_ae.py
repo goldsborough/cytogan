@@ -6,6 +6,7 @@ from keras.layers import (Conv2D, Dense, Flatten, Input, MaxPooling2D, Reshape,
 from keras.models import Model
 
 from cytogan.models import ae
+from cytogan.metrics import losses
 
 
 def build_encoder(original_images, filter_sizes):
@@ -34,13 +35,6 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
     return deconv
 
 
-def binary_crossentropy(original_images, reconstructed_images):
-    flat_shape = [-1, int(np.prod(original_images.shape[1:]))]
-    original_flat = K.reshape(original_images, flat_shape)
-    reconstructed_flat = K.reshape(reconstructed_images, flat_shape)
-    return ae.binary_crossentropy(original_flat, reconstructed_flat)
-
-
 class ConvAE(ae.AE):
     def __init__(self, image_shape, filter_sizes, latent_size):
         super(ConvAE, self).__init__(image_shape, latent_size)
@@ -59,8 +53,8 @@ class ConvAE(ae.AE):
             self.image_shape[2], (3, 3), activation='sigmoid',
             padding='same')(deconv)
 
-        self.loss = binary_crossentropy(self.original_images,
-                                        self.reconstructed_images)
+        self.loss = losses.reconstruction_loss(self.original_images,
+                                               self.reconstructed_images)
 
         self.encoder = Model(self.original_images, self.latent)
         self.model = Model(self.original_images, self.reconstructed_images)

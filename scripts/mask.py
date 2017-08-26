@@ -3,6 +3,7 @@
 import argparse
 import glob
 import os.path
+import os
 import time
 from collections import namedtuple
 
@@ -19,7 +20,7 @@ def filter_metadata(metadata, patterns):
     regex_pattern = '|'.join(patterns)
     plate = metadata['Image_Metadata_Plate_DAPI']
     filename = metadata['Image_FileName_DAPI']
-    key = plate + '/' + filename
+    key = plate + os.sep + filename
     labels = key.str.contains(regex_pattern)
     return metadata.loc[labels]
 
