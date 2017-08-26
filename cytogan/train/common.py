@@ -40,6 +40,8 @@ def make_parser(name):
     parser.add_argument('--save-figures-to')
     parser.add_argument('--summary-dir')
     parser.add_argument('--summary-freq', default=20, type=int)
+    parser.add_argument('--checkpoint-dir')
+    parser.add_argument('--checkpoint-freq', default=20, type=int)
     parser.add_argument(
         '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
 

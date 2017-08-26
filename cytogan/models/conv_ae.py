@@ -15,7 +15,9 @@ def build_encoder(original_images, filter_sizes):
     with K.name_scope('encoder'):
         for filter_size in filter_sizes:
             conv = Conv2D(
-                filter_size, kernel_size=(3, 3), activation='relu',
+                filter_size,
+                kernel_size=(3, 3),
+                activation='relu',
                 padding='same')(conv)
             conv = MaxPooling2D((2, 2), padding='same')(conv)
         flat = Flatten()(conv)
@@ -34,7 +36,9 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
         # steps of -1.
         for filter_size in filter_sizes[-2::-1]:
             deconv = Conv2D(
-                filter_size, kernel_size=(3, 3), activation='relu',
+                filter_size,
+                kernel_size=(3, 3),
+                activation='relu',
                 padding='same')(deconv)
             deconv = UpSampling2D((2, 2))(deconv)
 
@@ -59,8 +63,9 @@ class ConvAE(ae.AE):
             self.image_shape[2], (3, 3), activation='sigmoid',
             padding='same')(deconv)
 
-        self.loss = losses.reconstruction_loss(self.original_images,
-                                               self.reconstructed_images)
+        batch_loss = losses.reconstruction_loss(self.original_images,
+                                                self.reconstructed_images)
+        self.loss = K.mean(batch_loss)
 
         self.encoder = Model(self.original_images, self.latent)
         self.model = Model(self.original_images, self.reconstructed_images)

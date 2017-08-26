@@ -1,8 +1,11 @@
-import keras.backend as K
+import os
+import time
+
 import numpy as np
 import tensorflow as tf
 from keras.layers import Dense, Flatten, Input, Reshape
 from keras.models import Model
+import keras.backend as K
 
 from cytogan.metrics import losses
 
@@ -37,7 +40,7 @@ class AE(object):
             self.flat_image_shape, activation='sigmoid')(self.latent)
         self.reconstructed_images = Reshape(self.image_shape)(decoded)
 
-        self.loss = losses.reconstruction_loss(flat_input, decoded)
+        self.loss = K.mean(losses.reconstruction_loss(flat_input, decoded))
 
         self.encoder = Model(self.original_images, self.latent)
         self.model = Model(self.original_images, self.reconstructed_images)
@@ -45,6 +48,17 @@ class AE(object):
         self.optimize = self._add_optimization_target(
             learning_rate, decay_learning_rate_after, learning_rate_decay)
         self.summary = self._add_summary()
+
+    def save(self, directory):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(os.path.join(directory, 'model.json'), 'w') as model_file:
+            model_file.write(self.model.to_json())
+        class_name = self.__class__.__name__
+        timestamp = time.strftime('%H-%M-%S_%d-%m-%Y')
+        weights_path = os.path.join(directory, '{0}-{1}.h5'.format(
+            class_name, timestamp))
+        self.model.save_weights(weights_path)
 
     @property
     def is_ready(self):
@@ -60,7 +74,9 @@ class AE(object):
         if summary_writer is not None:
             summary_writer.add_summary(
                 summary=outputs[2], global_step=outputs[3])
-        return outputs[1]  # loss
+        loss = outputs[1]
+        assert np.isscalar(loss)
+        return loss
 
     def encode(self, images):
         assert self.is_ready

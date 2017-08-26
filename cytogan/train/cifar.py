@@ -40,8 +40,11 @@ model.compile(
 print(model)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
-                          options.batch_size, options.summary_dir,
-                          options.summary_freq)
+                          options.batch_size)
+trainer.summary_directory = options.summary_dir
+trainer.summary_frequency = options.summary_freq
+trainer.checkpoint_directory = options.checkpoint_dir
+trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
     trainer.train(session, model, get_batch)
 
