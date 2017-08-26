@@ -12,28 +12,31 @@ from cytogan.metrics import losses
 def build_encoder(original_images, filter_sizes):
     assert len(filter_sizes) > 0
     conv = original_images
-    for filter_size in filter_sizes:
-        conv = Conv2D(
-            filter_size, kernel_size=(3, 3), activation='relu',
-            padding='same')(conv)
-        conv = MaxPooling2D((2, 2), padding='same')(conv)
+    with K.name_scope('encoder'):
+        for filter_size in filter_sizes:
+            conv = Conv2D(
+                filter_size, kernel_size=(3, 3), activation='relu',
+                padding='same')(conv)
+            conv = MaxPooling2D((2, 2), padding='same')(conv)
+        flat = Flatten()(conv)
 
-    return conv, Flatten()(conv)
+    return conv, flat
 
 
 def build_decoder(last_encoder_layer, latent, filter_sizes):
     first_shape = list(map(int, last_encoder_layer.shape[1:]))
-    deconv_flat = Dense(np.prod(first_shape))(latent)
-    deconv = Reshape(first_shape)(deconv_flat)
-    deconv = UpSampling2D((2, 2))(deconv)
-    # Go through encoder layers in reverse order and skip the last layer.
-    # [-2::-1] means start at the second to last (inclusive) and go to 0 in
-    # steps of -1.
-    for filter_size in filter_sizes[-2::-1]:
-        deconv = Conv2D(
-            filter_size, kernel_size=(3, 3), activation='relu',
-            padding='same')(deconv)
+    with K.name_scope('decoder'):
+        deconv_flat = Dense(np.prod(first_shape))(latent)
+        deconv = Reshape(first_shape)(deconv_flat)
         deconv = UpSampling2D((2, 2))(deconv)
+        # Go through encoder layers in reverse order and skip the last layer.
+        # [-2::-1] means start at the second to last (inclusive) and go to 0 in
+        # steps of -1.
+        for filter_size in filter_sizes[-2::-1]:
+            deconv = Conv2D(
+                filter_size, kernel_size=(3, 3), activation='relu',
+                padding='same')(deconv)
+            deconv = UpSampling2D((2, 2))(deconv)
 
     return deconv
 
