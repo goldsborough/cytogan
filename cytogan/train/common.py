@@ -17,11 +17,6 @@ class Frequency(object):
     def __init__(self, value):
         self.iterations = None
         self.seconds = None
-
-        if isinstance(value, int):
-            self.iterations = value
-            return
-
         match = re.match(r'(\d+)\s*(s|m|min|h)?', value)
         if match is None:
             raise ValueError('{0} is not a valid frequency'.format(value))
@@ -76,10 +71,10 @@ def make_parser(name):
     parser.add_argument('--save-figures-to')
     parser.add_argument('--summary-dir')
     parser.add_argument(
-        '--summary-freq', type=Frequency, default=Frequency(20))
+        '--summary-freq', type=Frequency, default=Frequency('20'))
     parser.add_argument('--checkpoint-dir')
     parser.add_argument(
-        '--checkpoint-freq', type=Frequency, default=Frequency(20))
+        '--checkpoint-freq', type=Frequency, default=Frequency('30s'))
     parser.add_argument('--restore-from', metavar='CHECKPOINT_DIR')
     parser.add_argument(
         '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)

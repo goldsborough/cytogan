@@ -6,7 +6,6 @@ import time
 import tensorflow as tf
 import collections
 
-
 Learning = collections.namedtuple('Learning', 'rate, decay, steps_per_decay')
 
 
@@ -26,7 +25,8 @@ class Model(abc.ABC):
         # Boilerplate for management of the model execution.
         self._add_summaries()
         self.summary = tf.summary.merge_all()
-        self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=2)
+        self.saver = tf.train.Saver(
+            max_to_keep=2, keep_checkpoint_every_n_hours=2)
 
     def train_on_batch(self, batch, with_summary=False):
         fetches = [self.optimize, self.loss]
