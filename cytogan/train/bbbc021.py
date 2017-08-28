@@ -2,10 +2,10 @@
 
 import numpy as np
 
-from cytogan.models import ae, conv_ae, vae
+from cytogan.models import model, ae, conv_ae, vae
 from cytogan.train import trainer, visualize
 from cytogan.data.cell_data import CellData
-from cytogan.score import score_profiles
+from cytogan.metrics import profiling
 
 from cytogan.train import common
 
@@ -32,33 +32,34 @@ cell_data = CellData(
 number_of_batches = cell_data.number_of_images // options.batch_size
 image_shape = (128, 128, 3)
 
+learning = model.Learning(options.lr, options.lr_decay, number_of_batches)
+
 if options.model == 'ae':
-    model = ae.AE(image_shape=image_shape, latent_size=32)
+    hyper = ae.Hyper(image_shape, latent_size=32)
+    Model = ae.AE
 elif options.model == 'conv_ae':
-    model = conv_ae.ConvAE(
-        image_shape=image_shape, filter_sizes=[8, 8], latent_size=32)
+    hyper = conv_ae.Hyper(image_shape, filter_sizes=[8, 8], latent_size=32)
+    Model = conv_ae.ConvAE
 elif options.model == 'vae':
-    model = vae.VAE(
-        image_shape=image_shape, filter_sizes=[32], latent_size=256)
-
-model.compile(
-    options.lr,
-    decay_learning_rate_after=number_of_batches,
-    learning_rate_decay=options.lr_decay)
-
-print(model)
+    hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
+    Model = vae.VAE
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
-                          options.batch_size, options.summary_dir,
-                          options.summary_freq)
+                          options.batch_size)
+trainer.summary_directory = options.summary_dir
+trainer.summary_frequency = options.summary_freq
+trainer.checkpoint_directory = options.checkpoint_dir
+trainer.checkpoint_frequency = options.checkpoint_freq
+
 with common.get_session(options.gpus) as session:
-    trainer.train(session, model, cell_data.next_batch_of_images)
+    model = Model(hyper, learning, session)
+    trainer.train(model, cell_data.next_batch_of_images, options.restore_from)
 
     print('Evaluating ...')
     keys, images = cell_data.all_images()
     profiles = model.encode(images)
     outcome = cell_data.create_dataset_from_profiles(keys, profiles)
-    confusion_matrix, accuracy = score_profiles(outcome)
+    confusion_matrix, accuracy = profiling.score_profiles(outcome)
     print('Final Accuracy: {0}'.format(accuracy))
 
     if options.confusion:

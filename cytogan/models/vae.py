@@ -29,6 +29,10 @@ class VAE(conv_ae.ConvAE):
 
         super(VAE, self).__init__(hyper, learning, session)
 
+    def decode(self, samples):
+        return self.session.run(
+        self.decoder.output, feed_dict={self.decoder.input: samples})
+
     def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
         conv, conv_flat = conv_ae.build_encoder(self.original_images,
@@ -55,11 +59,6 @@ class VAE(conv_ae.ConvAE):
         self.decoder = _reuse_decoder_layers(model, self.latent_size)
 
         return self.original_images, loss, model
-
-    def decode(self, samples):
-        assert self.is_ready
-        return self.session.run(
-            self.decoder.output, feed_dict={self.decoder.input: samples})
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors

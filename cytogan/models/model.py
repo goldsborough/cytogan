@@ -70,7 +70,6 @@ class Model(abc.ABC):
     def _add_optimizer(self, learning):
         # Start with the scalar learning rate value.
         learning_rate = learning.rate
-        print(learning)
         if learning.decay is not None:
             # Upgrade to decaying learning rate *tensor*.
             learning_rate = tf.train.exponential_decay(

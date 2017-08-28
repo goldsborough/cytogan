@@ -36,8 +36,6 @@ elif options.model == 'vae':
         image_shape, filter_sizes=[128, 128, 128], latent_size=512)
     Model = vae.VAE
 
-print(model)
-
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size)
 trainer.summary_directory = options.summary_dir

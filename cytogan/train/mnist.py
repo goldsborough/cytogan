@@ -38,6 +38,7 @@ trainer.summary_directory = options.summary_dir
 trainer.summary_frequency = options.summary_freq
 trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
+
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
     trainer.train(model, get_batch, checkpoint=options.restore_from)

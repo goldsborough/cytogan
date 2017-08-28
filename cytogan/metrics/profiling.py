@@ -22,6 +22,8 @@ def update_confusion_matrix(confusion_matrix, label_table, actual_labels,
     for actual, predicted in zip(actual_indices, predicted_indices):
         confusion_matrix[actual, predicted] += 1
 
+def collapse_profiles():
+    pass
 
 # Performs leave-one-compound-out cross-validation
 # Result is a dataframe with columns:
