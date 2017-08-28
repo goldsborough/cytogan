@@ -4,6 +4,8 @@ import argparse
 import tensorflow as tf
 import os
 
+import keras.backend as K
+
 Dataset = collections.namedtuple('Dataset', 'images, labels')
 
 
@@ -57,7 +59,5 @@ def get_session(gpus):
         gpus = ','.join(map(str, gpus))
     gpu_options = tf.GPUOptions(allow_growth=True, visible_device_list=gpus)
 
-    session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-    tf.global_variables_initializer().run(session=session)
-
-    return session
+    K.manual_variable_initialization(True)
+    return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))

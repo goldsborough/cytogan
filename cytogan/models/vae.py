@@ -32,7 +32,6 @@ class VAE(ae.AE):
 
     def compile(self, learning_rate, decay_learning_rate_after,
                 learning_rate_decay):
-        K.manual_variable_initialization(True)
         self.original_images = Input(shape=self.image_shape)
         conv, conv_flat = conv_ae.build_encoder(self.original_images,
                                                 self.filter_sizes)

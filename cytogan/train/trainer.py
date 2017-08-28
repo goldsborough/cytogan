@@ -28,7 +28,9 @@ class Trainer(object):
         if checkpoint is not None:
             model.restore(checkpoint)
         if self.summary_directory is not None:
-            self._setup_summary_writer(session.graph)
+            self._summary_writer = self._get_summary_writer(session.graph)
+        tf.global_variables_initializer().run(session=session)
+
         start_time = time.time()
         try:
             self._train_loop(model, batch_generator)
@@ -70,11 +72,10 @@ class Trainer(object):
             return number_of_iterations % self.checkpoint_frequency == 0
         return False
 
-    def _setup_summary_writer(self, graph):
-        self._summary_writer = tf.summary.FileWriter(
-            self.summary_directory, graph=graph)
+    def _get_summary_writer(self, graph):
         print('Writing TensorBoard summaries to {0}'.format(
             self.summary_directory))
+        return tf.summary.FileWriter(self.summary_directory, graph=graph)
 
     def __repr__(self):
         return 'Trainer<{0} epochs x {1} batches @ {2} examples>'.format(

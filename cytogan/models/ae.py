@@ -60,6 +60,7 @@ class AE(object):
         checkpoint_path = os.path.join(checkpoint_directory, model_key)
         self.saver.save(
             self.session, checkpoint_path, global_step=self.global_step)
+        print(self.model.layers[1].get_weights())
 
     def restore(self, checkpoint_directory):
         assert self.session is not None
@@ -69,6 +70,7 @@ class AE(object):
                 'Could not find any valid checkpoints under {0}!'.format(
                     checkpoint_directory))
         self.saver.restore(self.session, checkpoint)
+        print(self.model.layers[1].get_weights())
 
     @property
     def is_ready(self):
