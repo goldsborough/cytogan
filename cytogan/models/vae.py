@@ -32,6 +32,7 @@ class VAE(ae.AE):
 
     def compile(self, learning_rate, decay_learning_rate_after,
                 learning_rate_decay):
+        K.manual_variable_initialization(True)
         self.original_images = Input(shape=self.image_shape)
         conv, conv_flat = conv_ae.build_encoder(self.original_images,
                                                 self.filter_sizes)
@@ -63,7 +64,8 @@ class VAE(ae.AE):
 
     def decode(self, samples):
         assert self.is_ready
-        return self.decoder.predict(samples)
+        return self.session.run(
+            self.decoder.output, feed_dict={self.decoder.input: samples})
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors
