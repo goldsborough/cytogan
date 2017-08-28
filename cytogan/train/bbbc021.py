@@ -53,13 +53,22 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    trainer.train(model, cell_data.next_batch_of_images, options.restore_from)
+    trainer.train(model, cell_data.next_batch, options.restore_from)
 
     print('Evaluating ...')
-    keys, images = cell_data.all_images()
-    profiles = model.encode(images)
-    outcome = cell_data.create_dataset_from_profiles(keys, profiles)
-    confusion_matrix, accuracy = profiling.score_profiles(outcome)
+    N = 1024
+    keys = []
+    profiles = []
+    for batch_keys, images in cell_data.batches_of_size(N):
+        print('Encoding {0} images ...'.format(N))
+        keys.append(batch_keys)
+        profiles.append(model.encode(images))
+    print('Creating dataset from profiles ...')
+    profiles = np.concatenate(profiles, axis=0)
+    # assert profiles.shape == (cell_data.number_of_images, model.latent_size)
+    dataset = cell_data.create_dataset_from_profiles(keys, profiles)
+    print('Scoring profiles ...')
+    confusion_matrix, accuracy = profiling.score_profiles(dataset)
     print('Final Accuracy: {0}'.format(accuracy))
 
     if options.confusion:

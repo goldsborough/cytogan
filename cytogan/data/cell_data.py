@@ -111,7 +111,7 @@ class CellData(object):
         self.metadata = _preprocess_metadata(all_metadata, patterns,
                                              self.image_root, cell_count_path)
 
-        self.images = LazyImageLoader(self.image_root)
+        self.images = LazyImageLoader(self.image_root, cache=False)
 
         self.batch_index = 0
 
@@ -119,7 +119,7 @@ class CellData(object):
     def number_of_images(self):
         return self.metadata.shape[0]
 
-    def next_batch_of_images(self, number_of_images):
+    def next_batch(self, number_of_images):
         if self.batch_index >= self.number_of_images:
             self.reset_batching_state()
 
@@ -135,12 +135,15 @@ class CellData(object):
         # https://stackoverflow.com/questions/29576430/shuffle-dataframe-rows
         self.metadata = self.metadata.sample(frac=1)
 
-    def all_images(self):
-        return self.images[self.metadata.index]
+    def batches_of_size(self, batch_size):
+        self.reset_batching_state()
+        for start in range(0, batch_size, batch_size):
+            keys = self.metadata.iloc[start:start + batch_size].index
+            yield self.images[keys]
 
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
-        relevant_metadata = self.metadata.loc[keys]
+        relevant_metadata = self.metadata.loc[tuple(keys)]
         compounds = relevant_metadata['compound']
         concentrations = relevant_metadata['concentration']
         # The keys to the labels dataframe are (compound, concentration) pairs.

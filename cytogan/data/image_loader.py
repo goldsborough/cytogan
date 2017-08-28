@@ -26,12 +26,16 @@ class LazyImageLoader(object):
             return self.get_all_images(image_key)
         return self.get_image(image_key)
 
+    def clear(self):
+        self.loaded_images.clear()
+
     def get_image(self, image_key):
+        if not self.do_cache:
+            return _load_image(self.root_path, image_key, self.extension)
         image = self.loaded_images.get(image_key)
         if image is None:
             image = _load_image(self.root_path, image_key, self.extension)
-            if self.do_cache:
-                self.loaded_images[image_key] = image
+            self.loaded_images[image_key] = image
         return image
 
     def get_all_images(self, image_keys):
