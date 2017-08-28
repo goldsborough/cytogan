@@ -25,22 +25,23 @@ class Trainer(object):
 
     def train(self, session, model, batch_generator, checkpoint=None):
         model.session = session
-        if checkpoint is not None:
+        if checkpoint is None:
+            tf.global_variables_initializer().run(session=session)
+        else:
             model.restore(checkpoint)
         if self.summary_directory is not None:
             self._summary_writer = self._get_summary_writer(session.graph)
-        tf.global_variables_initializer().run(session=session)
 
         start_time = time.time()
         try:
             self._train_loop(model, batch_generator)
         except KeyboardInterrupt:
             pass
+        elapsed_time = time.time() - start_time
 
         if self.checkpoint_directory is not None:
             model.save(self.checkpoint_directory)
 
-        elapsed_time = time.time() - start_time
         print('Training complete! Took {0:.2f}s'.format(elapsed_time))
 
     def _train_loop(self, model, batch_generator):

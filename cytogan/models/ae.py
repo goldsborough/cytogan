@@ -31,7 +31,9 @@ class AE(object):
 
         self.global_step = tf.Variable(0, trainable=False)
         self.saver = tf.train.Saver(
-            max_to_keep=5, keep_checkpoint_every_n_hours=2)
+            tf.global_variables(),
+            max_to_keep=5,
+            keep_checkpoint_every_n_hours=2)
 
     def compile(self, learning_rate, decay_learning_rate_after,
                 learning_rate_decay):
@@ -52,14 +54,16 @@ class AE(object):
         self.summary = self._add_summary()
 
     def save(self, checkpoint_directory):
+        assert self.session is not None
         if not os.path.exists(checkpoint_directory):
             os.makedirs(checkpoint_directory)
         class_name = self.__class__.__name__
         timestamp = time.strftime('%H-%M-%S_%d-%m-%Y')
         model_key = '{0}-{1}'.format(class_name, timestamp)
         checkpoint_path = os.path.join(checkpoint_directory, model_key)
-        self.saver.save(
+        x = self.saver.save(
             self.session, checkpoint_path, global_step=self.global_step)
+        print(x)
         print(self.model.layers[1].get_weights())
 
     def restore(self, checkpoint_directory):
@@ -69,6 +73,7 @@ class AE(object):
             raise RuntimeError(
                 'Could not find any valid checkpoints under {0}!'.format(
                     checkpoint_directory))
+        print(checkpoint)
         self.saver.restore(self.session, checkpoint)
         print(self.model.layers[1].get_weights())
 
