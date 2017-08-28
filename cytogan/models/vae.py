@@ -1,12 +1,12 @@
 import keras.backend as K
-import keras.losses
-import keras.optimizers
 import tensorflow as tf
 from keras.layers import Conv2D, Dense, Input, Lambda
 from keras.models import Model
 
-from cytogan.models import ae, conv_ae
+from cytogan.models import conv_ae
 from cytogan.metrics import losses
+
+Hyper = conv_ae.Hyper
 
 
 def _reuse_decoder_layers(model, latent_size):
@@ -19,19 +19,17 @@ def _reuse_decoder_layers(model, latent_size):
     return Model(decoder_input, decoder_layer)
 
 
-class VAE(ae.AE):
-    def __init__(self, image_shape, filter_sizes, latent_size):
-        super(VAE, self).__init__(image_shape, latent_size)
-        self.filter_sizes = filter_sizes
+class VAE(conv_ae.ConvAE):
+    def __init__(self, hyper, learning, session):
         self.decoder = None
-
         # Tensor handles for the loss function.
         self.mean = None
         self.sigma = None
         self.log_sigma = None
 
-    def compile(self, learning_rate, decay_learning_rate_after,
-                learning_rate_decay):
+        super(VAE, self).__init__(hyper, learning, session)
+
+    def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
         conv, conv_flat = conv_ae.build_encoder(self.original_images,
                                                 self.filter_sizes)
@@ -50,16 +48,13 @@ class VAE(ae.AE):
         assert self.reconstructed_images.shape[1:] == \
             self.image_shape, self.reconstructed_images.shape
 
-        self.loss = self._add_loss(self.original_images,
-                                   self.reconstructed_images)
+        loss = self._add_loss(self.original_images, self.reconstructed_images)
 
         self.encoder = Model(self.original_images, self.latent)
-        self.model = Model(self.original_images, self.reconstructed_images)
-        self.decoder = _reuse_decoder_layers(self.model, self.latent_size)
+        model = Model(self.original_images, self.reconstructed_images)
+        self.decoder = _reuse_decoder_layers(model, self.latent_size)
 
-        self.optimize = self._add_optimization_target(
-            learning_rate, decay_learning_rate_after, learning_rate_decay)
-        self.summary = self._add_summary()
+        return self.original_images, loss, model
 
     def decode(self, samples):
         assert self.is_ready
@@ -85,7 +80,7 @@ class VAE(ae.AE):
 
         return K.mean(regularization_loss + reconstruction_loss)
 
-    def _add_summary(self):
+    def _add_summaries(self):
         tf.summary.histogram('latent_mean', self.mean)
         tf.summary.histogram('latent_stddev', self.sigma)
-        return super(VAE, self)._add_summary()
+        super(VAE, self)._add_summaries()

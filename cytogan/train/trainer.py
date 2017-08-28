@@ -18,19 +18,17 @@ class Trainer(object):
 
         self.summary_directory = None
         self.summary_frequency = None
-        self._summary_writer = None
+        self.summary_writer = None
 
         self.checkpoint_directory = None
         self.checkpoint_frequency = None
 
-    def train(self, session, model, batch_generator, checkpoint=None):
-        model.session = session
-        if checkpoint is None:
-            tf.global_variables_initializer().run(session=session)
-        else:
+    def train(self, model, batch_generator, checkpoint=None):
+        tf.global_variables_initializer().run(session=model.session)
+        if checkpoint is not None:
             model.restore(checkpoint)
         if self.summary_directory is not None:
-            self._summary_writer = self._get_summary_writer(session.graph)
+            self.summary_writer = self._get_summary_writer(model.graph)
 
         start_time = time.time()
         try:
@@ -52,8 +50,9 @@ class Trainer(object):
             for _ in batch_range:
                 batch = batch_generator(self.batch_size)
                 if self._is_time_to_write_summary(number_of_iterations):
-                    current_loss = model.train_on_batch(
-                        batch, self._summary_writer)
+                    current_loss, summary = model.train_on_batch(
+                        batch, with_summary=True)
+                    self.summary_writer.add_summary(summary, model.step)
                 else:
                     current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):
@@ -64,13 +63,14 @@ class Trainer(object):
                 number_of_iterations += 1
 
     def _is_time_to_write_summary(self, number_of_iterations):
-        if self._summary_writer is not None:
-            return number_of_iterations % self.summary_frequency == 0
+        if self.summary_writer is not None:
+            return self.summary_frequency.elapsed(number_of_iterations)
         return False
 
     def _is_time_to_save_checkpoint(self, number_of_iterations):
         if self.checkpoint_directory is not None:
-            return number_of_iterations % self.checkpoint_frequency == 0
+            return self.checkpoint_frequency.elapsed(number_of_iterations)
+
         return False
 
     def _get_summary_writer(self, graph):

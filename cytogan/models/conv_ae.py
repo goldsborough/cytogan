@@ -1,5 +1,4 @@
 import keras.backend as K
-import keras.losses
 import numpy as np
 from keras.layers import (Conv2D, Dense, Flatten, Input, MaxPooling2D, Reshape,
                           UpSampling2D)
@@ -7,6 +6,11 @@ from keras.models import Model
 
 from cytogan.models import ae
 from cytogan.metrics import losses
+
+import collections
+
+Hyper = collections.namedtuple('Hyper',
+                               'image_shape, filter_sizes, latent_size')
 
 
 def build_encoder(original_images, filter_sizes):
@@ -46,14 +50,11 @@ def build_decoder(last_encoder_layer, latent, filter_sizes):
 
 
 class ConvAE(ae.AE):
-    def __init__(self, image_shape, filter_sizes, latent_size):
-        super(ConvAE, self).__init__(image_shape, latent_size)
-        self.filter_sizes = filter_sizes
+    def __init__(self, hyper, learning, session):
+        self.filter_sizes = hyper.filter_sizes
+        super(ConvAE, self).__init__(hyper, learning, session)
 
-    def compile(self,
-                learning_rate,
-                decay_learning_rate_after,
-                learning_rate_decay):
+    def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
 
         conv, conv_flat = build_encoder(self.original_images,
@@ -67,11 +68,9 @@ class ConvAE(ae.AE):
 
         batch_loss = losses.reconstruction_loss(self.original_images,
                                                 self.reconstructed_images)
-        self.loss = K.mean(batch_loss)
+        loss = K.mean(batch_loss)
 
         self.encoder = Model(self.original_images, self.latent)
-        self.model = Model(self.original_images, self.reconstructed_images)
+        model = Model(self.original_images, self.reconstructed_images)
 
-        self.optimize = self._add_optimization_target(
-            learning_rate, decay_learning_rate_after, learning_rate_decay)
-        self.summary = self._add_summary()
+        return self.original_images, loss, model

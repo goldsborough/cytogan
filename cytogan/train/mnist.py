@@ -2,7 +2,7 @@
 
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, vae
+from cytogan.models import model, ae, conv_ae, vae
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser(name='cytogan-mnist')
@@ -16,18 +16,19 @@ if options.save_figures_to is not None:
 data = mnist.input_data.read_data_sets('MNIST_data', one_hot=False)
 get_batch = lambda n: data.train.next_batch(n)[0].reshape([-1, 28, 28, 1])
 number_of_batches = data.train.num_examples // options.batch_size
+image_shape = (28, 28, 1)
+
+learning = model.Learning(options.lr, options.lr_decay, number_of_batches)
 
 if options.model == 'ae':
-    model = ae.AE(image_shape=[28, 28, 1], latent_size=32)
+    hyper = ae.Hyper(image_shape, latent_size=32)
+    Model = ae.AE
 elif options.model == 'conv_ae':
-    model = conv_ae.ConvAE(
-        image_shape=[28, 28, 1], filter_sizes=[8, 8], latent_size=32)
+    hyper = conv_ae.Hyper(image_shape, filter_sizes=[8, 8], latent_size=32)
+    Model = conv_ae.ConvAE
 elif options.model == 'vae':
-    model = vae.VAE(
-        image_shape=[28, 28, 1], filter_sizes=[32, 32], latent_size=512)
-
-model.compile(options.lr, number_of_batches, options.lr_decay,
-              options.restore_from)
+    hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
+    Model = vae.VAE
 
 print(model)
 
@@ -38,7 +39,8 @@ trainer.summary_frequency = options.summary_freq
 trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
-    trainer.train(session, model, get_batch)
+    model = Model(hyper, learning, session)
+    trainer.train(model, get_batch, checkpoint=options.restore_from)
 
     if options.reconstruction_samples is not None:
         original_images, _ = data.test.next_batch(
