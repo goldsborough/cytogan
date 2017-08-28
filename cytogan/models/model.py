@@ -26,7 +26,7 @@ class Model(abc.ABC):
         self._add_summaries()
         self.summary = tf.summary.merge_all()
         self.saver = tf.train.Saver(
-            max_to_keep=2, keep_checkpoint_every_n_hours=2)
+            max_to_keep=2, keep_checkpoint_every_n_hours=1)
 
     def train_on_batch(self, batch, with_summary=False):
         fetches = [self.optimize, self.loss]

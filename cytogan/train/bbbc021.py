@@ -15,7 +15,7 @@ parser.add_argument('--metadata', required=True)
 parser.add_argument('--labels', required=True)
 parser.add_argument('--images', required=True)
 parser.add_argument('-p', '--pattern', action='append')
-parser.add_argument('--confusion', action='store_true')
+parser.add_argument('--confusion-matrix', action='store_true')
 options = parser.parse_args()
 print(options)
 
@@ -41,7 +41,8 @@ elif options.model == 'conv_ae':
     hyper = conv_ae.Hyper(image_shape, filter_sizes=[8, 8], latent_size=32)
     Model = conv_ae.ConvAE
 elif options.model == 'vae':
-    hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
+    hyper = vae.Hyper(
+        image_shape, filter_sizes=[128, 128, 128], latent_size=512)
     Model = vae.VAE
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
@@ -56,11 +57,10 @@ with common.get_session(options.gpus) as session:
     trainer.train(model, cell_data.next_batch, options.restore_from)
 
     print('Evaluating ...')
-    N = 1024
     keys = []
     profiles = []
-    for batch_keys, images in cell_data.batches_of_size(N):
-        print('Encoding {0} images ...'.format(N))
+    for batch_keys, images in cell_data.batches_of_size(options.batch_size):
+        print('Encoding {0} images ...'.format(options.batch_size))
         keys.append(batch_keys)
         profiles.append(model.encode(images))
     print('Creating dataset from profiles ...')
@@ -71,7 +71,7 @@ with common.get_session(options.gpus) as session:
     confusion_matrix, accuracy = profiling.score_profiles(dataset)
     print('Final Accuracy: {0}'.format(accuracy))
 
-    if options.confusion:
+    if options.confusion_matrix:
         visualize.confusion_matrix(
             confusion_matrix,
             title='MOA Confusion Matrix',
