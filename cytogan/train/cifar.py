@@ -30,10 +30,9 @@ elif options.model == 'conv_ae':
         image_shape=image_shape, filter_sizes=[8, 8], latent_size=32)
 elif options.model == 'vae':
     model = vae.VAE(
-        image_shape=image_shape, filter_sizes=[128, 64, 32], latent_size=256)
+        image_shape=image_shape, filter_sizes=[128, 128, 128], latent_size=512)
 
-model.compile(options.lr, number_of_batches, options.lr_decay,
-              options.load_weights)
+model.compile(options.lr, number_of_batches, options.lr_decay)
 
 print(model)
 
@@ -44,7 +43,7 @@ trainer.summary_frequency = options.summary_freq
 trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
-    trainer.train(session, model, get_batch)
+    trainer.train(session, model, get_batch, checkpoint=options.restore_from)
 
     if options.reconstruction_samples is not None:
         original_images = test.images[:options.reconstruction_samples]
