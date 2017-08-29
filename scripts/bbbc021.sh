@@ -11,7 +11,7 @@ python3 -m cytogan.train.bbbc021                        \
   --summary-dir /data1/peter/runs/summaries             \
   --summary-freq '1min'                                 \
   --reconstruction-samples 20                           \
-  --latent-samples 256                                  \
+  --latent-samples 128                                  \
   --generative-samples 10                               \
   --confusion-matrix                                    \
   --gpus 2 3                                            \

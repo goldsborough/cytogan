@@ -75,7 +75,7 @@ class AsyncImageLoader(object):
             # Wrap around.
             if index == len(want):
                 index = 0
-                time.sleep(0.01)
+                time.sleep(0.005)
 
         return got_keys, got_images
 
