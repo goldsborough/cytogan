@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 cytogan/train/bbbc021.py                        \
+python3 -m cytogan.train.bbbc021                        \
   --epochs  20                                          \
   --model vae                                           \
   --lr 0.001                                            \
