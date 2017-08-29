@@ -69,7 +69,7 @@ with common.get_session(options.gpus) as session:
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     print('Scoring profiles ...')
     confusion_matrix, accuracy = profiling.score_profiles(dataset)
-    print('Final Accuracy: {0}'.format(accuracy))
+    print('Final Accuracy: {0:.3f}'.format(accuracy))
 
     if options.confusion_matrix:
         visualize.confusion_matrix(

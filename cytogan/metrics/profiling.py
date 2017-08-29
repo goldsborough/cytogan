@@ -37,6 +37,7 @@ def score_profiles(dataset):
     print('Reduced dataset to {0} profiles for each '
           '(compound, concentration) pair ...'.format(len(dataset)))
     labels = dataset['moa'].unique()
+    print('Have {0} MOAs among the profiles.'.format(len(labels)))
     confusion_matrix = pd.DataFrame(
         index=labels,
         data=np.zeros([len(labels), len(labels)]),
