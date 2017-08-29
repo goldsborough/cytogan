@@ -1,7 +1,7 @@
 #!/bin/bash
 
 python3 -m cProfile -s time -o profile                  \
-  -m cytogan.train.bbbc021                              \
+  cytogan/train/bbbc021.py                              \
   --epochs  20                                          \
   --model vae                                           \
   --lr 0.001                                            \
