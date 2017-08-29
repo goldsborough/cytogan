@@ -31,7 +31,8 @@ cell_data = CellData(
 number_of_batches = cell_data.number_of_images // options.batch_size
 image_shape = (128, 128, 3)
 
-learning = model.Learning(options.lr, options.lr_decay, number_of_batches)
+learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
+                          or number_of_batches)
 
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)

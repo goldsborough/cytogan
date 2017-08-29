@@ -48,6 +48,7 @@ class Trainer(object):
             batch_range = tqdm.trange(self.number_of_batches, unit=' batches')
             batch_range.set_description('Epoch {0}'.format(epoch_index))
             for _ in batch_range:
+                lr = model.learning_rate
                 batch = batch_generator(self.batch_size)
                 if self._is_time_to_write_summary(number_of_iterations):
                     current_loss, summary = model.train_on_batch(
@@ -57,7 +58,7 @@ class Trainer(object):
                     current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):
                     model.save(self.checkpoint_directory)
-                batch_range.set_postfix(loss=current_loss)
+                batch_range.set_postfix(loss=current_loss, lr=lr)
                 if np.isnan(current_loss):
                     raise RuntimeError('Loss was NaN')
                 number_of_iterations += 1

@@ -24,7 +24,8 @@ get_batch = BatchGenerator(train.images)
 number_of_batches = len(train.images) // options.batch_size
 image_shape = (32, 32, 3)
 
-learning = model.Learning(options.lr, options.lr_decay, number_of_batches)
+learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
+                          or number_of_batches)
 
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)

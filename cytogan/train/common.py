@@ -48,6 +48,7 @@ def make_parser(name):
     parser.add_argument('-b', '--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--lr-decay', type=float)
+    parser.add_argument('--lr-decay-steps', type=int)
     parser.add_argument('-r', '--reconstruction-samples', type=int)
     parser.add_argument('-l', '--latent-samples', type=int)
     parser.add_argument('-g', '--generative-samples', type=int)

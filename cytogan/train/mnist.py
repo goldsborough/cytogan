@@ -18,7 +18,8 @@ get_batch = lambda n: data.train.next_batch(n)[0].reshape([-1, 28, 28, 1])
 number_of_batches = data.train.num_examples // options.batch_size
 image_shape = (28, 28, 1)
 
-learning = model.Learning(options.lr, options.lr_decay, number_of_batches)
+learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
+                          or number_of_batches)
 
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)

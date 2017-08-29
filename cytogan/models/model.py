@@ -20,7 +20,7 @@ class Model(abc.ABC):
         self.input, self.loss, self.model = self._define_graph()
 
         # Attach an optimizer and get the final learning rate tensor.
-        self.learning_rate, self.optimize = self._add_optimizer(learning)
+        self._learning_rate, self.optimize = self._add_optimizer(learning)
 
         # Boilerplate for management of the model execution.
         self._add_summaries()
@@ -39,7 +39,13 @@ class Model(abc.ABC):
 
     @property
     def step(self):
-        return self.global_step.eval(self.session)
+        return self.global_step.eval(session=self.session)
+
+    @property
+    def learning_rate(self):
+        if isinstance(self._learning_rate, float):
+            return self._learning_rate
+        return self._learning_rate.eval(session=self.session)
 
     @property
     def graph(self):
@@ -84,7 +90,7 @@ class Model(abc.ABC):
 
     def _add_summaries(self):
         tf.summary.scalar('loss', self.loss)
-        tf.summary.scalar('learning_rate', self.learning_rate)
+        tf.summary.scalar('learning_rate', self._learning_rate)
 
     def __repr__(self):
         lines = []
