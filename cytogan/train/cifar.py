@@ -4,7 +4,8 @@ from keras.datasets import cifar10
 
 from cytogan.models import model, ae, conv_ae, vae
 from cytogan.train import common, trainer, visualize
-from cytogan.train.common import BatchGenerator, Dataset, make_parser
+from cytogan.train.common import Dataset, make_parser
+from cytogan.data.batch_generator import BatchGenerator
 import numpy as np
 
 parser = make_parser('cytogan-cifar')

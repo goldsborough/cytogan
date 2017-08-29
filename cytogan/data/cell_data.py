@@ -5,7 +5,7 @@ import re
 import pandas as pd
 import tqdm
 
-from cytogan.data.image_loader import LazyImageLoader
+from cytogan.data.image_loader import AsyncImageLoader
 
 
 def _image_key_for_path(path, root_path):
@@ -39,8 +39,7 @@ def _get_single_cell_names(root_path, plate_names, file_names, patterns):
     return original_indices, single_cell_names
 
 
-def _load_single_cell_names_from_cell_count_file(metadata,
-                                                 cell_count_path):
+def _load_single_cell_names_from_cell_count_file(metadata, cell_count_path):
     print('Using cell count file {0}'.format(cell_count_path))
     indices = []
     single_cell_names = []
@@ -111,8 +110,7 @@ class CellData(object):
         self.metadata = _preprocess_metadata(all_metadata, patterns,
                                              self.image_root, cell_count_path)
 
-        self.images = LazyImageLoader(self.image_root, cache=False)
-
+        self.images = AsyncImageLoader(self.image_root)
         self.batch_index = 0
 
     @property
@@ -120,14 +118,18 @@ class CellData(object):
         return self.metadata.shape[0]
 
     def next_batch(self, number_of_images):
+        last_index = self.batch_index + number_of_images
+        keys = self.metadata.iloc[self.batch_index:last_index].index
+        _, ok_images = self.images[keys]
+
+        self.batch_index = last_index
         if self.batch_index >= self.number_of_images:
             self.reset_batching_state()
 
-        last_index = self.batch_index + number_of_images
-        keys = self.metadata.iloc[self.batch_index:last_index].index
-        self.batch_index = last_index
+        next_keys = self.metadata.iloc[
+            self.batch_index:self.batch_index + number_of_images].index
+        self.images.fetch_async(next_keys)
 
-        _, ok_images = self.images[keys]
         return ok_images
 
     def reset_batching_state(self):
@@ -137,13 +139,17 @@ class CellData(object):
 
     def batches_of_size(self, batch_size):
         self.reset_batching_state()
-        for start in range(0, batch_size, batch_size):
-            keys = self.metadata.iloc[start:start + batch_size].index
-            yield self.images[keys]
+        for start in range(0, self.number_of_images, batch_size):
+            end = start + batch_size
+            keys = self.metadata.iloc[start:end].index
+            images = self.images[keys]
+            next_keys = self.metadata.iloc[end:end + batch_size].index
+            self.images.fetch_async(next_keys)
+            yield images
 
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
-        relevant_metadata = self.metadata.loc[tuple(keys)]
+        relevant_metadata = self.metadata.loc[keys]
         compounds = relevant_metadata['compound']
         concentrations = relevant_metadata['concentration']
         # The keys to the labels dataframe are (compound, concentration) pairs.

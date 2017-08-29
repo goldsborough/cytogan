@@ -70,7 +70,6 @@ class Trainer(object):
     def _is_time_to_save_checkpoint(self, number_of_iterations):
         if self.checkpoint_directory is not None:
             return self.checkpoint_frequency.elapsed(number_of_iterations)
-
         return False
 
     def _get_summary_writer(self, graph):

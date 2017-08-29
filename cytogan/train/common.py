@@ -26,36 +26,20 @@ class Frequency(object):
             self.iterations = number
         else:
             self.seconds = number * Frequency.UNITS[unit]
+            self.last_check = 0
 
     def elapsed(self, number_of_iterations):
         if self.iterations is None:
-            return int(time.time()) % self.seconds == 0
+            now = int(time.time())
+            has_elapsed = (now - self.last_check) >= self.seconds
+            self.last_check = now
+            return has_elapsed
         return number_of_iterations % self.iterations == 0
 
     def __repr__(self):
         if self.iterations is None:
             return 'Frequency<{0} secs>'.format(self.seconds)
         return 'Frequency<{0} iter>'.format(self.iterations)
-
-
-class BatchGenerator(object):
-    def __init__(self, data):
-        self.data = data
-        self.index = 0
-
-    def __call__(self, batch_size):
-        if self.index >= len(self.data):
-            self.reset()
-
-        stop_index = self.index + batch_size
-        batch = self.data[self.index:stop_index]
-        self.index = stop_index
-
-        return batch
-
-    def reset(self):
-        self.index = 0
-        np.random.shuffle(self.data)
 
 
 def make_parser(name):

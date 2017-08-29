@@ -80,6 +80,6 @@ class VAE(conv_ae.ConvAE):
         return K.mean(regularization_loss + reconstruction_loss)
 
     def _add_summaries(self):
+        super(VAE, self)._add_summaries()
         tf.summary.histogram('latent_mean', self.mean)
         tf.summary.histogram('latent_stddev', self.sigma)
-        super(VAE, self)._add_summaries()

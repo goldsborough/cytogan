@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from tqdm import tqdm
 
-from cytogan.models import model, ae, conv_ae, vae
-from cytogan.train import trainer, visualize
 from cytogan.data.cell_data import CellData
 from cytogan.metrics import profiling
-
-from cytogan.train import common
+from cytogan.models import ae, conv_ae, model, vae
+from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
@@ -57,15 +56,16 @@ with common.get_session(options.gpus) as session:
     trainer.train(model, cell_data.next_batch, options.restore_from)
 
     print('Evaluating ...')
-    keys = []
-    profiles = []
-    for batch_keys, images in cell_data.batches_of_size(options.batch_size):
-        print('Encoding {0} images ...'.format(options.batch_size))
-        keys.append(batch_keys)
-        profiles.append(model.encode(images))
+    keys, profiles = [], []
+    batch_generator = cell_data.batches_of_size(options.batch_size)
+    try:
+        for batch_keys, images in tqdm(batch_generator, unit=' batches'):
+            profiles.append(model.encode(images))
+            keys += batch_keys
+    except KeyboardInterrupt:
+        pass
     print('Creating dataset from profiles ...')
     profiles = np.concatenate(profiles, axis=0)
-    # assert profiles.shape == (cell_data.number_of_images, model.latent_size)
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     print('Scoring profiles ...')
     confusion_matrix, accuracy = profiling.score_profiles(dataset)
@@ -79,15 +79,17 @@ with common.get_session(options.gpus) as session:
             save_to=options.save_figures_to)
 
     if options.reconstruction_samples is not None:
+        images = cell_data.next_batch(options.reconstruction_samples)
         visualize.reconstructions(
             model,
-            images[:options.reconstruction_samples],
+            np.stack(images, axis=0),
             save_to=options.save_figures_to)
 
     if options.latent_samples is not None:
+        images = cell_data.next_batch(options.latent_samples)
         visualize.latent_space(
             model,
-            images[:options.latent_samples],
+            images,
             cell_data.labels.values,
             save_to=options.save_figures_to)
 
