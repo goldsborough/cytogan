@@ -5,7 +5,7 @@ python3 -m cytogan.train.bbbc021                        \
   --model vae                                           \
   --lr 0.001                                            \
   --lr-decay 0.999                                      \
-  --batch-size 256                                      \
+  --batch-size 128                                      \
   --checkpoint-dir /data1/peter/runs/checkpoints        \
   --checkpoint-freq '1min'                              \
   --summary-dir /data1/peter/runs/summaries             \
