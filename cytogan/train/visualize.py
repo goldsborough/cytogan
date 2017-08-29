@@ -54,7 +54,8 @@ def reconstructions(model, original_images, gray=False, save_to=None):
 
 def latent_space(model,
                  images,
-                 labels,
+                 labels=None,
+                 label_map=None,
                  reduction_method=sklearn.manifold.TSNE,
                  save_to=None):
     latent_vectors = model.encode(images)
@@ -64,10 +65,14 @@ def latent_space(model,
         reduction = reduction_method(n_components=2)
         latent_vectors = reduction.fit_transform(latent_vectors)
         assert latent_vectors.shape[1] == 2
-    figure = plot.figure(figsize=(10, 10))
+    figure = plot.figure(figsize=(12, 10))
     figure.suptitle('Latent Space')
     plot.scatter(latent_vectors[:, 0], latent_vectors[:, 1], c=labels)
-    plot.colorbar()
+    if labels is not None:
+        colorbar = plot.colorbar()
+        if label_map is not None:
+            ticks = {label_map[index] for index in sorted(set(labels))}
+            colorbar.ax.set_yticklabels(ticks)
 
     if save_to is not None:
         _save_figure(save_to, 'latent-space.png')

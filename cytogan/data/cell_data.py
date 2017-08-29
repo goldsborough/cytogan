@@ -103,6 +103,7 @@ class CellData(object):
                  cell_count_path=None,
                  patterns=None):
         self.image_root = os.path.realpath(image_root)
+
         self.labels = pd.read_csv(labels_file_path)
         self.labels.set_index(['compound', 'concentration'], inplace=True)
 
@@ -117,10 +118,10 @@ class CellData(object):
     def number_of_images(self):
         return self.metadata.shape[0]
 
-    def next_batch(self, number_of_images):
+    def next_batch(self, number_of_images, with_keys=False):
         last_index = self.batch_index + number_of_images
         keys = self.metadata.iloc[self.batch_index:last_index].index
-        _, ok_images = self.images[keys]
+        ok_keys, ok_images = self.images[keys]
 
         self.batch_index = last_index
         if self.batch_index >= self.number_of_images:
@@ -130,6 +131,8 @@ class CellData(object):
             self.batch_index:self.batch_index + number_of_images].index
         self.images.fetch_async(next_keys)
 
+        if with_keys:
+            return ok_keys, ok_images
         return ok_images
 
     def reset_batching_state(self):
@@ -167,3 +170,12 @@ class CellData(object):
         dataset.dropna(inplace=True)
 
         return dataset
+
+    def get_compound_indices(self, keys):
+        filtered = self.metadata.loc[keys][['compound', 'concentration']]
+        compounds = list(set(map(tuple, filtered.values.tolist())))
+        index_map = {(com, con): i for i, (com, con) in enumerate(compounds)}
+        indices = filtered.apply(lambda row: index_map[tuple(row)], axis=1)
+        compound_strings = ['{}/{}'.format(com, con) for com, con in compounds]
+
+        return compound_strings, indices

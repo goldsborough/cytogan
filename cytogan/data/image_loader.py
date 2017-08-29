@@ -1,10 +1,11 @@
 import collections
 import multiprocessing
-import signal
 import os.path
+import signal
+import time
 
-import scipy.misc
 import numpy as np
+import scipy.misc
 
 
 def load_image(root_path, image_key, extension):
@@ -38,10 +39,7 @@ class AsyncImageLoader(object):
         self.load_job = AsyncImageLoader.Job(root_path, extension)
 
     def __getitem__(self, image_keys):
-        if isinstance(image_keys, str):
-            want = [image_keys]
-        else:
-            want = list(image_keys[:])
+        want = list(image_keys.copy())
         got_keys, got_images = [], []
         # We'll be iterating over `want` and removing elements from it during
         # iteration, so we cannot use a normal iterator or it will be
@@ -58,7 +56,7 @@ class AsyncImageLoader(object):
             future = self.images.get(key)
             if future is None:
                 # Haven't started fetching this image yet at all.
-                self.fetch_async(key)
+                self.fetch_async([key])
                 index += 1
             elif future.ready():
                 # The value of the future is either the image or an exception.
@@ -77,12 +75,11 @@ class AsyncImageLoader(object):
             # Wrap around.
             if index == len(want):
                 index = 0
+                time.sleep(0.01)
 
         return got_keys, got_images
 
     def fetch_async(self, image_keys):
-        if isinstance(image_keys, str):
-            image_keys = [image_keys]
         for key in image_keys:
             future = self.pool.apply_async(self.load_job, [key])
             self.images[key] = future

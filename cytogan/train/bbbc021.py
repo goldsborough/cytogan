@@ -64,7 +64,6 @@ with common.get_session(options.gpus) as session:
             keys += batch_keys
     except KeyboardInterrupt:
         pass
-    print('Creating dataset from profiles ...')
     profiles = np.concatenate(profiles, axis=0)
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     print('Scoring profiles ...')
@@ -81,17 +80,14 @@ with common.get_session(options.gpus) as session:
     if options.reconstruction_samples is not None:
         images = cell_data.next_batch(options.reconstruction_samples)
         visualize.reconstructions(
-            model,
-            np.stack(images, axis=0),
-            save_to=options.save_figures_to)
+            model, np.stack(images, axis=0), save_to=options.save_figures_to)
 
     if options.latent_samples is not None:
-        images = cell_data.next_batch(options.latent_samples)
+        keys, images = cell_data.next_batch(
+            options.latent_samples, with_keys=True)
+        label_map, labels = cell_data.get_compound_indices(keys)
         visualize.latent_space(
-            model,
-            images,
-            cell_data.labels.values,
-            save_to=options.save_figures_to)
+            model, images, labels, label_map, save_to=options.save_figures_to)
 
     if options.generative_samples is not None:
         visualize.generative_samples(
