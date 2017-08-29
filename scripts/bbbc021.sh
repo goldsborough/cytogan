@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 -m cProfile -s time -o profile                  \
+python3 -m cProfile -s time                             \
   cytogan/train/bbbc021.py                              \
   --epochs  20                                          \
   --model vae                                           \
@@ -15,7 +15,7 @@ python3 -m cProfile -s time -o profile                  \
   --generative-samples 10                               \
   --confusion-matrix                                    \
   --gpus 2 3                                            \
-  --save-figures-to /data1/peter/runs/figures           \
+  --save-figures-to ~/figures                           \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv     \
   --images /data1/peter/segmented                       \
