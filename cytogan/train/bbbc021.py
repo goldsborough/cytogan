@@ -65,8 +65,6 @@ with common.get_session(options.gpus) as session:
     try:
         for batch_keys, images in tqdm(batch_generator, unit=' batches'):
             batch_profiles = model.encode(images)
-            assert batch_profiles.shape == (options.batch_size,
-                                            model.latent_size)
             profiles.append(batch_profiles)
             keys += batch_keys
     except KeyboardInterrupt:
