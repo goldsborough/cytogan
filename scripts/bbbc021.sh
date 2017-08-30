@@ -4,7 +4,7 @@ python3 -m cytogan.train.bbbc021                        \
   --epochs 10                                           \
   --model vae                                           \
   --lr 0.001                                            \
-  --lr-decay 0.995                                      \
+  --lr-decay 0.996                                      \
   --lr-decay-steps 100                                  \
   --batch-size 128                                      \
   --checkpoint-dir /data1/peter/runs/checkpoints        \

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import numpy as np
+import tensorflow as tf
 from keras.datasets import cifar10
 
-from cytogan.models import model, ae, conv_ae, vae
+from cytogan.data.batch_generator import BatchGenerator
+from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
 from cytogan.train.common import Dataset, make_parser
-from cytogan.data.batch_generator import BatchGenerator
-import numpy as np
 
 parser = make_parser('cytogan-cifar')
 options = parser.parse_args()
@@ -45,6 +46,7 @@ trainer.summary_frequency = options.summary_freq
 trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
+    tf.global_variables_initializer().run(session=session)
     model = Model(hyper, learning, session)
     if not options.skip_training:
         trainer.train(model, get_batch, checkpoint=options.restore_from)

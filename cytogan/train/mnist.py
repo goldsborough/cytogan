@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import model, ae, conv_ae, vae
+from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser(name='cytogan-mnist')
@@ -42,6 +43,7 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
+    tf.global_variables_initializer().run(session=session)
     if not options.skip_training:
         trainer.train(model, get_batch, checkpoint=options.restore_from)
 

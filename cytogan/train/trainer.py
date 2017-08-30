@@ -24,7 +24,6 @@ class Trainer(object):
         self.checkpoint_frequency = None
 
     def train(self, model, batch_generator, checkpoint=None):
-        tf.global_variables_initializer().run(session=model.session)
         if checkpoint is not None:
             model.restore(checkpoint)
         if self.summary_directory is not None:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
@@ -54,6 +55,7 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
+    tf.global_variables_initializer().run(session=session)
     if not options.skip_training:
         trainer.train(model, cell_data.next_batch, options.restore_from)
 
@@ -62,12 +64,16 @@ with common.get_session(options.gpus) as session:
     batch_generator = cell_data.batches_of_size(options.batch_size)
     try:
         for batch_keys, images in tqdm(batch_generator, unit=' batches'):
-            profiles.append(model.encode(images))
+            batch_profiles = model.encode(images)
+            assert batch_profiles.shape == (options.batch_size,
+                                            model.latent_size)
+            profiles.append(batch_profiles)
             keys += batch_keys
     except KeyboardInterrupt:
         pass
     profiles = np.concatenate(profiles, axis=0)
     keys = list(cell_data.metadata.index)
+    print('Generated {0} profiles ...'.format(len(profiles)))
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     print('Matching {0:,} profiles to {1} MOAs ...'.format(
         len(dataset), len(dataset.moa.unique())))
