@@ -13,6 +13,7 @@ import matplotlib.pyplot as plot
 import numpy as np
 import pandas as pd
 import scipy.misc
+import tqdm
 
 ImagePath = namedtuple('ImagePath', 'dna, tubulin, actin, mask, prefix')
 Image = namedtuple('Image', 'dna, tubulin, actin, mask')
@@ -204,20 +205,21 @@ class MaskJob(object):
                 break
         count = self.cells_processed - cells_at_start
         self.cell_counts[image_key] = count
-        print('Generated {0:>3} cells for {1} ...'.format(count, image_key))
         self.images_processed += 1
 
     def on_error(self, error):
         image_key, real_error = error.args
         self.error_count += 1
-        print('Failed to process {0}: {1}'.format(image_key, repr(real_error)))
+        tqdm.write(
+            'Failed to process {0}: {1}'.format(image_key, repr(real_error)))
 
 
 def mask_images(image_paths, options):
     job = MaskJob(options)
     pool = multiprocessing.Pool()
     try:
-        for image_index, image_path in enumerate(image_paths):
+        image_range = tqdm.tqdm(enumerate(image_paths), unit=' images')
+        for image_index, image_path in image_range:
             if job.cells_processed == options.cell_limit or \
                job.images_processed == options.image_limit:
                 break

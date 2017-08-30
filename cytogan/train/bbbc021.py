@@ -58,49 +58,47 @@ with common.get_session(options.gpus) as session:
         trainer.train(model, cell_data.next_batch, options.restore_from)
 
     print('Evaluating ...')
-    # keys, profiles = [], []
-    # batch_generator = cell_data.batches_of_size(options.batch_size)
-    # try:
-    #     for batch_keys, images in tqdm(batch_generator, unit=' batches'):
-    #         profiles.append(model.encode(images))
-    #         keys += batch_keys
-    # except KeyboardInterrupt:
-    #     pass
-    # profiles = np.concatenate(profiles, axis=0)
+    keys, profiles = [], []
+    batch_generator = cell_data.batches_of_size(options.batch_size)
+    try:
+        for batch_keys, images in tqdm(batch_generator, unit=' batches'):
+            profiles.append(model.encode(images))
+            keys += batch_keys
+    except KeyboardInterrupt:
+        pass
+    profiles = np.concatenate(profiles, axis=0)
     keys = list(cell_data.metadata.index)
-    print('keys: ', len(keys), keys[0])
-    profiles = [np.zeros(512)] * len(keys)
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     print('Matching {0:,} profiles to {1} MOAs ...'.format(
         len(dataset), len(dataset.moa.unique())))
-    # confusion_matrix, accuracy = profiling.score_profiles(dataset)
-    # print('Final Accuracy: {0:.3f}'.format(accuracy))
+    confusion_matrix, accuracy = profiling.score_profiles(dataset)
+    print('Final Accuracy: {0:.3f}'.format(accuracy))
 
-#     if options.confusion_matrix:
-#         visualize.confusion_matrix(
-#             confusion_matrix,
-#             title='MOA Confusion Matrix',
-#             accuracy=accuracy,
-#             save_to=options.save_figures_to)
-#
-#     if options.reconstruction_samples is not None:
-#         images = cell_data.next_batch(options.reconstruction_samples)
-#         visualize.reconstructions(
-#             model, np.stack(images, axis=0), save_to=options.save_figures_to)
-#
-#     if options.latent_samples is not None:
-#         keys, images = cell_data.next_batch(
-#             options.latent_samples, with_keys=True)
-#         label_map, labels = cell_data.get_compound_indices(keys)
-#         visualize.latent_space(
-#             model, images, labels, label_map, save_to=options.save_figures_to)
-#
-#     if options.generative_samples is not None:
-#         visualize.generative_samples(
-#             model,
-#             options.generative_samples,
-#             gray=True,
-#             save_to=options.save_figures_to)
-#
-# if options.save_figures_to is None:
-#     visualize.show()
+    if options.confusion_matrix:
+        visualize.confusion_matrix(
+            confusion_matrix,
+            title='MOA Confusion Matrix',
+            accuracy=accuracy,
+            save_to=options.save_figures_to)
+
+    if options.reconstruction_samples is not None:
+        images = cell_data.next_batch(options.reconstruction_samples)
+        visualize.reconstructions(
+            model, np.stack(images, axis=0), save_to=options.save_figures_to)
+
+    if options.latent_samples is not None:
+        keys, images = cell_data.next_batch(
+            options.latent_samples, with_keys=True)
+        label_map, labels = cell_data.get_compound_indices(keys)
+        visualize.latent_space(
+            model, images, labels, label_map, save_to=options.save_figures_to)
+
+    if options.generative_samples is not None:
+        visualize.generative_samples(
+            model,
+            options.generative_samples,
+            gray=True,
+            save_to=options.save_figures_to)
+
+if options.save_figures_to is None:
+    visualize.show()

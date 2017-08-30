@@ -156,13 +156,10 @@ class CellData(object):
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
         relevant_metadata = self.metadata.loc[keys]
-        print('relevant: ', len(relevant_metadata))
         compounds = relevant_metadata['compound']
         concentrations = relevant_metadata['concentration']
-        print(set(zip(compounds, concentrations)))
         # The keys to the labels dataframe are (compound, concentration) pairs.
         labels = self.labels.loc[list(zip(compounds, concentrations))]
-        print('labels:', len(labels), len(labels.dropna()))
 
         dataset = pd.DataFrame(
             index=keys,
