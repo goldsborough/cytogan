@@ -7,19 +7,17 @@ python3 -m cytogan.train.bbbc021                        \
   --lr-decay 0.996                                      \
   --lr-decay-steps 100                                  \
   --batch-size 128                                      \
-  --checkpoint-dir /data1/peter/runs/checkpoints        \
+  --workspace /data1/peter/runs                         \
   --checkpoint-freq '1min'                              \
-  --summary-dir /data1/peter/runs/summaries             \
   --summary-freq '1min'                                 \
   --reconstruction-samples 20                           \
   --latent-samples 128                                  \
   --generative-samples 10                               \
-  --confusion-matrix                                    \
   --gpus 2 3                                            \
-  --save-figures-to ~/figures                           \
+# Specific to BBBC021
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv     \
   --images /data1/peter/segmented                       \
   --cell-count-file /data1/peter/cell_counts.csv        \
-  --restore-from /data1/peter/runs/checkpoints          \
+  --confusion-matrix                                    \
   $1
