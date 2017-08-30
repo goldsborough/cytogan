@@ -46,7 +46,8 @@ trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    trainer.train(model, get_batch, checkpoint=options.restore_from)
+    if not options.skip_training:
+        trainer.train(model, get_batch, checkpoint=options.restore_from)
 
     if options.reconstruction_samples is not None:
         original_images = test.images[:options.reconstruction_samples]

@@ -54,6 +54,7 @@ def make_parser(name):
     parser.add_argument('-g', '--generative-samples', type=int)
     parser.add_argument('--gpus', type=int, nargs='+')
     parser.add_argument('--save-figures-to')
+    parser.add_argument('--skip-training', action='store_true')
     parser.add_argument('--summary-dir')
     parser.add_argument(
         '--summary-freq', type=Frequency, default=Frequency('20'))

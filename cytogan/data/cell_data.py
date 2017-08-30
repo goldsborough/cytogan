@@ -82,8 +82,6 @@ def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     else:
         indices, image_keys = _load_single_cell_names_from_cell_count_file(
             metadata, cell_count_path)
-    print('Found {0} single-cell images (will load them lazily)'.format(
-        len(image_keys)))
 
     compounds = metadata['Image_Metadata_Compound'].iloc[indices]
     concentrations = metadata['Image_Metadata_Concentration'].iloc[indices]
@@ -110,6 +108,11 @@ class CellData(object):
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = _preprocess_metadata(all_metadata, patterns,
                                              self.image_root, cell_count_path)
+
+        unique_compounds = set(map(tuple, self.metadata.values))
+        print('Have {0:,} single-cell images for {1} unique '
+              '(compound, concentration) pairs with {2} MOA labels'.format(
+                  len(self.metadata), len(unique_compounds), len(self.labels)))
 
         self.images = AsyncImageLoader(self.image_root)
         self.batch_index = 0
@@ -153,10 +156,13 @@ class CellData(object):
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
         relevant_metadata = self.metadata.loc[keys]
+        print('relevant: ', len(relevant_metadata))
         compounds = relevant_metadata['compound']
         concentrations = relevant_metadata['concentration']
+        print(set(zip(compounds, concentrations)))
         # The keys to the labels dataframe are (compound, concentration) pairs.
         labels = self.labels.loc[list(zip(compounds, concentrations))]
+        print('labels:', len(labels), len(labels.dropna()))
 
         dataset = pd.DataFrame(
             index=keys,

@@ -2,8 +2,10 @@
 
 import argparse
 import glob
-import os.path
+import multiprocessing
 import os
+import os.path
+import signal
 import time
 from collections import namedtuple
 
@@ -30,7 +32,6 @@ def parse_paths(metadata_path, patterns, mask_root_path, image_root_path):
     if patterns:
         metadata = filter_metadata(metadata, patterns)
 
-    images_paths = []
     for index, row in metadata.iterrows():
         plate = row['Image_Metadata_Plate_DAPI']
         image_path_prefix = os.path.join(image_root_path, plate)
@@ -51,11 +52,8 @@ def parse_paths(metadata_path, patterns, mask_root_path, image_root_path):
             continue
         mask_path = glob_result[0]
 
-        image_path = ImagePath(dna_image_path, tubulin_image_path,
-                               actin_image_path, mask_path, mask_name)
-        images_paths.append(image_path)
-
-    return images_paths
+        yield ImagePath(dna_image_path, tubulin_image_path, actin_image_path,
+                        mask_path, mask_name)
 
 
 def load_image(path):
@@ -72,10 +70,10 @@ def read_images(image_path):
 
 
 def get_crop_slices(minima, maxima, mask_index):
-    mask_min_row = minima['row'][mask_index] + 1
-    mask_max_row = maxima['row'][mask_index] + 1
-    mask_min_column = minima['column'][mask_index]
-    mask_max_column = maxima['column'][mask_index]
+    mask_min_row = minima.row[mask_index] + 1
+    mask_max_row = maxima.row[mask_index] + 1
+    mask_min_column = minima.column[mask_index]
+    mask_max_column = maxima.column[mask_index]
     row_slice = slice(mask_min_row, mask_max_row)
     column_slice = slice(mask_min_column, mask_max_column)
 
@@ -106,24 +104,16 @@ def get_mask_boundaries(image, mask):
     row, col = np.indices(mask.shape)
     row, col = row.flatten(), col.flatten()
 
-    mask_vector = mask.flatten()
-    image_vector = image.flatten()
-
-    index = pd.MultiIndex.from_arrays([mask_vector], names=['label'])
+    index = pd.MultiIndex.from_arrays([mask.flatten()], names=['label'])
 
     row_series = pd.Series(row, index=index, name='row')
     col_series = pd.Series(col, index=index, name='column')
-    image_series = pd.Series(image_vector, index=index, name='image')
-    mask_series = pd.Series(mask_vector, index=index, name='mask')
+    image_series = pd.Series(image.flatten(), index=index, name='image')
+    columns = pd.concat([row_series, col_series, image_series], axis=1)
 
-    columns = pd.concat(
-        [row_series, col_series, image_series, mask_series], axis=1)
-    columns = columns.groupby(level=0)
-
-    maxima = columns.aggregate(np.max)
-    minima = columns.aggregate(np.min)
-
-    return minima, maxima
+    # Aggregate over the pixel values of the mask.
+    grouped = columns.groupby(level=0)
+    return grouped.min(), grouped.max()
 
 
 def clip_crop_slices(slices, clip):
@@ -136,9 +126,8 @@ def clip_crop_slices(slices, clip):
 
 def process_channel(image, mask, output_size):
     minima, maxima = get_mask_boundaries(image, mask)
-
     # The first mask is the entire segmentation
-    for mask_index in range(1, min(len(minima), len(maxima))):
+    for mask_index in minima.index.values:
         slices = get_crop_slices(minima, maxima, mask_index)
         row_slice, column_slice = clip_crop_slices(slices, output_size)
         crops = crop_channel(row_slice, column_slice, image, mask, output_size)
@@ -170,7 +159,7 @@ def process_image(image, output_size, display):
         cell = np.dstack([dna, tubulin, actin]).astype(np.uint8)
         if display:
             display_cell(dna, tubulin, actin, cell)
-        yield cell
+        return cell
 
 
 def save_single_cell(output_directory, image_prefix, index, image):
@@ -183,38 +172,66 @@ def save_single_cell(output_directory, image_prefix, index, image):
     scipy.misc.imsave(output_path, image)
 
 
+class MaskJob(object):
+    def __init__(self, options):
+        self.options = options
+        self.images_processed = 0
+        self.cells_processed = 0
+        self.error_count = 0
+        self.cell_counts = {}
+
+    def __call__(self, image_index, image_path):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        image_key = image_path.prefix
+        image = read_images(image_path)
+        try:
+            cells = process_image(image, self.options.size,
+                                  self.options.display)
+        except Exception as error:
+            raise RuntimeError(image_key, error)
+        return image_key, cells
+
+    def on_success(self, args):
+        image_key, cells = args
+        # Count the difference so we know when cells_processed is > limit
+        cells_at_start = self.cells_processed
+        for cell_index, cell in enumerate(cells):
+            if not self.options.display:
+                save_single_cell(self.options.output, image_key, cell_index,
+                                 cell)
+            self.cells_processed += 1
+            if self.cells_processed == self.options.cell_limit:
+                break
+        count = self.cells_processed - cells_at_start
+        self.cell_counts[image_key] = count
+        print('Generated {0:>3} cells for {1} ...'.format(count, image_key))
+        self.images_processed += 1
+
+    def on_error(self, error):
+        image_key, real_error = error.args
+        self.error_count += 1
+        print('Failed to process {0}: {1}'.format(image_key, repr(real_error)))
+
+
 def mask_images(image_paths, options):
-    images_processed = 0
-    cells_processed = 0
-    cell_counts = {}
+    job = MaskJob(options)
+    pool = multiprocessing.Pool()
     try:
         for image_index, image_path in enumerate(image_paths):
-            image = read_images(image_path)
-            try:
-                cells = process_image(image, options.size, options.display)
-                cells_at_start = cells_processed
-                for cell_index, cell in enumerate(cells):
-                    if not options.display:
-                        save_single_cell(options.output, image_path.prefix,
-                                         cell_index, cell)
-                    cells_processed += 1
-                    if cells_processed == options.cell_limit:
-                        break
-                count = cells_processed - cells_at_start
-                cell_counts[image_path.prefix] = count
-                print('Generated {0:>3} cells for {1} ...'.format(
-                    count, image_path.prefix))
-                images_processed += 1
-                if cells_processed == options.cell_limit or \
-                   images_processed == options.image_limit:
-                    break
-            except Exception as error:
-                print('Failed to process {0}: {1}'.format(
-                    image_path.prefix, repr(error)))
+            if job.cells_processed == options.cell_limit or \
+               job.images_processed == options.image_limit:
+                break
+            pool.apply_async(
+                job, [image_index, image_path],
+                callback=job.on_success,
+                error_callback=job.on_error)
     except KeyboardInterrupt:
         print()
+    pool.close()
+    pool.join()
 
-    return images_processed, cells_processed, cell_counts
+    return job.images_processed, job.cells_processed, \
+           job.cell_counts, job.error_count
 
 
 def parse():
@@ -240,11 +257,11 @@ def main():
                               options.image_path)
 
     start = time.time()
-    images_processed, cells_processed, cell_counts = mask_images(
-        image_paths, options)
+    stats = mask_images(image_paths, options)
+    images_processed, cells_processed, cell_counts, error_counts = stats
     elapsed = time.time() - start
-    print('Processed {0} images into {1} cells in {2:.2f}s'.format(
-        images_processed, cells_processed, elapsed))
+    print('Processed {0:,} images into {1:,} cells in {2:.2f}s ({3} errors)'.
+          format(images_processed, cells_processed, elapsed, error_counts))
 
     if options.cell_count_csv:
         with open(options.cell_count_csv, 'w') as file:

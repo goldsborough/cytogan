@@ -31,11 +31,12 @@ def _reduce_profiles_across_compounds(dataset):
 # - concentration
 # - profile vector
 # - MOA
-def score_profiles(dataset):
+def score_profiles(full_dataset):
     accuracies = []
-    dataset = _reduce_profiles_across_compounds(dataset)
-    print('Reduced dataset to {0} profiles for each '
-          '(compound, concentration) pair ...'.format(len(dataset)))
+    dataset = _reduce_profiles_across_compounds(full_dataset)
+    print('Reduced dataset from {0} to {1} profiles for each '
+          '(compound, concentration) pair ...'.format(
+              len(full_dataset), len(dataset)))
     labels = dataset['moa'].unique()
     print('Have {0} MOAs among the profiles.'.format(len(labels)))
     confusion_matrix = pd.DataFrame(
@@ -55,7 +56,8 @@ def score_profiles(dataset):
         neighbor_indices = get_nearest_neighbors(test_data['profile'],
                                                  training_data['profile'])
         # Get the MOAs of those nearest neighbors as our predictions.
-        predicted_labels = np.array(training_data['moa'].iloc[neighbor_indices])
+        predicted_labels = np.array(
+            training_data['moa'].iloc[neighbor_indices])
         actual_labels = np.array(test_data['moa'])
         assert actual_labels.shape == predicted_labels.shape
         accuracy = np.mean(predicted_labels == actual_labels)
