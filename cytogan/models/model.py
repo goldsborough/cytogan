@@ -26,7 +26,7 @@ class Model(abc.ABC):
         self._add_summaries()
         self.summary = tf.summary.merge_all()
         self.saver = tf.train.Saver(
-            max_to_keep=2, keep_checkpoint_every_n_hours=1)
+            max_to_keep=10, keep_checkpoint_every_n_hours=1)
 
     def train_on_batch(self, batch, with_summary=False):
         fetches = [self.optimize, self.loss]
@@ -56,17 +56,19 @@ class Model(abc.ABC):
             os.makedirs(checkpoint_directory)
         class_name = self.__class__.__name__
         timestamp = time.strftime('%H-%M-%S_%d-%m-%Y')
-        model_key = '{0}-{1}'.format(class_name, timestamp)
+        model_key = '{0}_{1}'.format(class_name, timestamp)
         checkpoint_path = os.path.join(checkpoint_directory, model_key)
         self.saver.save(
             self.session, checkpoint_path, global_step=self.global_step)
 
-    def restore(self, checkpoint_directory):
-        checkpoint = tf.train.latest_checkpoint(checkpoint_directory)
+    def restore(self, checkpoint):
+        if os.path.isdir(checkpoint):
+            checkpoint = tf.train.latest_checkpoint(checkpoint)
+        print('Restoring from {0} ...'.format(checkpoint))
         if checkpoint is None:
             raise RuntimeError(
                 'Could not find any valid checkpoints under {0}!'.format(
-                    checkpoint_directory))
+                    checkpoint))
         self.saver.restore(self.session, checkpoint)
 
     @abc.abstractmethod
