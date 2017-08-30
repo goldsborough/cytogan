@@ -156,11 +156,16 @@ def process_image(image, output_size, display):
     dna_masked = process_channel(image.dna, image.mask, output_size)
     actin_masked = process_channel(image.actin, image.mask, output_size)
     tubulin_masked = process_channel(image.tubulin, image.mask, output_size)
+
+    cells = []
     for dna, actin, tubulin in zip(dna_masked, actin_masked, tubulin_masked):
         cell = np.dstack([dna, tubulin, actin]).astype(np.uint8)
+        assert np.ndim(cell) == 3
         if display:
             display_cell(dna, tubulin, actin, cell)
-        return cell
+        cells.append(cell)
+
+    return cells
 
 
 def save_single_cell(output_directory, image_prefix, index, image):
@@ -170,6 +175,7 @@ def save_single_cell(output_directory, image_prefix, index, image):
     if not os.path.exists(most_specific_directory):
         os.makedirs(most_specific_directory)
         print('Creating {0}'.format(most_specific_directory))
+    assert np.ndim(image) == 3
     scipy.misc.imsave(output_path, image)
 
 
@@ -197,6 +203,8 @@ class MaskJob(object):
         # Count the difference so we know when cells_processed is > limit
         cells_at_start = self.cells_processed
         for cell_index, cell in enumerate(cells):
+            assert np.ndim(cell) == 3
+            assert cell.shape[2] == 3
             if not self.options.display:
                 save_single_cell(self.options.output, image_key, cell_index,
                                  cell)

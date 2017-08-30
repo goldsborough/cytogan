@@ -1,7 +1,7 @@
 #!/bin/bash
 
 python3 -m cytogan.train.bbbc021                        \
-  --epochs  20                                          \
+  --epochs 10                                           \
   --model vae                                           \
   --lr 0.001                                            \
   --lr-decay 0.995                                      \
