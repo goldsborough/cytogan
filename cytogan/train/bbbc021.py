@@ -45,7 +45,7 @@ elif options.model == 'conv_ae':
     Model = conv_ae.ConvAE
 elif options.model == 'vae':
     hyper = vae.Hyper(
-        image_shape, filter_sizes=[128, 128, 128], latent_size=512)
+        image_shape, filter_sizes=[128, 64, 32], latent_size=256)
     Model = vae.VAE
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
