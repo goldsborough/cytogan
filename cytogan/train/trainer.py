@@ -1,13 +1,16 @@
 import os
 import time
 
-import keras
 import numpy as np
 import tensorflow as tf
 import tqdm
 
+from cytogan.extra import logs
+
 # Supress warnings about wrong compilation of TensorFlow.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+log = logs.get_logger(__name__)
 
 
 class Trainer(object):
@@ -37,12 +40,17 @@ class Trainer(object):
         if self.checkpoint_directory is not None:
             model.save(self.checkpoint_directory)
 
-        print('Training complete! Took {0:.2f}s'.format(elapsed_time))
+        log.info('Training complete! Took %.2fs', elapsed_time)
 
     def _train_loop(self, model, batch_generator):
         number_of_iterations = 0
+        log_file = logs.LogFile(logs.get_raw_logger(__name__))
         for epoch_index in range(1, self.number_of_epochs + 1):
-            batch_range = tqdm.trange(self.number_of_batches, unit=' batches')
+            batch_range = tqdm.trange(
+                self.number_of_batches,
+                unit=' batches',
+                file=log_file,
+                ncols=160)
             batch_range.set_description('Epoch {0}'.format(epoch_index))
             for _ in batch_range:
                 lr = model.learning_rate
@@ -71,8 +79,7 @@ class Trainer(object):
         return False
 
     def _get_summary_writer(self, graph):
-        print('Writing TensorBoard summaries to {0}'.format(
-            self.summary_directory))
+        log.info('Writing TensorBoard summaries to %s', self.summary_directory)
         return tf.summary.FileWriter(self.summary_directory, graph=graph)
 
     def __repr__(self):

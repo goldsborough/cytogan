@@ -2,11 +2,15 @@ import argparse
 import collections
 import os
 import re
+import sys
 import time
 
 import keras.backend as K
-import numpy as np
 import tensorflow as tf
+
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
 
 Dataset = collections.namedtuple('Dataset', 'images, labels')
 
@@ -53,23 +57,51 @@ def make_parser(name):
     parser.add_argument('-l', '--latent-samples', type=int)
     parser.add_argument('-g', '--generative-samples', type=int)
     parser.add_argument('--gpus', type=int, nargs='+')
-    parser.add_argument('--save-figures-to')
+    parser.add_argument('--show-figures', action='store_true')
     parser.add_argument('--skip-training', action='store_true')
-    parser.add_argument('--summary-dir')
     parser.add_argument(
         '--summary-freq', type=Frequency, default=Frequency('20'))
-    parser.add_argument('--checkpoint-dir')
     parser.add_argument(
         '--checkpoint-freq', type=Frequency, default=Frequency('30s'))
     parser.add_argument('--restore-from', metavar='CHECKPOINT_DIR')
+    parser.add_argument('-w', '--workspace')
     parser.add_argument(
         '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
+    parser.add_argument('--dry', action='store_true')
 
     return parser
 
 
+def parse_args(parser):
+    options = parser.parse_args()
+
+    options.checkpoint_dir = None
+    options.summary_dir = None
+    options.figure_dir = None
+    options.log_file = None
+    if options.workspace:
+        timestamp = time.strftime('%d-%m-%Y_%H-%M-%S')
+        run_name = '{0}_{1}'.format(options.model, timestamp)
+        options.workspace = os.path.join(options.workspace, run_name)
+        if not os.path.exists(options.workspace):
+            os.makedirs(options.workspace)
+        options.checkpoint_dir = os.path.join(options.workspace, 'checkpoints')
+        options.summary_dir = os.path.join(options.workspace, 'summaries')
+        options.figure_dir = os.path.join(options.workspace, 'figures')
+        options.log_file = os.path.join(options.workspace, 'log.log')
+
+    option_strings = ['{0} = {1}'.format(*i) for i in options._get_kwargs()]
+    options.as_string = '\n'.join(option_strings)
+
+    if options.dry:
+        print(options.as_string)
+        sys.exit()
+
+    return options
+
+
 def get_session(gpus):
-    print('Using GPUs: {0}'.format(gpus))
+    log.info('Using GPUs: %s', gpus)
     if gpus is None:
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
     else:

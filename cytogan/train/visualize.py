@@ -1,11 +1,13 @@
 import os
 
-import matplotlib
 import matplotlib.pyplot as plot
 import numpy as np
-import scipy.stats
-import sklearn.manifold
 import seaborn
+import sklearn.manifold
+
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
 
 plot.style.use('ggplot')
 
@@ -29,7 +31,7 @@ def _save_figure(folder, filename):
     path = os.path.join(folder, filename)
     if not os.path.exists(folder):
         os.makedirs(folder)
-    print('Saving {0} ...'.format(path))
+    log.info('Saving {0} ...'.format(path))
     plot.savefig(path)
 
 
@@ -61,7 +63,7 @@ def latent_space(model,
     latent_vectors = model.encode(images)
     assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
-        print('Reducing dimensionality ...')
+        log.info('Reducing dimensionality ...')
         reduction = reduction_method(n_components=2)
         latent_vectors = reduction.fit_transform(latent_vectors)
         assert latent_vectors.shape[1] == 2

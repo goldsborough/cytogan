@@ -8,6 +8,7 @@ from cytogan.data.cell_data import CellData
 from cytogan.metrics import profiling
 from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
+from cytogan.extra import logs
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
@@ -16,10 +17,11 @@ parser.add_argument('--labels', required=True)
 parser.add_argument('--images', required=True)
 parser.add_argument('-p', '--pattern', action='append')
 parser.add_argument('--confusion-matrix', action='store_true')
-options = parser.parse_args()
-print(options)
+options = common.parse_args(parser)
+log = logs.get_root_logger(options.log_file)
+log.debug('Options:\n%s', options.as_string)
 
-if options.save_figures_to is not None:
+if not options.show_figures:
     visualize.disable_display()
 
 cell_data = CellData(
@@ -55,7 +57,7 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    print(model)
+    log.info('\n%s', model)
     if options.restore_from is None:
         tf.global_variables_initializer().run(session=session)
     else:
@@ -63,50 +65,49 @@ with common.get_session(options.gpus) as session:
     if not options.skip_training:
         trainer.train(model, cell_data.next_batch)
 
-    print('Evaluating ...')
+    log.info('Starting Evaluation')
     keys, profiles = [], []
     batch_generator = cell_data.batches_of_size(options.batch_size)
     try:
         for batch_keys, images in tqdm(batch_generator, unit=' batches'):
-            batch_profiles = model.encode(images)
-            profiles.append(batch_profiles)
+            profiles.append(model.encode(images))
             keys += batch_keys
     except KeyboardInterrupt:
         pass
     profiles = np.concatenate(profiles, axis=0)
     keys = list(cell_data.metadata.index)
-    print('Generated {0} profiles ...'.format(len(profiles)))
+    log.info('Generated %d profiles', len(profiles))
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
-    print('Matching {0:,} profiles to {1} MOAs ...'.format(
+    log.info('Matching {0:,} profiles to {1} MOAs ...'.format(
         len(dataset), len(dataset.moa.unique())))
     confusion_matrix, accuracy = profiling.score_profiles(dataset)
-    print('Final Accuracy: {0:.3f}'.format(accuracy))
+    log.info('Final Accuracy: %.3f', accuracy)
 
     if options.confusion_matrix:
         visualize.confusion_matrix(
             confusion_matrix,
             title='MOA Confusion Matrix',
             accuracy=accuracy,
-            save_to=options.save_figures_to)
+            save_to=options.figure_dir)
 
     if options.reconstruction_samples is not None:
         images = cell_data.next_batch(options.reconstruction_samples)
         visualize.reconstructions(
-            model, np.stack(images, axis=0), save_to=options.save_figures_to)
+            model, np.stack(images, axis=0), save_to=options.figure_dir)
 
     if options.latent_samples is not None:
         keys, images = cell_data.next_batch(
             options.latent_samples, with_keys=True)
         label_map, labels = cell_data.get_compound_indices(keys)
         visualize.latent_space(
-            model, images, labels, label_map, save_to=options.save_figures_to)
+            model, images, labels, label_map, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         visualize.generative_samples(
             model,
             options.generative_samples,
             gray=True,
-            save_to=options.save_figures_to)
+            save_to=options.figure_dir)
 
-if options.save_figures_to is None:
+if options.show_figures:
     visualize.show()

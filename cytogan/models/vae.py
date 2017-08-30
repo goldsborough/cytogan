@@ -31,7 +31,7 @@ class VAE(conv_ae.ConvAE):
 
     def decode(self, samples):
         return self.session.run(
-        self.decoder.output, feed_dict={self.decoder.input: samples})
+            self.decoder.output, feed_dict={self.decoder.input: samples})
 
     def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)

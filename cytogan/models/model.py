@@ -6,6 +6,10 @@ import time
 import tensorflow as tf
 import collections
 
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
+
 Learning = collections.namedtuple('Learning', 'rate, decay, steps_per_decay')
 
 
@@ -55,7 +59,7 @@ class Model(abc.ABC):
         if not os.path.exists(checkpoint_directory):
             os.makedirs(checkpoint_directory)
         class_name = self.__class__.__name__
-        timestamp = time.strftime('%H-%M-%S_%d-%m-%Y')
+        timestamp = time.strftime('%d-%m-%Y_%H-%M-%S')
         model_key = '{0}_{1}'.format(class_name, timestamp)
         checkpoint_path = os.path.join(checkpoint_directory, model_key)
         self.saver.save(
@@ -64,7 +68,7 @@ class Model(abc.ABC):
     def restore(self, checkpoint):
         if os.path.isdir(checkpoint):
             checkpoint = tf.train.latest_checkpoint(checkpoint)
-        print('Restoring from {0} ...'.format(checkpoint))
+        log.info('Restoring from {0} ...'.format(checkpoint))
         if checkpoint is None:
             raise RuntimeError(
                 'Could not find any valid checkpoints under {0}!'.format(

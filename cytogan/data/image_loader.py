@@ -7,6 +7,10 @@ import time
 import numpy as np
 import scipy.misc
 
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
+
 
 def load_image(root_path, image_key, extension):
     full_path = os.path.join(root_path, '{0}.{1}'.format(image_key, extension))
@@ -65,7 +69,7 @@ class AsyncImageLoader(object):
                     got_keys.append(key)
                     got_images.append(image)
                 except IOError as error:
-                    print(error)
+                    log.error(error)
                 del want[index]
                 # Free memory.
                 del self.images[key]
@@ -87,6 +91,7 @@ class AsyncImageLoader(object):
 
 class ImageLoader(object):
     '''A basic, synchronous image loader with caching functionality.'''
+
     def __init__(self, root_path, extension='png', cache=False):
         self.root_path = root_path
         self.extension = extension
@@ -117,7 +122,8 @@ class ImageLoader(object):
             try:
                 image = self.get_image(key)
             except IOError as error:
-                print('Error loading image {0}: {1}'.format(key, repr(error)))
+                log.error(
+                    'Error loading image {0}: {1}'.format(key, repr(error)))
             else:
                 ok_keys.append(key)
                 ok_images.append(image)

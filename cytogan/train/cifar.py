@@ -8,13 +8,15 @@ from cytogan.data.batch_generator import BatchGenerator
 from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
 from cytogan.train.common import Dataset, make_parser
+from cytogan.extra import logs
 
 parser = make_parser('cytogan-cifar')
-options = parser.parse_args()
+options = common.parse_args(parser)
 
-print(options)
+log = logs.get_root_logger(options.log_file)
+log.debug('Options:\n%s', options.as_string)
 
-if options.save_figures_to is not None:
+if not options.show_figures:
     visualize.disable_display()
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -47,7 +49,7 @@ trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    print(model)
+    log.info('\n%s', model)
     if options.restore_from is None:
         tf.global_variables_initializer().run(session=session)
     else:
@@ -58,17 +60,17 @@ with common.get_session(options.gpus) as session:
     if options.reconstruction_samples is not None:
         original_images = test.images[:options.reconstruction_samples]
         visualize.reconstructions(
-            model, original_images, save_to=options.save_figures_to)
+            model, original_images, save_to=options.figure_dir)
 
     if options.latent_samples is not None:
         original_images = test.images[:options.latent_samples]
         labels = test.labels[:options.latent_samples]
         visualize.latent_space(
-            model, original_images, labels, save_to=options.save_figures_to)
+            model, original_images, labels, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         visualize.generative_samples(
-            model, options.generative_samples, save_to=options.save_figures_to)
+            model, options.generative_samples, save_to=options.figure_dir)
 
-if options.save_figures_to is None:
+if options.show_figures:
     visualize.show()

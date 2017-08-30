@@ -6,6 +6,9 @@ import pandas as pd
 import tqdm
 
 from cytogan.data.image_loader import AsyncImageLoader
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
 
 
 def _image_key_for_path(path, root_path):
@@ -40,7 +43,7 @@ def _get_single_cell_names(root_path, plate_names, file_names, patterns):
 
 
 def _load_single_cell_names_from_cell_count_file(metadata, cell_count_path):
-    print('Using cell count file {0}'.format(cell_count_path))
+    log.info('Using cell count file %s', cell_count_path)
     indices = []
     single_cell_names = []
     with open(cell_count_path) as cell_count_file:
@@ -72,7 +75,7 @@ def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
 
-    print('Reading single-cell names ...')
+    log.info('Reading single-cell names ...')
     if cell_count_path is None:
         if patterns:
             assert not isinstance(patterns, str)
@@ -110,9 +113,10 @@ class CellData(object):
                                              self.image_root, cell_count_path)
 
         unique_compounds = set(map(tuple, self.metadata.values))
-        print('Have {0:,} single-cell images for {1} unique '
-              '(compound, concentration) pairs with {2} MOA labels'.format(
-                  len(self.metadata), len(unique_compounds), len(self.labels)))
+        log.info('Have {0:,} single-cell images for {1} unique '
+                 '(compound, concentration) pairs with {2} MOA labels'.format(
+                     len(self.metadata),
+                     len(unique_compounds), len(self.labels)))
 
         self.images = AsyncImageLoader(self.image_root)
         self.batch_index = 0

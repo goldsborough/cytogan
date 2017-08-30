@@ -5,13 +5,15 @@ from tensorflow.examples.tutorials import mnist
 
 from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
+from cytogan.extra import logs
 
-parser = common.make_parser(name='cytogan-mnist')
-options = parser.parse_args()
+parser = common.make_parser('cytogan-mnist')
+options = common.parse_args(parser)
 
-print(options)
+log = logs.get_root_logger(options.log_file)
+log.debug('Options:\n%s', options.as_string)
 
-if options.save_figures_to is not None:
+if not options.show_figures:
     visualize.disable_display()
 
 data = mnist.input_data.read_data_sets('MNIST_data', one_hot=False)
@@ -41,7 +43,7 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    print(model)
+    log.info('\n%s', model)
     if options.restore_from is None:
         tf.global_variables_initializer().run(session=session)
     else:
@@ -54,20 +56,20 @@ with common.get_session(options.gpus) as session:
             options.reconstruction_samples)
         original_images = original_images.reshape(-1, 28, 28, 1)
         visualize.reconstructions(
-            model, original_images, gray=True, save_to=options.save_figures_to)
+            model, original_images, gray=True, save_to=options.figure_dir)
 
     if options.latent_samples is not None:
         original_images, labels = data.test.next_batch(options.latent_samples)
         original_images = original_images.reshape(-1, 28, 28, 1)
         visualize.latent_space(
-            model, original_images, labels, save_to=options.save_figures_to)
+            model, original_images, labels, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         visualize.generative_samples(
             model,
             options.generative_samples,
             gray=True,
-            save_to=options.save_figures_to)
+            save_to=options.figure_dir)
 
-if options.save_figures_to is None:
+if options.show_figures:
     visualize.show()

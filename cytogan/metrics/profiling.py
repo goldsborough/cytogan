@@ -1,6 +1,10 @@
-import sklearn.metrics.pairwise
 import numpy as np
 import pandas as pd
+import sklearn.metrics.pairwise
+
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
 
 
 def get_nearest_neighbors(examples, neighbors):
@@ -34,17 +38,17 @@ def _reduce_profiles_across_compounds(dataset):
 def score_profiles(full_dataset):
     accuracies = []
     dataset = _reduce_profiles_across_compounds(full_dataset)
-    print('Reduced dataset from {0} to {1} profiles for each '
-          '(compound, concentration) pair ...'.format(
-              len(full_dataset), len(dataset)))
+    log.info('Reduced dataset from %d to %d profiles for each '
+             '(compound, concentration) pair ...',
+             len(full_dataset), len(dataset))
     labels = dataset['moa'].unique()
-    print('Have {0} MOAs among the profiles.'.format(len(labels)))
+    log.info('Have %d MOAs among the profiles.', len(labels))
     confusion_matrix = pd.DataFrame(
         index=labels,
         data=np.zeros([len(labels), len(labels)]),
         columns=labels)
     for holdout_compound in dataset['compound'].unique():
-        print('Holding out {0} ...'.format(holdout_compound))
+        log.info('Holding out %d ...', holdout_compound)
         test_mask = dataset['compound'] == holdout_compound
         # Leaves all the concentrations for the holdout compound.
         test_data = dataset[test_mask]
@@ -61,7 +65,7 @@ def score_profiles(full_dataset):
         actual_labels = np.array(test_data['moa'])
         assert actual_labels.shape == predicted_labels.shape
         accuracy = np.mean(predicted_labels == actual_labels)
-        print('Accuracy for {0} is {1:.3f}'.format(holdout_compound, accuracy))
+        log.info('Accuracy for %s is %.3f'.format(holdout_compound, accuracy))
         accuracies.append(accuracy)
 
         confusion_matrix.loc[actual_labels, predicted_labels] += 1
