@@ -32,8 +32,6 @@ elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
     Model = vae.VAE
 
-print(model)
-
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size)
 trainer.summary_directory = options.summary_dir
@@ -43,9 +41,11 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
-    if options.restore_from is not None:
+    print(model)
+    if options.restore_from is None:
+        tf.global_variables_initializer().run(session=session)
+    else:
         model.restore(options.restore_from)
-    tf.global_variables_initializer().run(session=session)
     if not options.skip_training:
         trainer.train(model, get_batch)
 
