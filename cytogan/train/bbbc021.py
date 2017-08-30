@@ -55,9 +55,11 @@ trainer.checkpoint_frequency = options.checkpoint_freq
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
+    if options.restore_from is not None:
+        model.restore(options.restore_from)
     tf.global_variables_initializer().run(session=session)
     if not options.skip_training:
-        trainer.train(model, cell_data.next_batch, options.restore_from)
+        trainer.train(model, cell_data.next_batch)
 
     print('Evaluating ...')
     keys, profiles = [], []

@@ -23,9 +23,7 @@ class Trainer(object):
         self.checkpoint_directory = None
         self.checkpoint_frequency = None
 
-    def train(self, model, batch_generator, checkpoint=None):
-        if checkpoint is not None:
-            model.restore(checkpoint)
+    def train(self, model, batch_generator):
         if self.summary_directory is not None:
             self.summary_writer = self._get_summary_writer(model.graph)
 

@@ -21,4 +21,5 @@ python3 -m cytogan.train.bbbc021                        \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv     \
   --images /data1/peter/segmented                       \
   --cell-count-file /data1/peter/cell_counts.csv        \
+  --restore-from /data1/peter/runs/checkpoints          \
   $1
