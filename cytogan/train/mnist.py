@@ -47,7 +47,7 @@ with common.get_session(options.gpus) as session:
         model.restore(options.restore_from)
     tf.global_variables_initializer().run(session=session)
     if not options.skip_training:
-        trainer.train(model, cell_data.next_batch)
+        trainer.train(model, get_batch)
 
     if options.reconstruction_samples is not None:
         original_images, _ = data.test.next_batch(
