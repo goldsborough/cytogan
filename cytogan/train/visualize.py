@@ -107,12 +107,15 @@ def generative_samples(model,
         _save_figure(save_to, 'generative-samples.png')
 
 
-def confusion_matrix(matrix, title=None, accuracy=None, save_to=None):
-    if title is not None:
-        accuracy *= 100
-        plot.suptitle('{0} ({1:.1f}% Accuracy)'.format(title, accuracy))
-    _, ax = plot.subplots(figsize=(14, 10))
-    seaborn.heatmap(matrix, annot=True, ax=ax)
+def confusion_matrix(matrix,
+                     title='Confusion Matrix',
+                     accuracy=None,
+                     save_to=None):
+    figure, axis = plot.subplots(figsize=(14, 10))
+    if accuracy:
+        title += ' ({0:.1f}% Accuracy)'.format(accuracy * 100)
+    figure.suptitle(title)
+    seaborn.heatmap(matrix, annot=True, ax=axis)
     if save_to is not None:
         _save_figure(save_to, 'confusion-matrix.png')
 
