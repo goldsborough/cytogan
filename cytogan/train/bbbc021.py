@@ -76,7 +76,6 @@ with common.get_session(options.gpus) as session:
     except KeyboardInterrupt:
         pass
     profiles = np.concatenate(profiles, axis=0)
-    keys = list(cell_data.metadata.index)
     log.info('Generated %d profiles', len(profiles))
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     log.info('Matching {0:,} profiles to {1} MOAs ...'.format(
