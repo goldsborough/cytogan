@@ -17,6 +17,8 @@ parser.add_argument('--labels', required=True)
 parser.add_argument('--images', required=True)
 parser.add_argument('-p', '--pattern', action='append')
 parser.add_argument('--confusion-matrix', action='store_true')
+parser.add_argument('--latent-compounds', action='store_true')
+parser.add_argument('--latent-moa', action='store_true')
 options = common.parse_args(parser)
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
@@ -44,8 +46,7 @@ elif options.model == 'conv_ae':
     hyper = conv_ae.Hyper(image_shape, filter_sizes=[8, 8], latent_size=32)
     Model = conv_ae.ConvAE
 elif options.model == 'vae':
-    hyper = vae.Hyper(
-        image_shape, filter_sizes=[128, 64, 32], latent_size=256)
+    hyper = vae.Hyper(image_shape, filter_sizes=[128, 64, 32], latent_size=256)
     Model = vae.VAE
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
@@ -80,7 +81,10 @@ with common.get_session(options.gpus) as session:
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     log.info('Matching {0:,} profiles to {1} MOAs ...'.format(
         len(dataset), len(dataset.moa.unique())))
-    confusion_matrix, accuracy = profiling.score_profiles(dataset)
+    treatment_profiles = profiling.reduce_profiles_across_treatments(dataset)
+    log.info('Reduced dataset from %d to %d profiles for each treatment',
+             len(dataset), len(treatment_profiles))
+    confusion_matrix, accuracy = profiling.score_profiles(treatment_profiles)
     log.info('Final Accuracy: %.3f', accuracy)
 
     if options.confusion_matrix:
@@ -98,9 +102,35 @@ with common.get_session(options.gpus) as session:
     if options.latent_samples is not None:
         keys, images = cell_data.next_batch(
             options.latent_samples, with_keys=True)
-        label_map, labels = cell_data.get_compound_indices(keys)
+        treatment_names, indices = cell_data.get_treatment_indices(keys)
+        latent_vectors = model.encode(images)
         visualize.latent_space(
-            model, images, labels, label_map, save_to=options.figure_dir)
+            latent_vectors,
+            indices,
+            treatment_names,
+            save_to=options.figure_dir,
+            title='Latent Space (Single Cells)')
+
+    if options.latent_compounds:
+        compound_names, indices = cell_data.get_compound_indices(
+            treatment_profiles)
+        latent_vectors = np.array(list(treatment_profiles['profile']))
+        visualize.latent_space(
+            latent_vectors,
+            indices,
+            compound_names,
+            save_to=options.figure_dir,
+            title='Latent Space (Compounds)')
+
+    if options.latent_moa:
+        moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
+        latent_vectors = np.array(list(treatment_profiles['profile']))
+        visualize.latent_space(
+            latent_vectors,
+            indices,
+            moa_names,
+            save_to=options.figure_dir,
+            title='Latent Space (MOAs)')
 
     if options.generative_samples is not None:
         visualize.generative_samples(

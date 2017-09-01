@@ -19,7 +19,7 @@ def get_nearest_neighbors(examples, neighbors):
     return np.argmin(distances, axis=1)
 
 
-def _reduce_profiles_across_compounds(dataset):
+def reduce_profiles_across_treatments(dataset):
     keys = ('compound', 'concentration', 'moa')
     reduced_profiles = []
     for key, group in dataset.groupby(keys, sort=False, as_index=False):
@@ -35,12 +35,8 @@ def _reduce_profiles_across_compounds(dataset):
 # - concentration
 # - profile vector
 # - MOA
-def score_profiles(full_dataset):
+def score_profiles(dataset):
     accuracies = []
-    dataset = _reduce_profiles_across_compounds(full_dataset)
-    log.info('Reduced dataset from %d to %d profiles for each '
-             '(compound, concentration) pair ...',
-             len(full_dataset), len(dataset))
     labels = dataset['moa'].unique()
     log.info('Have %d MOAs among the profiles.', len(labels))
     confusion_matrix = pd.DataFrame(
@@ -48,7 +44,7 @@ def score_profiles(full_dataset):
         data=np.zeros([len(labels), len(labels)]),
         columns=labels)
     for holdout_compound in dataset['compound'].unique():
-        log.info('Holding out %d ...', holdout_compound)
+        log.info('Holding out %s ...', holdout_compound)
         test_mask = dataset['compound'] == holdout_compound
         # Leaves all the concentrations for the holdout compound.
         test_data = dataset[test_mask]
@@ -65,7 +61,7 @@ def score_profiles(full_dataset):
         actual_labels = np.array(test_data['moa'])
         assert actual_labels.shape == predicted_labels.shape
         accuracy = np.mean(predicted_labels == actual_labels)
-        log.info('Accuracy for %s is %.3f'.format(holdout_compound, accuracy))
+        log.info('Accuracy for %s is %.3f', holdout_compound, accuracy)
         accuracies.append(accuracy)
 
         confusion_matrix.loc[actual_labels, predicted_labels] += 1

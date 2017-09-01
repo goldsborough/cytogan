@@ -61,8 +61,9 @@ with common.get_session(options.gpus) as session:
     if options.latent_samples is not None:
         original_images, labels = data.test.next_batch(options.latent_samples)
         original_images = original_images.reshape(-1, 28, 28, 1)
+        latent_vectors = model.encode(original_images)
         visualize.latent_space(
-            model, original_images, labels, save_to=options.figure_dir)
+            latent_vectors, labels, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         visualize.generative_samples(

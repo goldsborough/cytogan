@@ -178,7 +178,7 @@ class CellData(object):
 
         return dataset
 
-    def get_compound_indices(self, keys):
+    def get_treatment_indices(self, keys):
         filtered = self.metadata.loc[keys][['compound', 'concentration']]
         compounds = list(set(map(tuple, filtered.values.tolist())))
         index_map = {(com, con): i for i, (com, con) in enumerate(compounds)}
@@ -186,3 +186,13 @@ class CellData(object):
         compound_strings = ['{}/{}'.format(com, con) for com, con in compounds]
 
         return compound_strings, indices
+
+    def get_compound_indices(self, dataset):
+        compounds = list(dataset['compound'].unique())
+        indices = dataset['compound'].apply(compounds.index)
+        return compounds, indices
+
+    def get_moa_indices(self, dataset):
+        moas = list(dataset['moa'].unique())
+        indices = dataset['moa'].apply(moas.index)
+        return moas, indices

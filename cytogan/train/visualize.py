@@ -31,18 +31,22 @@ def _save_figure(folder, filename):
     path = os.path.join(folder, filename)
     if not os.path.exists(folder):
         os.makedirs(folder)
-    log.info('Saving {0} ...'.format(path))
+    log.info('Saving %s ...', path)
     plot.savefig(path)
 
 
-def reconstructions(model, original_images, gray=False, save_to=None):
+def reconstructions(model,
+                    original_images,
+                    gray=False,
+                    save_to=None,
+                    title='Reconstructed Images'):
     reconstructed_images = model.reconstruct(original_images)
     if _is_grayscale(original_images):
         original_images = _make_rgb(original_images)
         reconstructed_images = _make_rgb(reconstructed_images)
 
     figure = plot.figure(figsize=(20, 4))
-    figure.suptitle('Reconstructed Images')
+    figure.suptitle(title)
     number_of_images = len(original_images)
     for index in range(number_of_images):
         _plot_image_tile(2, number_of_images, index, original_images[index],
@@ -54,13 +58,12 @@ def reconstructions(model, original_images, gray=False, save_to=None):
         _save_figure(save_to, 'reconstructions.png')
 
 
-def latent_space(model,
-                 images,
+def latent_space(latent_vectors,
                  labels=None,
                  label_map=None,
                  reduction_method=sklearn.manifold.TSNE,
-                 save_to=None):
-    latent_vectors = model.encode(images)
+                 save_to=None,
+                 title='Latent Space'):
     assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
         log.info('Reducing dimensionality ...')
@@ -68,8 +71,9 @@ def latent_space(model,
         latent_vectors = reduction.fit_transform(latent_vectors)
         assert latent_vectors.shape[1] == 2
     figure = plot.figure(figsize=(12, 10))
-    figure.suptitle('Latent Space')
-    plot.scatter(latent_vectors[:, 0], latent_vectors[:, 1], c=labels)
+    figure.suptitle(title)
+    plot.scatter(
+        latent_vectors[:, 0], latent_vectors[:, 1], c=labels, cmap='plasma')
     if labels is not None:
         colorbar = plot.colorbar()
         if label_map is not None:
@@ -84,13 +88,14 @@ def generative_samples(model,
                        number_of_samples,
                        distribution=np.random.randn,
                        gray=False,
-                       save_to=None):
+                       save_to=None,
+                       title='Generated Samples'):
     samples = distribution(number_of_samples, model.latent_size)
     images = model.decode(samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
     figure = plot.figure(figsize=(10, 10))
-    figure.suptitle('Decoded Samples')
+    figure.suptitle(title)
     figure_rows = int(np.ceil(np.sqrt(number_of_samples)))
     figure_columns = int(np.ceil(number_of_samples / figure_rows))
     for index, image in enumerate(images[:number_of_samples]):
@@ -104,7 +109,7 @@ def confusion_matrix(matrix, title=None, accuracy=None, save_to=None):
     if title is not None:
         accuracy *= 100
         plot.suptitle('{0} ({1:.1f}% Accuracy)'.format(title, accuracy))
-    _, ax = plot.subplots(figsize=(12, 10))
+    _, ax = plot.subplots(figsize=(14, 10))
     seaborn.heatmap(matrix, annot=True, ax=ax)
     if save_to is not None:
         _save_figure(save_to, 'confusion-matrix.png')
