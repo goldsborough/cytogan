@@ -108,7 +108,7 @@ with common.get_session(options.gpus) as session:
             indices,
             treatment_names,
             save_to=options.figure_dir,
-            title='Latent Space (Single Cells)')
+            title='Cells')
 
     if options.latent_compounds:
         compound_names, indices = cell_data.get_compound_indices(
@@ -119,7 +119,7 @@ with common.get_session(options.gpus) as session:
             indices,
             compound_names,
             save_to=options.figure_dir,
-            title='Latent Space (Compounds)')
+            title='Compounds')
 
     if options.latent_moa:
         moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
@@ -129,7 +129,7 @@ with common.get_session(options.gpus) as session:
             indices,
             moa_names,
             save_to=options.figure_dir,
-            title='Latent Space (MOAs)')
+            title='MOA')
 
     if options.generative_samples is not None:
         visualize.generative_samples(
