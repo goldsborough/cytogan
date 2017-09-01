@@ -63,7 +63,7 @@ def latent_space(latent_vectors,
                  label_map=None,
                  reduction_method=sklearn.manifold.TSNE,
                  save_to=None,
-                 subject=''):
+                 subject=None):
     assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
         log.info('Reducing dimensionality ...')
@@ -71,7 +71,8 @@ def latent_space(latent_vectors,
         latent_vectors = reduction.fit_transform(latent_vectors)
         assert latent_vectors.shape[1] == 2
     figure = plot.figure(figsize=(12, 10))
-    figure.suptitle('Latent Space ({0})'.format(subject))
+    subject_title = ' ({0})'.format(subject) if subject else ''
+    figure.suptitle('Latent Space{0}'.format(subject_title))
     plot.scatter(
         latent_vectors[:, 0], latent_vectors[:, 1], c=labels, cmap='plasma')
     if labels is not None:
@@ -81,7 +82,8 @@ def latent_space(latent_vectors,
             colorbar.ax.set_yticklabels(ticks)
 
     if save_to is not None:
-        _save_figure(save_to, 'latent-space-{0}.png'.format(subject.lower()))
+        subject_suffix = '-{0}'.format(subject.lower()) if subject else ''
+        _save_figure(save_to, 'latent-space{0}.png'.format(subject_suffix))
 
 
 def generative_samples(model,
