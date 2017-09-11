@@ -58,6 +58,9 @@ class InfoGAN(model.Model):
         self.encoder = None  # Q(c|x)
         self.encoder_loss = None
 
+        self.infogan = None  # D(G(z, c)) + Q(G(z, c))
+        self.infogan_loss = None
+
         super(InfoGAN, self).__init__(learning, session)
 
     def _define_graph(self):
@@ -87,15 +90,16 @@ class InfoGAN(model.Model):
         # model should just train the generator.
         self.discriminator.trainable = False
         self.encoder.trainable = False
-        infogan = Model(
+        self.infogan = Model(
             inputs=[self.noise, self.latent_prior],
             outputs=[
                 self.discriminator(self.fake_images),
                 self.encoder(self.fake_images)
             ],
             name='InfoGAN')
-        bce = -K.mean(K.log(infogan.outputs[0]))
-        mi = losses.mutual_information(self.latent_prior, infogan.outputs[1])
+        bce = -K.mean(K.log(self.infogan.outputs[0]))
+        mi = losses.mutual_information(self.latent_prior,
+                                       self.infogan.outputs[1])
         self.infogan_loss = bce + mi
 
         return dict(
@@ -148,12 +152,12 @@ class InfoGAN(model.Model):
         return (losses, results[2]) if with_summary else losses
 
     def _add_summaries(self):
+        super(InfoGAN, self)._add_summaries()
         tf.summary.histogram('noise', self.noise)
         tf.summary.histogram('latent_prior', self.latent_prior)
-        tf.summary.histogram('latent_predicted', self.latent_predicted)
-        tf.summary.histogram('probability', self.probability)
+        tf.summary.histogram('latent_predicted', self.infogan.outputs[0])
+        tf.summary.histogram('probability', self.infogan.outputs[1])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
-        super(InfoGAN, self)._add_summaries()
 
     def _define_generator(self):
         with K.name_scope('G'):
