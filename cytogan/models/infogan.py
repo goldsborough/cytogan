@@ -56,7 +56,7 @@ class InfoGAN(model.Model):
         self.encoder = None  # Q(c|x)
         self.encoder_loss = None
 
-        super(InfoGAN, self).__init__([learning], session)
+        super(InfoGAN, self).__init__(learning, session)
 
     def _define_graph(self):
         tensors = self._define_generator()
@@ -112,7 +112,7 @@ class InfoGAN(model.Model):
         else:
             number_of_samples = len(latent_samples)
         noise = self._sample_noise(number_of_samples)
-        return self.session.run(
+        images = self.session.run(
             self.generator.output,
             feed_dict={
                 self.latent_prior: latent_samples,
@@ -120,7 +120,11 @@ class InfoGAN(model.Model):
                 K.learning_phase(): 0,
             })
 
+        # Go from [-1, +1] scale back to [0, 1]
+        return (images + 1) / 2
+
     def train_on_batch(self, real_images, with_summary=False):
+        real_images = (real_images * 2) - 1
         discriminator_loss = self._train_discriminator(real_images)
 
         noise = self._sample_noise(len(real_images))
@@ -184,7 +188,7 @@ class InfoGAN(model.Model):
                 D = LeakyReLU(alpha=0.2)(D)
             D = Flatten()(D)
 
-        with tf.control_dependencies([tf.assert_positive(x)]):
+        with tf.control_dependencies([tf.assert_positive(D, [D])]):
             return x, D
 
     def _train_discriminator(self, real_images):

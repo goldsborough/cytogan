@@ -16,6 +16,8 @@ Learning = collections.namedtuple('Learning',
 
 class Model(abc.ABC):
     def __init__(self, learning, session):
+        assert isinstance(learning, Learning)
+
         self.session = session
 
         # The training step indicator variable.
@@ -84,18 +86,14 @@ class Model(abc.ABC):
                     checkpoint))
         self.saver.restore(self.session, checkpoint)
 
-    def _add_optimizer(self, learning_options, losses):
+    def _add_optimizer(self, learning, losses):
         learning_rate, optimizer = {}, {}
         return_tensors = False
         if isinstance(losses, tf.Tensor):
             return_tensors = True
             losses = {0: losses}
-            learning_options = [learning_options] * len(losses)
-        if len(learning_options) < len(losses):
-            learning_options = [learning_options[0]] * len(losses)
-        assert len(losses) == len(learning_options)
-        for learning, key in zip(learning_options, losses):
-            lr = self._get_learning_rate(learning)
+        for index, key in enumerate(losses.keys()):
+            lr = self._get_learning_rate(learning, index)
             kwargs = learning.kwargs or {}
             loss = tf.check_numerics(losses[key], str(key))
             optimizer[key] = tf.train.AdamOptimizer(lr, **kwargs).minimize(
@@ -106,14 +104,18 @@ class Model(abc.ABC):
             return learning_rate[0], optimizer[0]
         return learning_rate, optimizer
 
-    def _get_learning_rate(self, learning):
-        # Start with the scalar learning rate value.
+    def _get_learning_rate(self, learning, index):
+        learning_rate = learning.rate
+        if isinstance(learning_rate, collections.Iterable):
+            learning_rate = learning_rate[index]
         if learning.decay is None:
-            return learning.rate
-        # Upgrade to decaying learning rate *tensor*.
+            return learning_rate
+        decay = learning.decay
+        if isinstance(decay, collections.Iterable):
+            decay = decay[index]
         return tf.train.exponential_decay(
-            learning.rate,
+            learning_rate,
             decay_steps=learning.steps_per_decay,
-            decay_rate=learning.decay,
+            decay_rate=decay,
             global_step=self.global_step,
             staircase=True)

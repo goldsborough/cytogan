@@ -97,8 +97,11 @@ class Trainer(object):
 
     def _update_progressbar(self, batch_range, learning_rate, loss):
         if isinstance(loss, collections.Mapping):
-            assert all(np.isscalar(l) for l in loss.values())
-            batch_range.set_postfix(**loss, lr=learning_rate)
+            strings = {}
+            for key, value in loss.items():
+                assert np.isscalar(value), key
+                strings[key]= '{0:.8f}'.format(value)
+            batch_range.set_postfix(**strings, lr=learning_rate)
         else:
             assert np.isscalar(loss)
             batch_range.set_postfix(loss=loss, lr=learning_rate)
