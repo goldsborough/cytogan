@@ -36,8 +36,10 @@ elif options.model == 'vae':
 elif options.model == 'infogan':
     hyper = infogan.Hyper(
         image_shape,
-        filter_sizes=(256, 128, 64, 32),
-        rescales=(1, 2, 2, 1),
+        generator_filters=(256, 128, 64, 32),
+        generator_strides=(1, 2, 2, 1),
+        discriminator_filters=(32, 64, 128, 256),
+        discriminator_strides=(2, 2, 2, 1),
         latent_size=10,
         noise_size=100,
         initial_shape=(7, 7),

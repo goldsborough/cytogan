@@ -14,10 +14,12 @@ import numpy as np
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
-    'filter_sizes',
+    'generator_filters',
+    'discriminator_filters',
+    'generator_strides',
+    'discriminator_strides',
     'latent_size',
     'noise_size',
-    'rescales',
     'initial_shape',
     'latent_priors',
 ])
@@ -159,15 +161,16 @@ class InfoGAN(model.Model):
             c = Input(shape=[self.latent_size])
             G = Concatenate()([z, c])
 
-            G = Dense(np.prod(self.initial_shape) * self.filter_sizes[0])(G)
+            first_filter = self.generator_filters[0]
+            G = Dense(np.prod(self.initial_shape) * first_filter)(G)
             G = BatchNormalization(momentum=0.9)(G)
             G = LeakyReLU(alpha=0.2)(G)
-            G = Reshape(self.initial_shape + self.filter_sizes[:1])(G)
+            G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
-            for filters, rescale in zip(self.filter_sizes[1:],
-                                        self.rescales[1:]):
-                if rescale > 1:
-                    G = UpSampling2D(rescale)(G)
+            for filters, stride in zip(self.generator_filters,
+                                       self.generator_strides):
+                if stride > 1:
+                    G = UpSampling2D(stride)(G)
                 G = Conv2D(filters, (5, 5), padding='same')(G)
                 G = BatchNormalization(momentum=0.9)(G)
                 G = LeakyReLU(alpha=0.2)(G)
@@ -182,9 +185,11 @@ class InfoGAN(model.Model):
         with K.name_scope('D'):
             x = Input(shape=self.image_shape)
             D = x
-            for filters, scale in zip(self.filter_sizes[::-1],
-                                      self.rescales[::-1]):
-                D = Conv2D(filters, (5, 5), strides=scale, padding='same')(D)
+            for filters, stride in zip(self.discriminator_filters,
+                                       self.discriminator_strides):
+                D = Conv2D(
+                    filters, (5, 5), strides=(stride, stride),
+                    padding='same')(D)
                 D = LeakyReLU(alpha=0.2)(D)
             D = Flatten()(D)
 
