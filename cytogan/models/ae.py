@@ -25,7 +25,7 @@ class AE(model.Model):
         self.latent = None
         self.encoder = None
 
-        super(AE, self).__init__([learning], session)
+        super(AE, self).__init__(learning, session)
 
     def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
@@ -43,7 +43,7 @@ class AE(model.Model):
         return loss
 
     def train_on_batch(self, batch, with_summary=False):
-        fetches = [self.optimizers[self.name], self.losses[self.name]]
+        fetches = [self.optimizer, self.loss]
         if with_summary is not None:
             fetches.append(self.summary)
         outputs = self.session.run(
@@ -61,10 +61,10 @@ class AE(model.Model):
             self.model.output, feed_dict={self.original_images: images})
 
     def _add_summaries(self):
-        tf.summary.scalar('loss', self.losses[0])
-        tf.summary.scalar('learning_rate', self._learning_rates[0])
-        tf.summary.histogram('latent', self.latent)
         super(AE, self)._add_summaries()
+        tf.summary.scalar('loss', self.loss)
+        tf.summary.scalar('learning_rate', self._learning_rate)
+        tf.summary.histogram('latent', self.latent)
 
     def __repr__(self):
         lines = [self.name]

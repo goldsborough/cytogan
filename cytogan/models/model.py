@@ -22,11 +22,11 @@ class Model(abc.ABC):
         self.global_step = tf.Variable(0, trainable=False)
 
         # Define the graph structure and setup the model architecture.
-        self.losses = self._define_graph()
+        self.loss = self._define_graph()
 
         # Attach an optimizer and get the final learning rate tensor.
-        self._learning_rates, self.optimizers = self._add_optimizers(
-            learning, self.losses)
+        tensors = self._add_optimizer(learning, self.loss)
+        self._learning_rate, self.optimizer = tensors
 
         # Boilerplate for management of the model execution.
         self._add_summaries()
@@ -48,7 +48,7 @@ class Model(abc.ABC):
 
     @property
     def name(self):
-        return self.__class__.name__
+        return self.__class__.__name__
 
     @property
     def step(self):
@@ -56,7 +56,9 @@ class Model(abc.ABC):
 
     @property
     def learning_rate(self):
-        lr = list(self._learning_rates.values())[0]
+        lr = self._learning_rate
+        if isinstance(lr, dict):
+            lr = list(lr.values())[0]
         return lr if isinstance(lr, float) else lr.eval(session=self.session)
 
     @property
@@ -82,22 +84,27 @@ class Model(abc.ABC):
                     checkpoint))
         self.saver.restore(self.session, checkpoint)
 
-    def _add_optimizers(self, learning_options, losses):
-        learning_rates, optimizers = {}, {}
+    def _add_optimizer(self, learning_options, losses):
+        learning_rate, optimizer = {}, {}
+        return_tensors = False
         if isinstance(losses, tf.Tensor):
+            return_tensors = True
             losses = {0: losses}
+            learning_options = [learning_options] * len(losses)
         if len(learning_options) < len(losses):
             learning_options = [learning_options[0]] * len(losses)
         assert len(losses) == len(learning_options)
         for learning, key in zip(learning_options, losses):
-            learning_rate = self._get_learning_rate(learning)
+            lr = self._get_learning_rate(learning)
             kwargs = learning.kwargs or {}
-            optimizer = tf.train.AdamOptimizer(learning_rate, **kwargs)
-            loss = tf.check_numerics(losses[key], key)
-            optimizers[key] = optimizer.minimize(loss, self.global_step)
-            learning_rates[key] = learning_rate
+            loss = tf.check_numerics(losses[key], str(key))
+            optimizer[key] = tf.train.AdamOptimizer(lr, **kwargs).minimize(
+                loss, self.global_step)
+            learning_rate[key] = lr
 
-        return learning_rates, optimizers
+        if return_tensors:
+            return learning_rate[0], optimizer[0]
+        return learning_rate, optimizer
 
     def _get_learning_rate(self, learning):
         # Start with the scalar learning rate value.

@@ -63,7 +63,7 @@ class VAE(conv_ae.ConvAE):
 
         loss = self._add_loss(self.original_images, self.model.output)
 
-        return [loss]
+        return loss
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors

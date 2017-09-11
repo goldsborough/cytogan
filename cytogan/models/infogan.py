@@ -72,8 +72,10 @@ class InfoGAN(model.Model):
 
         self.labels = Input(batch_shape=[None])
         self.discriminator = Model(self.images, self.probability, name='D')
-        self.discriminator_loss = losses.binary_crossentropy(
-            self.labels, self.probability)
+
+        with tf.control_dependencies([tf.assert_positive(self.probability)]):
+            self.discriminator_loss = losses.binary_crossentropy(
+                self.labels, self.probability)
 
         self.encoder = Model(self.images, self.latent_predicted, name='Q')
         self.encoder_loss = losses.mutual_information(self.latent_prior,
@@ -100,7 +102,7 @@ class InfoGAN(model.Model):
 
     def encode(self, images):
         return self.session.run(
-            self.encoder.output, feed_dict={self.images: images})
+            self.latent_predicted, feed_dict={self.images: images})
 
     def generate(self, latent_samples):
         if isinstance(latent_samples, int):
@@ -122,7 +124,7 @@ class InfoGAN(model.Model):
 
         noise = self._sample_noise(len(real_images))
         latent = self._sample_priors(len(real_images))
-        fetches = [self.optimizers['G'], self.infogan_loss]
+        fetches = [self.optimizer['G'], self.infogan_loss]
         if with_summary:
             fetches.append(self.summary)
 
@@ -147,36 +149,39 @@ class InfoGAN(model.Model):
         super(InfoGAN, self)._add_summaries()
 
     def _define_generator(self):
-        z = Input(shape=[self.noise_size])
-        c = Input(shape=[self.latent_size])
-        G = Concatenate()([z, c])
+        with tf.name_scope('G'):
+            z = Input(shape=[self.noise_size])
+            c = Input(shape=[self.latent_size])
+            G = Concatenate()([z, c])
 
-        G = Dense(np.prod(self.initial_shape) * self.filter_sizes[0])(G)
-        G = BatchNormalization(momentum=0.9)(G)
-        G = LeakyReLU(alpha=0.2)(G)
-        G = Reshape(self.initial_shape + self.filter_sizes[:1])(G)
-
-        for filters, rescale in zip(self.filter_sizes[1:], self.rescales[1:]):
-            if rescale > 1:
-                G = UpSampling2D(rescale)(G)
-            G = Conv2D(filters, (5, 5), padding='same')(G)
+            G = Dense(np.prod(self.initial_shape) * self.filter_sizes[0])(G)
             G = BatchNormalization(momentum=0.9)(G)
             G = LeakyReLU(alpha=0.2)(G)
+            G = Reshape(self.initial_shape + self.filter_sizes[:1])(G)
 
-        G = Conv2D(1, (5, 5), padding='same')(G)
-        G = Activation('tanh')(G)
-        assert G.shape[1:] == self.image_shape, G.shape
+            for filters, rescale in zip(self.filter_sizes[1:],
+                                        self.rescales[1:]):
+                if rescale > 1:
+                    G = UpSampling2D(rescale)(G)
+                G = Conv2D(filters, (5, 5), padding='same')(G)
+                G = BatchNormalization(momentum=0.9)(G)
+                G = LeakyReLU(alpha=0.2)(G)
+
+            G = Conv2D(1, (5, 5), padding='same')(G)
+            G = Activation('tanh')(G)
+            assert G.shape[1:] == self.image_shape, G.shape
 
         return z, c, G
 
     def _define_discriminator(self):
-        x = Input(shape=(28, 28, 1))
-        D = x
-        for filters, scale in zip(self.filter_sizes[::-1],
-                                  self.rescales[::-1]):
-            D = Conv2D(filters, (5, 5), strides=scale, padding='same')(D)
-            D = LeakyReLU(alpha=0.2)(D)
-        D = Flatten()(D)
+        with tf.name_scope('D'):
+            x = Input(shape=(28, 28, 1))
+            D = x
+            for filters, scale in zip(self.filter_sizes[::-1],
+                                      self.rescales[::-1]):
+                D = Conv2D(filters, (5, 5), strides=scale, padding='same')(D)
+                D = LeakyReLU(alpha=0.2)(D)
+            D = Flatten()(D)
 
         return x, D
 
@@ -191,7 +196,7 @@ class InfoGAN(model.Model):
 
         # L_D = -D(x) -D(G(z, c))
         _, discriminator_loss = self.session.run(
-            [self.optimizers['D'], self.discriminator_loss],
+            [self.optimizer['D'], self.discriminator_loss],
             feed_dict={
                 self.images: images,
                 self.labels: labels,
@@ -200,7 +205,7 @@ class InfoGAN(model.Model):
 
         # L_D = -D(x) -D(G(z, c)) + I(c; G(z, c))
         _, mutual_information_loss = self.session.run(
-            [self.optimizers['Q'], self.encoder_loss],
+            [self.optimizer['Q'], self.encoder_loss],
             feed_dict={
                 self.images: fake_images,
                 self.latent_prior: latent,

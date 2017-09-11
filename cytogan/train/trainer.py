@@ -19,7 +19,6 @@ Options = namedtuple('TrainerOptions', [
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 log = logs.get_logger(__name__)
-log_file = logs.LogFile(logs.get_raw_logger(__name__))
 
 
 class Trainer(object):
@@ -88,6 +87,7 @@ class Trainer(object):
         return tf.summary.FileWriter(self.summary_directory, graph=graph)
 
     def _get_batch_range(self, epoch_index):
+        log_file = logs.LogFile(logs.get_raw_logger(__name__))
         batch_range = tqdm.trange(
             self.number_of_batches, unit=' batches', file=log_file, ncols=160)
         batch_range.set_description('Epoch {0}'.format(epoch_index))
