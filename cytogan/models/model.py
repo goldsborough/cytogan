@@ -92,12 +92,14 @@ class Model(abc.ABC):
         if isinstance(losses, tf.Tensor):
             return_tensors = True
             losses = {0: losses}
-        for index, key in enumerate(losses.keys()):
+        for index, key in enumerate(sorted(losses.keys())):
             lr = self._get_learning_rate(learning, index)
             kwargs = learning.kwargs or {}
             loss = tf.check_numerics(losses[key], str(key))
+            variables = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope=key) or None
             optimizer[key] = tf.train.AdamOptimizer(lr, **kwargs).minimize(
-                loss, self.global_step)
+                loss, self.global_step, var_list=variables)
             learning_rate[key] = lr
 
         if return_tensors:

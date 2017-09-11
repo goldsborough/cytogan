@@ -97,6 +97,7 @@ class InfoGAN(model.Model):
                 self.encoder(self.fake_images)
             ],
             name='InfoGAN')
+        self.infogan.compile(loss='binary_crossentropy', optimizer='adam')
         bce = -K.mean(K.log(self.infogan.outputs[0]))
         mi = losses.mutual_information(self.latent_prior,
                                        self.infogan.outputs[1])
@@ -155,8 +156,8 @@ class InfoGAN(model.Model):
         super(InfoGAN, self)._add_summaries()
         tf.summary.histogram('noise', self.noise)
         tf.summary.histogram('latent_prior', self.latent_prior)
-        tf.summary.histogram('latent_predicted', self.infogan.outputs[0])
-        tf.summary.histogram('probability', self.infogan.outputs[1])
+        tf.summary.histogram('probability', self.infogan.outputs[0])
+        tf.summary.histogram('latent_predicted', self.infogan.outputs[1])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
 
     def _define_generator(self):
