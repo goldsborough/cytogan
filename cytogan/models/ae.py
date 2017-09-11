@@ -5,26 +5,27 @@ from keras.models import Model
 import keras.backend as K
 
 from cytogan.metrics import losses
-import cytogan.models.model
+from cytogan.models import model
 
 import collections
 
 Hyper = collections.namedtuple('Hyper', 'image_shape, latent_size')
 
 
-class AE(cytogan.models.model.Model):
+class AE(model.Model):
     def __init__(self, hyper, learning, session):
         assert len(hyper.image_shape) == 3
         self.image_shape = hyper.image_shape
         self.flat_image_shape = np.prod(hyper.image_shape)
+        self.number_of_channels = hyper.image_shape[-1]
         self.latent_size = hyper.latent_size
 
-        self.original_images = None  # = self.input
+        self.original_images = None
         self.reconstructed_images = None
         self.latent = None
         self.encoder = None
 
-        super(AE, self).__init__(learning, session)
+        super(AE, self).__init__([learning], session)
 
     def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
@@ -36,10 +37,20 @@ class AE(cytogan.models.model.Model):
 
         loss = K.mean(losses.reconstruction_loss(flat_input, decoded))
 
-        model = Model(self.original_images, self.reconstructed_images)
+        self.model = Model(self.original_images, self.reconstructed_images)
         self.encoder = Model(self.original_images, self.latent)
 
-        return self.original_images, loss, model
+        return loss
+
+    def train_on_batch(self, batch, with_summary=False):
+        fetches = [self.optimizers[self.name], self.losses[self.name]]
+        if with_summary is not None:
+            fetches.append(self.summary)
+        outputs = self.session.run(
+            fetches, feed_dict={self.original_images: batch})
+        if with_summary:
+            return outputs[1:]
+        return outputs[1]
 
     def encode(self, images):
         return self.session.run(
@@ -50,5 +61,16 @@ class AE(cytogan.models.model.Model):
             self.model.output, feed_dict={self.original_images: images})
 
     def _add_summaries(self):
+        tf.summary.scalar('loss', self.losses[0])
+        tf.summary.scalar('learning_rate', self._learning_rates[0])
         tf.summary.histogram('latent', self.latent)
         super(AE, self)._add_summaries()
+
+    def __repr__(self):
+        lines = [self.name]
+        try:
+            # >= Keras 2.0.6
+            self.model.summary(print_fn=lines.append)
+        except TypeError:
+            lines = [layer.name for layer in self.model.layers]
+        return '\n'.join(map(str, lines))

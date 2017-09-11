@@ -78,7 +78,7 @@ with common.get_session(options.gpus) as session:
     profiles = np.concatenate(profiles, axis=0)
     log.info('Generated %d profiles', len(profiles))
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
-    log.info('Matching {0:,} profiles to {1} MOAs ...'.format(
+    log.info('Matching {0:,} profiles to {1} MOAs'.format(
         len(dataset), len(dataset.moa.unique())))
     treatment_profiles = profiling.reduce_profiles_across_treatments(dataset)
     log.info('Reduced dataset from %d to %d profiles for each treatment',

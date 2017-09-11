@@ -3,8 +3,8 @@ import tensorflow as tf
 from keras.layers import Conv2D, Dense, Input, Lambda
 from keras.models import Model
 
-from cytogan.models import conv_ae
 from cytogan.metrics import losses
+from cytogan.models import conv_ae
 
 Hyper = conv_ae.Hyper
 
@@ -29,36 +29,41 @@ class VAE(conv_ae.ConvAE):
 
         super(VAE, self).__init__(hyper, learning, session)
 
-    def decode(self, samples):
+    def generate(self, samples):
         return self.session.run(
-            self.decoder.output, feed_dict={self.decoder.input: samples})
+            self.decoder.outputs[0],
+            feed_dict={self.decoder.inputs[0]: samples})
 
     def _define_graph(self):
         self.original_images = Input(shape=self.image_shape)
-        conv, conv_flat = conv_ae.build_encoder(self.original_images,
-                                                self.filter_sizes)
+        encoder, encoded_flat = conv_ae.build_encoder(self.original_images,
+                                                      self.filter_sizes)
 
-        self.mean = Dense(self.latent_size)(conv_flat)
-        log_sigma = Dense(self.latent_size)(conv_flat)
+        self.mean = Dense(self.latent_size)(encoded_flat)
+        log_sigma = Dense(self.latent_size)(encoded_flat)
         self.sigma = K.exp(log_sigma)
 
         self.latent = Lambda(
             self._sample_latent, name='latent')([self.mean, log_sigma])
-        deconv = conv_ae.build_decoder(conv, self.latent, self.filter_sizes)
+
+        latent_input = Input([self.latent_size])
+        decoder = conv_ae.build_decoder(encoder, latent_input,
+                                        self.filter_sizes)
 
         self.reconstructed_images = Conv2D(
-            self.image_shape[-1], (3, 3), activation='sigmoid',
-            padding='same')(deconv)
+            self.number_of_channels, (3, 3),
+            activation='sigmoid',
+            padding='same')(decoder)
         assert self.reconstructed_images.shape[1:] == \
             self.image_shape, self.reconstructed_images.shape
 
-        loss = self._add_loss(self.original_images, self.reconstructed_images)
-
         self.encoder = Model(self.original_images, self.latent)
-        model = Model(self.original_images, self.reconstructed_images)
-        self.decoder = _reuse_decoder_layers(model, self.latent_size)
+        self.decoder = Model(latent_input, self.reconstructed_images)
+        self.model = Model(self.original_images, self.decoder(self.latent))
 
-        return self.original_images, loss, model
+        loss = self._add_loss(self.original_images, self.model.output)
+
+        return [loss]
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors

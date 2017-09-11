@@ -3,9 +3,9 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, model, vae
+from cytogan.models import ae, conv_ae, model, vae, infogan
 from cytogan.train import common, trainer, visualize
-from cytogan.extra import logs
+from cytogan.extra import distributions, logs
 
 parser = common.make_parser('cytogan-mnist')
 options = common.parse_args(parser)
@@ -22,24 +22,37 @@ number_of_batches = data.train.num_examples // options.batch_size
 image_shape = (28, 28, 1)
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
-                          or number_of_batches)
+                          or number_of_batches, {})
 
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)
     Model = ae.AE
 elif options.model == 'conv_ae':
-    hyper = conv_ae.Hyper(image_shape, filter_sizes=[8, 8], latent_size=32)
+    hyper = conv_ae.Hyper(image_shape, filter_sizes=(8, 8), latent_size=32)
     Model = conv_ae.ConvAE
 elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
     Model = vae.VAE
+elif options.model == 'infogan':
+    hyper = infogan.Hyper(
+        image_shape,
+        filter_sizes=(256, 128, 64, 32),
+        rescales=(1, 2, 2, 1),
+        latent_size=10,
+        noise_size=100,
+        initial_shape=(7, 7),
+        latent_priors=distributions.categorical(10))
+    learning.kwargs['beta1'] = 0.5
+    Model = infogan.InfoGAN
+
+trainer_options = trainer.Options(
+    summary_directory=options.summary_dir,
+    summary_frequency=options.summary_freq,
+    checkpoint_directory=options.checkpoint_dir,
+    checkpoint_frequency=options.checkpoint_freq)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
-                          options.batch_size)
-trainer.summary_directory = options.summary_dir
-trainer.summary_frequency = options.summary_freq
-trainer.checkpoint_directory = options.checkpoint_dir
-trainer.checkpoint_frequency = options.checkpoint_freq
+                          options.batch_size, trainer_options)
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)

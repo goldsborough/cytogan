@@ -1,13 +1,13 @@
+import collections
+
 import keras.backend as K
 import numpy as np
 from keras.layers import (Conv2D, Dense, Flatten, Input, MaxPooling2D, Reshape,
                           UpSampling2D)
 from keras.models import Model
 
-from cytogan.models import ae
 from cytogan.metrics import losses
-
-import collections
+from cytogan.models import ae
 
 Hyper = collections.namedtuple('Hyper',
                                'image_shape, filter_sizes, latent_size')

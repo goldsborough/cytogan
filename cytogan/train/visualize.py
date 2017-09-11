@@ -31,7 +31,7 @@ def _save_figure(folder, filename):
     path = os.path.join(folder, filename)
     if not os.path.exists(folder):
         os.makedirs(folder)
-    log.info('Saving %s ...', path)
+    log.info('Saving %s', path)
     plot.savefig(path)
 
 
@@ -66,7 +66,7 @@ def latent_space(latent_vectors,
                  subject=None):
     assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
-        log.info('Reducing dimensionality ...')
+        log.info('Reducing dimensionality')
         reduction = reduction_method(n_components=2)
         latent_vectors = reduction.fit_transform(latent_vectors)
         assert latent_vectors.shape[1] == 2
@@ -93,7 +93,7 @@ def generative_samples(model,
                        save_to=None,
                        title='Generated Samples'):
     samples = distribution(number_of_samples, model.latent_size)
-    images = model.decode(samples).reshape(-1, *model.image_shape)
+    images = model.generate(samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
     figure = plot.figure(figsize=(10, 10))

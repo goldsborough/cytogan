@@ -44,7 +44,7 @@ def score_profiles(dataset):
         data=np.zeros([len(labels), len(labels)]),
         columns=labels)
     for holdout_compound in dataset['compound'].unique():
-        log.info('Holding out %s ...', holdout_compound)
+        log.info('Holding out %s', holdout_compound)
         test_mask = dataset['compound'] == holdout_compound
         # Leaves all the concentrations for the holdout compound.
         test_data = dataset[test_mask]

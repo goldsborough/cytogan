@@ -66,7 +66,10 @@ def make_parser(name):
     parser.add_argument('--restore-from', metavar='CHECKPOINT_DIR')
     parser.add_argument('-w', '--workspace')
     parser.add_argument(
-        '-m', '--model', choices=['ae', 'conv_ae', 'vae'], required=True)
+        '-m',
+        '--model',
+        choices=('ae', 'conv_ae', 'vae', 'infogan'),
+        required=True)
     parser.add_argument('--dry', action='store_true')
 
     return parser

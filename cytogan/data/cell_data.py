@@ -75,7 +75,7 @@ def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
 
-    log.info('Reading single-cell names ...')
+    log.info('Reading single-cell names')
     if cell_count_path is None:
         if patterns:
             assert not isinstance(patterns, str)
