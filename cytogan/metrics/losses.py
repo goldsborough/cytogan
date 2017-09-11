@@ -1,5 +1,6 @@
 import keras.backend as K
 import numpy as np
+import tensorflow as tf
 
 E = 1e-10  # numerical stability
 
@@ -29,12 +30,13 @@ def reconstruction_loss(original_images, reconstructed_images):
 def mutual_information(x, x_given_y):
     '''I(x;y) = H(x) - H(x|y)'''
     with K.name_scope('mutual_information'):
-        # The cross entropy between x and x is just the entropy H(x).
-        h_x = K.categorical_crossentropy(x, x)
-        # The cross entropy between x and x|y is H(x|y).
-        h_x_given_y = K.categorical_crossentropy(x, x_given_y)
-        # The mutual information I(x;y) is now H(x) - H(x|y).
-        # Usually we want to maximize mutual information, but to provide a
-        # minimizable objective for TF's optimizer, we return E[-(H(x) - H(x|y))] =
-        # E[H(x|y) - H(x).]
+        with tf.control_dependencies([tf.assert_positive(x)]):
+            # The cross entropy between x and x is just the entropy H(x).
+            h_x = K.categorical_crossentropy(x, x)
+            # The cross entropy between x and x|y is H(x|y).
+            h_x_given_y = K.categorical_crossentropy(x, x_given_y)
+            # The mutual information I(x;y) is now H(x) - H(x|y). Usually we
+            # want to maximize mutual information, but to provide a minimizable
+            # objective for TF's optimizer, we return E[-(H(x) - H(x|y))] =
+            # E[H(x|y) - H(x).]
         return K.mean(h_x_given_y - h_x)

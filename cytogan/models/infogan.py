@@ -176,7 +176,7 @@ class InfoGAN(model.Model):
 
     def _define_discriminator(self):
         with K.name_scope('D'):
-            x = Input(shape=(28, 28, 1))
+            x = Input(shape=self.image_shape)
             D = x
             for filters, scale in zip(self.filter_sizes[::-1],
                                       self.rescales[::-1]):
@@ -184,7 +184,8 @@ class InfoGAN(model.Model):
                 D = LeakyReLU(alpha=0.2)(D)
             D = Flatten()(D)
 
-        return x, D
+        with tf.control_dependencies([tf.assert_positive(x)]):
+            return x, D
 
     def _train_discriminator(self, real_images):
         latent = self._sample_priors(len(real_images))
