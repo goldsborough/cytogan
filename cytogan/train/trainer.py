@@ -2,6 +2,7 @@ import collections
 import os
 import time
 
+import numpy as np
 import tensorflow as tf
 import tqdm
 
@@ -96,8 +97,10 @@ class Trainer(object):
 
     def _update_progressbar(self, batch_range, learning_rate, loss):
         if isinstance(loss, collections.Mapping):
+            assert all(np.isscalar(l) for l in loss.values())
             batch_range.set_postfix(**loss, lr=learning_rate)
         else:
+            assert np.isscalar(loss)
             batch_range.set_postfix(loss=loss, lr=learning_rate)
 
     def __repr__(self):

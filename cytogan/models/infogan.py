@@ -92,8 +92,9 @@ class InfoGAN(model.Model):
                 self.encoder(self.fake_images)
             ],
             name='InfoGAN')
+        bce = -K.mean(K.log(infogan.outputs[0]))
         mi = losses.mutual_information(self.latent_prior, infogan.outputs[1])
-        self.infogan_loss = -K.log(infogan.outputs[0]) + mi
+        self.infogan_loss = bce + mi
 
         return dict(
             G=self.infogan_loss,
@@ -149,7 +150,7 @@ class InfoGAN(model.Model):
         super(InfoGAN, self)._add_summaries()
 
     def _define_generator(self):
-        with tf.name_scope('G'):
+        with K.name_scope('G'):
             z = Input(shape=[self.noise_size])
             c = Input(shape=[self.latent_size])
             G = Concatenate()([z, c])
@@ -174,7 +175,7 @@ class InfoGAN(model.Model):
         return z, c, G
 
     def _define_discriminator(self):
-        with tf.name_scope('D'):
+        with K.name_scope('D'):
             x = Input(shape=(28, 28, 1))
             D = x
             for filters, scale in zip(self.filter_sizes[::-1],
