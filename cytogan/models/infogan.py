@@ -68,28 +68,44 @@ class InfoGAN(model.Model):
         self.noise, self.latent_prior, self.fake_images = tensors
         self.images, logits = self._define_discriminator()
 
-        self.latent_predicted = Dense(
-            self.latent_size, activation='softmax')(logits)
-        self.probability = Dense(1, activation='sigmoid')(logits)
+        with K.name_scope('Q'):
+            self.latent_predicted = Dense(
+                self.latent_size, activation='softmax')(logits)
+        with K.name_scope('P'):
+            self.probability = Dense(1, activation='sigmoid')(logits)
 
         self.generator = Model(
             [self.noise, self.latent_prior], self.fake_images, name='G')
 
         self.labels = Input(batch_shape=[None])
         self.discriminator = Model(self.images, self.probability, name='D')
+        d_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='D')
+        print(d_vars)
 
         with tf.control_dependencies([tf.assert_positive(self.probability)]):
             self.discriminator_loss = losses.binary_crossentropy(
                 self.labels, self.probability)
+            self.d_opt = tf.train.AdamOptimizer(
+                5e-4, beta1=0.5).minimize(
+                    self.discriminator_loss,
+                    var_list=d_vars + tf.get_collection(
+                        tf.GraphKeys.TRAINABLE_VARIABLES, scope='P'))
 
+        print(d_vars + tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope='P'))
+        print(d_vars + tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope='Q'))
         self.encoder = Model(self.images, self.latent_predicted, name='Q')
         self.encoder_loss = losses.mutual_information(self.latent_prior,
                                                       self.latent_predicted)
+        self.e_opt = tf.train.AdamOptimizer(
+            2e-4, beta1=0.5).minimize(
+                self.encoder_loss,
+                var_list=d_vars + tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='Q'))
 
-        # Disable weights when reusing layers here because updating the whole
-        # model should just train the generator.
-        self.discriminator.trainable = False
-        self.encoder.trainable = False
+        print(tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope='G'))
         self.infogan = Model(
             inputs=[self.noise, self.latent_prior],
             outputs=[
@@ -97,11 +113,18 @@ class InfoGAN(model.Model):
                 self.encoder(self.fake_images)
             ],
             name='InfoGAN')
-        self.infogan.compile(loss='binary_crossentropy', optimizer='adam')
-        bce = -K.mean(K.log(self.infogan.outputs[0]))
-        mi = losses.mutual_information(self.latent_prior,
-                                       self.infogan.outputs[1])
-        self.infogan_loss = bce + mi
+        bce = -K.log(self.infogan.outputs[0])
+        h_x = self.latent_prior * K.log(self.latent_prior + 1e-10)
+        h_x_y = self.latent_prior * K.log(self.infogan.outputs[1] + 1e-10)
+        mi = K.mean(h_x - h_x_y)
+        # mi = losses.mutual_information(self.latent_prior,
+        #                                self.infogan.outputs[1])
+        self.infogan_loss = K.mean(bce + mi)
+        self.i_opt = tf.train.AdamOptimizer(
+            2e-4, beta1=0.5).minimize(
+                self.infogan_loss,
+                var_list=tf.get_collection(
+                    tf.GraphKeys.TRAINABLE_VARIABLES, scope='G'))
 
         return dict(
             G=self.infogan_loss,
@@ -136,7 +159,7 @@ class InfoGAN(model.Model):
 
         noise = self._sample_noise(len(real_images))
         latent = self._sample_priors(len(real_images))
-        fetches = [self.optimizer['G'], self.infogan_loss]
+        fetches = [self.i_opt, self.infogan_loss]
         if with_summary:
             fetches.append(self.summary)
 
@@ -172,8 +195,8 @@ class InfoGAN(model.Model):
             G = LeakyReLU(alpha=0.2)(G)
             G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
-            for filters, stride in zip(self.generator_filters,
-                                       self.generator_strides):
+            for filters, stride in zip(self.generator_filters[1:],
+                                       self.generator_strides[1:]):
                 if stride > 1:
                     G = UpSampling2D(stride)(G)
                 G = Conv2D(filters, (5, 5), padding='same')(G)
@@ -205,23 +228,23 @@ class InfoGAN(model.Model):
         latent = self._sample_priors(len(real_images))
         assert latent.shape == real_images.shape[:1] + (self.latent_size, )
         fake_images = self.generate(latent)
+        labels = _get_labels(fake_images, real_images)
         images = np.concatenate([fake_images, real_images], axis=0)
         # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
         images += np.random.normal(0, 0.1, images.shape)
-        labels = _get_labels(fake_images, real_images)
 
         # L_D = -D(x) -D(G(z, c))
         _, discriminator_loss = self.session.run(
-            [self.optimizer['D'], self.discriminator_loss],
+            [self.d_opt, self.discriminator_loss],
             feed_dict={
                 self.images: images,
                 self.labels: labels,
                 K.learning_phase(): 1,
             })
 
-        # L_D = -D(x) -D(G(z, c)) + I(c; G(z, c))
+        # L_D = -D(x) - D(G(z, c)) - I(c; G(z, c))
         _, mutual_information_loss = self.session.run(
-            [self.optimizer['Q'], self.encoder_loss],
+            [self.e_opt, self.encoder_loss],
             feed_dict={
                 self.images: fake_images,
                 self.latent_prior: latent,
@@ -229,6 +252,9 @@ class InfoGAN(model.Model):
             })
 
         return discriminator_loss + mutual_information_loss
+
+    def _add_optimizer(self, learning, losses):
+        return 1.0, 2.0
 
     def _sample_noise(self, size):
         return np.random.randn(size, self.noise_size)

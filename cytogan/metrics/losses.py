@@ -37,7 +37,11 @@ def reconstruction_loss(original_images, reconstructed_images):
 
 
 def mutual_information(x, x_given_y):
-    '''I(x;y) = H(x) - H(x|y)'''
+    '''
+    I(x;y) = H(x) - H(x|y).
+    NOTE: We return the negative mutual information as a suitable minimization
+    target.
+    '''
     with K.name_scope('mutual_information'):
         h_x = entropy(x)
         # The cross entropy between x and x|y is H(x|y).
