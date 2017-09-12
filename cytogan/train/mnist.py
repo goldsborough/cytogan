@@ -22,7 +22,7 @@ number_of_batches = data.train.num_examples // options.batch_size
 image_shape = (28, 28, 1)
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
-                          or number_of_batches, {})
+                          or number_of_batches)
 
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)
@@ -44,7 +44,6 @@ elif options.model == 'infogan':
         noise_size=100,
         initial_shape=(7, 7),
         latent_priors=distributions.categorical(10))
-    learning.kwargs['beta1'] = 0.5
     Model = infogan.InfoGAN
 
 trainer_options = trainer.Options(

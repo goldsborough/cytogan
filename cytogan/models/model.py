@@ -10,8 +10,7 @@ from cytogan.extra import logs
 
 log = logs.get_logger(__name__)
 
-Learning = collections.namedtuple('Learning',
-                                  'rate, decay, steps_per_decay, kwargs')
+Learning = collections.namedtuple('Learning', 'rate, decay, steps_per_decay')
 
 
 class Model(abc.ABC):
@@ -45,6 +44,10 @@ class Model(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def _add_optimizer(self, learning, loss):
+        ...
+
+    @abc.abstractmethod
     def _add_summaries(self):
         ...
 
@@ -58,10 +61,9 @@ class Model(abc.ABC):
 
     @property
     def learning_rate(self):
-        lr = self._learning_rate
-        if isinstance(lr, dict):
-            lr = list(lr.values())[0]
-        return lr if isinstance(lr, float) else lr.eval(session=self.session)
+        if isinstance(self._learning_rate, float):
+            return self._learning_rate
+        return self._learning_rate.eval(session=self.session)
 
     @property
     def graph(self):
@@ -86,38 +88,13 @@ class Model(abc.ABC):
                     checkpoint))
         self.saver.restore(self.session, checkpoint)
 
-    def _add_optimizer(self, learning, losses):
-        learning_rate, optimizer = {}, {}
-        return_tensors = False
-        if isinstance(losses, tf.Tensor):
-            return_tensors = True
-            losses = {0: losses}
-        for index, key in enumerate(sorted(losses.keys())):
-            lr = self._get_learning_rate(learning, index)
-            kwargs = learning.kwargs or {}
-            loss = tf.check_numerics(losses[key], str(key))
-            variables = tf.get_collection(
-                tf.GraphKeys.TRAINABLE_VARIABLES, scope=key) or None
-            optimizer[key] = tf.train.AdamOptimizer(lr, **kwargs).minimize(
-                loss, self.global_step, var_list=variables)
-            learning_rate[key] = lr
-
-        if return_tensors:
-            return learning_rate[0], optimizer[0]
-        return learning_rate, optimizer
-
-    def _get_learning_rate(self, learning, index):
-        learning_rate = learning.rate
-        if isinstance(learning_rate, collections.Iterable):
-            learning_rate = learning_rate[index]
-        if learning.decay is None:
-            return learning_rate
-        decay = learning.decay
-        if isinstance(decay, collections.Iterable):
-            decay = decay[index]
+    def _get_learning_rate_tensor(self, initial_learning_rate, decay_rate,
+                                  steps_per_decay):
+        if decay_rate is None:
+            return initial_learning_rate
         return tf.train.exponential_decay(
-            learning_rate,
-            decay_steps=learning.steps_per_decay,
-            decay_rate=decay,
+            initial_learning_rate,
+            decay_steps=steps_per_decay,
+            decay_rate=decay_rate,
             global_step=self.global_step,
             staircase=True)

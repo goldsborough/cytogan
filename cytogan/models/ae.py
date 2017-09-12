@@ -66,6 +66,15 @@ class AE(model.Model):
         tf.summary.scalar('learning_rate', self._learning_rate)
         tf.summary.histogram('latent', self.latent)
 
+    def _add_optimizer(self, learning, loss):
+        learning_rate = self._get_learning_rate_tensor(
+            learning.rate, learning.decay, learning.steps_per_decay)
+        loss = tf.check_numerics(loss, self.name)
+        optimizer = tf.train.AdamOptimizer(learning_rate)
+        optimization = optimizer.minimize(loss, self.global_step)
+
+        return learning_rate, optimization
+
     def __repr__(self):
         lines = [self.name]
         try:
