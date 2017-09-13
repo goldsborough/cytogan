@@ -18,16 +18,17 @@ class Model(abc.ABC):
         assert isinstance(learning, Learning)
 
         self.session = session
+        self.optimizer = None
+        self._learning_rate = None
 
         # The training step indicator variable.
         self.global_step = tf.Variable(0, trainable=False)
 
         # Define the graph structure and setup the model architecture.
-        self.loss = self._define_graph()
+        self._define_graph()
 
         # Attach an optimizer and get the final learning rate tensor.
-        tensors = self._add_optimizer(learning, self.loss)
-        self._learning_rate, self.optimizer = tensors
+        self._add_optimizer(learning)
 
         # Boilerplate for management of the model execution.
         self._add_summaries()

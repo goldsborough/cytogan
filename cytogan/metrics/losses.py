@@ -5,14 +5,12 @@ E = 1e-10  # numerical stability
 
 
 def binary_crossentropy(p, q):
-    with K.name_scope('binary_crossentropy'):
-        return K.mean(K.binary_crossentropy(p, q))
+    return K.mean(K.binary_crossentropy(p, q))
 
 
 def squared_errors(p, q):
     '''MSE(p, q) = ||p - q||^2'''
-    with K.name_scope('squared_error'):
-        return K.sum(K.square(p - q), axis=1)
+    return K.sum(K.square(p - q), axis=1)
 
 
 def reconstruction_loss(original_images, reconstructed_images):
@@ -29,13 +27,12 @@ def mutual_information(x, x_given_y):
     NOTE: We return the negative mutual information as a suitable minimization
     target.
     '''
-    with K.name_scope('mutual_information'):
-        # The cross entropy between x and x is just the entropy H(x).
-        h_x = K.categorical_crossentropy(x, x)
-        # The cross entropy between x and x|y is H(x|y).
-        h_x_given_y = K.categorical_crossentropy(x, x_given_y)
-        # The mutual information I(x;y) is now H(x) - H(x|y).
-        # Usually we want to maximize mutual information, but to provide a
-        # minimizable objective for TF's optimizer, we return E[-(H(x) -
-        # H(x|y))] = E[H(x|y) - H(x).]
-        return K.mean(h_x_given_y - h_x)
+    # The cross entropy between x and x is just the entropy H(x).
+    h_x = K.categorical_crossentropy(x, x)
+    # The cross entropy between x and x|y is H(x|y).
+    h_x_given_y = K.categorical_crossentropy(x, x_given_y)
+    # The mutual information I(x;y) is now H(x) - H(x|y).
+    # Usually we want to maximize mutual information, but to provide a
+    # minimizable objective for TF's optimizer, we return E[-(H(x) -
+    # H(x|y))] = E[H(x|y) - H(x).]
+    return K.mean(h_x_given_y - h_x)

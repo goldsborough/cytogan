@@ -68,9 +68,7 @@ class ConvAE(ae.AE):
 
         batch_loss = losses.reconstruction_loss(self.original_images,
                                                 self.reconstructed_images)
-        loss = K.mean(batch_loss)
+        self.loss = K.mean(batch_loss)
 
         self.encoder = Model(self.original_images, self.latent)
-        model = Model(self.original_images, self.reconstructed_images)
-
-        return self.original_images, loss, model
+        self.model = Model(self.original_images, self.reconstructed_images)

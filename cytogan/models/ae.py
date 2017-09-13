@@ -24,6 +24,7 @@ class AE(model.Model):
         self.reconstructed_images = None
         self.latent = None
         self.encoder = None
+        self.model = None
 
         super(AE, self).__init__(learning, session)
 
@@ -35,15 +36,13 @@ class AE(model.Model):
             self.flat_image_shape, activation='sigmoid')(self.latent)
         self.reconstructed_images = Reshape(self.image_shape)(decoded)
 
-        loss = K.mean(losses.reconstruction_loss(flat_input, decoded))
+        self.loss = K.mean(losses.reconstruction_loss(flat_input, decoded))
 
         self.model = Model(self.original_images, self.reconstructed_images)
         self.encoder = Model(self.original_images, self.latent)
 
-        return loss
-
     def train_on_batch(self, batch, with_summary=False):
-        fetches = [self.optimizer, self.loss]
+        fetches = [self.optimization, self.loss]
         if with_summary is not None:
             fetches.append(self.summary)
         outputs = self.session.run(
@@ -66,14 +65,12 @@ class AE(model.Model):
         tf.summary.scalar('learning_rate', self._learning_rate)
         tf.summary.histogram('latent', self.latent)
 
-    def _add_optimizer(self, learning, loss):
-        learning_rate = self._get_learning_rate_tensor(
+    def _add_optimizer(self, learning):
+        self._learning_rate = self._get_learning_rate_tensor(
             learning.rate, learning.decay, learning.steps_per_decay)
-        loss = tf.check_numerics(loss, self.name)
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        optimization = optimizer.minimize(loss, self.global_step)
-
-        return learning_rate, optimization
+        loss = tf.check_numerics(self.loss, self.name)
+        optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        self.optimization = optimizer.minimize(loss, self.global_step)
 
     def __repr__(self):
         lines = [self.name]

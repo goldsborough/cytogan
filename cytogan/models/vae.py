@@ -61,9 +61,7 @@ class VAE(conv_ae.ConvAE):
         self.decoder = Model(latent_input, self.reconstructed_images)
         self.model = Model(self.original_images, self.decoder(self.latent))
 
-        loss = self._add_loss(self.original_images, self.model.output)
-
-        return loss
+        self.loss = self._add_loss(self.original_images, self.model.output)
 
     def _sample_latent(self, tensors):
         mean, log_sigma = tensors

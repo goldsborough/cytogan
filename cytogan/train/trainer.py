@@ -56,17 +56,18 @@ class Trainer(object):
         log.info('Training complete! Took %.2fs', elapsed_time)
 
     def _train_loop(self, model, batch_generator):
+        log_file = logs.LogFile(logs.get_raw_logger(__name__))
         number_of_iterations = 0
         for epoch_index in range(1, self.number_of_epochs + 1):
-            batch_range = self._get_batch_range(epoch_index)
+            batch_range = self._get_batch_range(log_file, epoch_index)
             for _ in batch_range:
                 batch = batch_generator(self.batch_size)
-                # if self._is_time_to_write_summary(number_of_iterations):
-                #     current_loss, summary = model.train_on_batch(
-                #         batch, with_summary=True)
-                #     self.summary_writer.add_summary(summary, model.step)
-                # else:
-                current_loss = model.train_on_batch(batch)
+                if self._is_time_to_write_summary(number_of_iterations):
+                    current_loss, summary = model.train_on_batch(
+                        batch, with_summary=True)
+                    self.summary_writer.add_summary(summary, model.step)
+                else:
+                    current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):
                     model.save(self.checkpoint_directory)
                 self._update_progressbar(batch_range, model.learning_rate,
@@ -87,8 +88,7 @@ class Trainer(object):
         log.info('Writing TensorBoard summaries to %s', self.summary_directory)
         return tf.summary.FileWriter(self.summary_directory, graph=graph)
 
-    def _get_batch_range(self, epoch_index):
-        log_file = logs.LogFile(logs.get_raw_logger(__name__))
+    def _get_batch_range(self, log_file, epoch_index):
         batch_range = tqdm.trange(
             self.number_of_batches, unit=' batches', file=log_file, ncols=160)
         batch_range.set_description('Epoch {0}'.format(epoch_index))
@@ -99,12 +99,15 @@ class Trainer(object):
         if isinstance(loss, collections.Mapping):
             strings = {}
             for key, value in loss.items():
-                assert np.isscalar(value), key
+                assert np.isscalar(value), (key, value)
                 strings[key]= '{0:.8f}'.format(value)
-            batch_range.set_postfix(**strings, lr=learning_rate)
+            for key, value in learning_rate.items():
+                assert np.isscalar(value), (key, value)
+                strings['lr_{0}'.format(key)] = '{0:.6f}'.format(value)
+            batch_range.set_postfix(**strings)
         else:
             assert np.isscalar(loss)
-            batch_range.set_postfix(loss=loss, lr=learning_rate)
+
 
     def __repr__(self):
         return 'Trainer<{0} epochs x {1} batches @ {2} examples>'.format(
