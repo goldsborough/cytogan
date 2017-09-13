@@ -78,12 +78,12 @@ class InfoGAN(model.Model):
         self.discriminator = Model(self.images, self.probability, name='D')
         with K.name_scope('D_loss'):
             self.loss['D'] = losses.binary_crossentropy(
-                self.labels, self.probability)
+                self.labels, self.discriminator.output)
 
         self.encoder = Model(self.images, self.latent_posterior, name='Q')
         with K.name_scope('Q_loss'):
             self.loss['Q'] = losses.mutual_information(self.latent_prior,
-                                                       self.latent_posterior)
+                                                       self.encoder.output)
 
         self.infogan = Model(
             [
@@ -94,6 +94,7 @@ class InfoGAN(model.Model):
                 self.encoder(self.fake_images),
             ],
             name='InfoGAN')
+        print(self.infogan.outputs)
         with K.name_scope('G_loss'):
             self.infogan_bce = losses.binary_crossentropy(
                 self.labels, self.infogan.outputs[0])
@@ -261,26 +262,39 @@ class InfoGAN(model.Model):
         if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 3
 
-        self._learning_rate['D'] = self._get_learning_rate_tensor(
-            initial_learning_rate[0], learning.decay, learning.steps_per_decay)
-        self.optimizer['D'] = tf.train.AdamOptimizer(
-            self._learning_rate['D'], beta1=0.5).minimize(self.loss['D'])
+        with K.name_scope('D_opt'):
+            q_d = self.discriminator.trainable_weights
+            print(q_d)
+            self._learning_rate['D'] = self._get_learning_rate_tensor(
+                initial_learning_rate[0], learning.decay,
+                learning.steps_per_decay)
+            self.optimizer['D'] = tf.train.AdamOptimizer(
+                self._learning_rate['D'], beta1=0.5).minimize(
+                    self.loss['D'], var_list=q_d)
 
-        self._learning_rate['Q'] = self._get_learning_rate_tensor(
-            initial_learning_rate[1], learning.decay, learning.steps_per_decay)
-        self.optimizer['Q'] = tf.train.AdamOptimizer(
-            self._learning_rate['Q'], beta1=0.5).minimize(self.loss['Q'])
+        with K.name_scope('Q_opt'):
+            q_w = self.encoder.trainable_weights
+            print(q_w)
+            self._learning_rate['Q'] = self._get_learning_rate_tensor(
+                initial_learning_rate[1], learning.decay,
+                learning.steps_per_decay)
+            self.optimizer['Q'] = tf.train.AdamOptimizer(
+                self._learning_rate['Q'], beta1=0.5).minimize(
+                    self.loss['Q'], var_list=q_w)
 
-        generator_weights = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
-        assert all(w.name.startswith('G/') for w in generator_weights)
-        self._learning_rate['G'] = self._get_learning_rate_tensor(
-            initial_learning_rate[2], learning.decay, learning.steps_per_decay)
-        self.optimizer['G'] = tf.train.AdamOptimizer(
-            self._learning_rate['G'], beta1=0.5).minimize(
-                self.loss['G'],
-                var_list=generator_weights,
-                global_step=self.global_step)
+        with K.name_scope('G_opt'):
+            generator_weights = tf.get_collection(
+                tf.GraphKeys.TRAINABLE_VARIABLES, scope='G')
+            assert all(w.name.startswith('G/') for w in generator_weights)
+            print(generator_weights)
+            self._learning_rate['G'] = self._get_learning_rate_tensor(
+                initial_learning_rate[2], learning.decay,
+                learning.steps_per_decay)
+            self.optimizer['G'] = tf.train.AdamOptimizer(
+                self._learning_rate['G'], beta1=0.5).minimize(
+                    self.loss['G'],
+                    var_list=generator_weights,
+                    global_step=self.global_step)
 
     def _sample_noise(self, size):
         return np.random.randn(size, self.noise_size)
