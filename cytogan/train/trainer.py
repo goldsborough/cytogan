@@ -106,7 +106,8 @@ class Trainer(object):
                 strings['lr_{0}'.format(key)] = '{0:.6f}'.format(value)
             batch_range.set_postfix(**strings)
         else:
-            assert np.isscalar(loss)
+            assert np.isscalar(loss), loss
+            batch_range.set_postfix(loss=loss)
 
 
     def __repr__(self):
