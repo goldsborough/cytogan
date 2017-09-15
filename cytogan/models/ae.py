@@ -29,7 +29,8 @@ class AE(model.Model):
         super(AE, self).__init__(learning, session)
 
     def _define_graph(self):
-        self.original_images = Input(shape=self.image_shape)
+        self.original_images = Input(
+            shape=self.image_shape, name='original_images')
         flat_input = Flatten()(self.original_images)
         self.latent = Dense(self.latent_size, activation='relu')(flat_input)
         decoded = Dense(
@@ -59,10 +60,10 @@ class AE(model.Model):
             self.model.output, feed_dict={self.original_images: images})
 
     def _add_summaries(self):
-        super(AE, self)._add_summaries()
         tf.summary.scalar('loss', self.loss)
         tf.summary.scalar('learning_rate', self._learning_rate)
         tf.summary.histogram('latent', self.latent)
+        tf.summary.image('reconstructions', self.model.output, max_outputs=4)
 
     def _add_optimizer(self, learning):
         self._learning_rate = self._get_learning_rate_tensor(
