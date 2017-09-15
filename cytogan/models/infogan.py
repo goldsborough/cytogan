@@ -3,7 +3,7 @@ import collections
 import keras.backend as K
 import numpy as np
 import tensorflow as tf
-from keras.layers import Concatenate, Dense, Input
+from keras.layers import Activation, Concatenate, Dense, Input, Lambda
 from keras.models import Model
 
 from cytogan.metrics import losses
@@ -40,10 +40,8 @@ class InfoGAN(dcgan.DCGAN):
 
         self.images, logits = self._define_discriminator()
 
-        self.latent_posterior = Dense(
-            self.discrete_variables + 2 * self.continuous_variables,
-            activation='softmax',
-            name='Q_final')(logits)
+        self.latent_posterior = Lambda(
+            self._latent_layer, name='Q_final')(logits)
         self.probability = Dense(
             1, activation='sigmoid', name='D_final')(logits)
 
@@ -147,6 +145,8 @@ class InfoGAN(dcgan.DCGAN):
         initial_learning_rate = learning.rate
         if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 3
+        else:
+            assert len(initial_learning_rate) == 3
 
         with K.name_scope('Q_opt'):
             self._learning_rate['Q'] = self._get_learning_rate_tensor(
@@ -155,3 +155,11 @@ class InfoGAN(dcgan.DCGAN):
             self.optimizer['Q'] = tf.train.AdamOptimizer(
                 self._learning_rate['Q'], beta1=0.5).minimize(
                     self.loss['Q'], var_list=self.encoder.trainable_weights)
+
+    def _latent_layer(self, logits):
+        logits = Dense(
+            self.discrete_variables + 2 * self.continuous_variables,
+            name='Q_final_dense')
+        discrete = Activation('softmax')(logits[:, :self.discrete_variables])
+        continuous = Activation('linear')(logits[:, self.discrete_variables:])
+        return Concatenate(axis=1)([discrete, continuous])
