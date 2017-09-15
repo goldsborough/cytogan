@@ -19,6 +19,8 @@ Hyper = collections.namedtuple('Hyper', [
     'noise_size',
     'initial_shape',
     'latent_distribution',
+    'discrete_variables',
+    'continuous_variables',
 ])
 
 
@@ -39,7 +41,9 @@ class InfoGAN(dcgan.DCGAN):
         self.images, logits = self._define_discriminator()
 
         self.latent_posterior = Dense(
-            self.latent_size, activation='softmax', name='Q_final')(logits)
+            self.discrete_variables + 2 * self.continuous_variables,
+            activation='softmax',
+            name='Q_final')(logits)
         self.probability = Dense(
             1, activation='sigmoid', name='D_final')(logits)
 
@@ -57,7 +61,8 @@ class InfoGAN(dcgan.DCGAN):
         self.encoder = Model(self.images, self.latent_posterior, name='Q')
         with K.name_scope('Q_loss'):
             self.loss['Q'] = losses.mixed_mutual_information(
-                self.latent_prior, self.encoder.output)
+                self.latent_prior, self.encoder.output,
+                self.discrete_variables)
 
         self.infogan = Model(
             [
@@ -72,7 +77,8 @@ class InfoGAN(dcgan.DCGAN):
             self.infogan_bce = losses.binary_crossentropy(
                 K.ones_like(self.infogan.outputs[0]), self.infogan.outputs[0])
             self.infogan_mi = losses.mixed_mutual_information(
-                self.latent_prior, self.infogan.outputs[1])
+                self.latent_prior, self.infogan.outputs[1],
+                self.discrete_variables)
             self.loss['G'] = self.infogan_bce + self.infogan_mi
 
     def generate(self, latent_samples):
@@ -124,10 +130,22 @@ class InfoGAN(dcgan.DCGAN):
 
         return results[1:]
 
+    def _train_encoder(self, fake_images, latent_prior):
+        # I(c; G(z, c))
+        _, encoder_loss = self.session.run(
+            [self.optimizer['Q'], self.loss['Q']],
+            feed_dict={
+                self.images: fake_images,
+                self.latent_prior: latent_prior,
+                K.learning_phase(): 1,
+            })
+
+        return encoder_loss
+
     def _add_optimizer(self, learning):
         super(InfoGAN, self)._add_optimizer(learning)
         initial_learning_rate = learning.rate
-        if not isinstance(initial_learning_rate, float):
+        if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 3
 
         with K.name_scope('Q_opt'):

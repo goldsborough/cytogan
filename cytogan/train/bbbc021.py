@@ -55,27 +55,31 @@ elif options.model == 'dcgan':
         generator_strides=(1, 2, 2, 2),
         discriminator_filters=(32, 64, 128, 256),
         discriminator_strides=(2, 2, 2, 2),
-        latent_size=128,
+        latent_size=100,
         noise_size=100,
         initial_shape=(16, 16))
     Model = dcgan.DCGAN
 elif options.model == 'infogan':
+    discrete_variables = 32
+    continuous_variables = 68
     latent_distribution = distributions.mixture({
-        distributions.categorical(32):
+        distributions.categorical(discrete_variables):
         1,
         distributions.uniform(-1.0, +1.0):
-        68,
+        continuous_variables,
     })
     hyper = infogan.Hyper(
         image_shape,
         generator_filters=(256, 128, 64, 32),
-        generator_strides=(1, 2, 2, 1),
+        generator_strides=(1, 2, 2, 2),
         discriminator_filters=(32, 64, 128, 256),
-        discriminator_strides=(2, 2, 2, 1),
+        discriminator_strides=(2, 2, 2, 2),
         latent_size=100,
         noise_size=100,
-        initial_shape=(7, 7),
-        latent_distribution=latent_distribution)
+        initial_shape=(16, 16),
+        latent_distribution=latent_distribution,
+        discrete_variables=discrete_variables,
+        continuous_variables=continuous_variables)
     Model = infogan.InfoGAN
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
@@ -163,13 +167,16 @@ with common.get_session(options.gpus) as session:
     if options.generative_samples is not None:
         if options.model == 'infogan':
             categorical = np.eye(options.generative_samples)
-            categorical_zeros = np.zeros(
-                [options.generative_samples, 32 - options.generative_samples])
+            categorical_zeros = np.zeros([
+                options.generative_samples,
+                discrete_variables - options.generative_samples
+            ])
             continuous = np.linspace(-3, +3, options.generative_samples)
-            continous_zeros = np.zeros([options.generative_samples, 58])
+            continuous_zeros = np.zeros(
+                [options.generative_samples, continuous_variables - 10])
             samples = np.concatenate(
                 [categorical, categorical_zeros] +
-                [continuous.reshape(-1, 1)] * 10 + [continous_zeros],
+                [continuous.reshape(-1, 1)] * 10 + [continuous_zeros],
                 axis=1)
         elif options.model == 'dcgan':
             samples = np.random.randn(options.generative_samples,

@@ -42,14 +42,30 @@ def mutual_information(x, x_given_y):
         return K.mean(h_x_given_y - h_x)
 
 
+def log_likelihood(p, mean, log_variance):
+    '''Negative log likelihood of a Gaussian-distributed variable.'''
+    # http://docs.chainer.org/en/stable/reference/generated/chainer.functions.gaussian_nll.html#chainer.functions.gaussian_nll
+    epsilon = K.square(p - mean) * K.exp(-log_variance)
+    pointwise = 0.5 * (K.log(2 * np.pi) + log_variance + epsilon)
+    return K.mean(K.sum(pointwise, axis=1))
+
+
 def mixed_mutual_information(x, x_given_y, discrete_continuous_split):
-    discrete_x = x[:discrete_continuous_split]
-    discrete_x_given_y = x_given_y[:discrete_continuous_split]
-    discrete_mi = mutual_information(discrete_x, discrete_x_given_y)
+    discrete_prior = x[:, :discrete_continuous_split]
+    discrete_posterior = x_given_y[:, :discrete_continuous_split]
+    discrete_mi = mutual_information(discrete_prior, discrete_posterior)
 
-    continuous_x = x[discrete_continuous_split:]
-    continuous_mean, continuous_sigma = tf.split(
-        x_given_y[discrete_continuous_split:], 2)
-    continuous_nll = 0
+    if discrete_continuous_split == x.shape[1]:
+        return discrete_mi
 
-    return discrete_mi + continuous_nll
+    # Compute likelihood of prior under unit Gaussian.
+    continuous_prior = x[:, discrete_continuous_split:]
+    prior_likelihood = log_likelihood(continuous_prior, 0.0, 0.0)
+
+    # Compute likelihood of prior under estimated Gaussian parameters.
+    mean, log_variance = tf.split(
+        x_given_y[:, discrete_continuous_split:], 2, axis=1)
+    posterior_likelihood = log_likelihood(continuous_prior, mean, log_variance)
+    continuous_likelihood_difference = posterior_likelihood - prior_likelihood
+
+    return discrete_mi + continuous_likelihood_difference

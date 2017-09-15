@@ -62,7 +62,9 @@ elif options.model == 'infogan':
         latent_size=12,
         noise_size=100,
         initial_shape=(7, 7),
-        latent_distribution=latent_distribution)
+        latent_distribution=latent_distribution,
+        discrete_variables=10,
+        continuous_variables=1)
     Model = infogan.InfoGAN
 
 trainer_options = trainer.Options(
