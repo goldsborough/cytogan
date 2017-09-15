@@ -3,7 +3,7 @@
 python3 -m cytogan.train.bbbc021                        \
   --epochs 20                                           \
   --model dcgan                                         \
-  --lr 5e-4 2e-4 2e-4                                   \
+  --lr 5e-4 2e-4                                        \
   --lr-decay 0.9975                                     \
   --lr-decay-steps 100                                  \
   --batch-size 256                                      \
