@@ -79,6 +79,9 @@ class DCGAN(model.Model):
             self.loss['G'] = losses.binary_crossentropy(
                 K.ones_like(self.infogan.outputs[0]), self.infogan.outputs[0])
 
+        self.fake_probability, self.real_probability = tf.split(
+            self.infogan.output, 2, axis=0)
+
     def encode(self, images):
         return self.encoder.predict_on_batch(np.array(images))
 
@@ -114,7 +117,8 @@ class DCGAN(model.Model):
     def _add_summaries(self):
         super(DCGAN, self)._add_summaries()
         tf.summary.histogram('noise', self.noise)
-        tf.summary.histogram('probability', self.infogan.outputs[0])
+        tf.summary.histogram('fake_probability', self.fake_probability)
+        tf.summary.histogram('real_probability', self.real_probability)
         tf.summary.scalar('G_loss', self.loss['G'])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
 
@@ -152,7 +156,6 @@ class DCGAN(model.Model):
         return x, D
 
     def _train_discriminator(self, fake_images, real_images):
-        assert len(fake_images) == len(real_images)
         labels = _smooth_labels(fake_images, real_images)
         assert labels.shape == (2 * len(real_images), ), labels.shape
 
