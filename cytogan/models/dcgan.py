@@ -80,7 +80,7 @@ class DCGAN(model.Model):
                 K.ones_like(self.infogan.outputs[0]), self.infogan.outputs[0])
 
     def encode(self, images):
-        return self.encoder.predict_on_batch(np.array(images))
+        return self.encoder.predict_on_batch(images)
 
     def generate(self, latent_samples):
         images = self.generator.predict_on_batch(latent_samples)

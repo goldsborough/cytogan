@@ -2,6 +2,7 @@ import glob
 import os.path
 import re
 
+import numpy as np
 import pandas as pd
 import tqdm
 
@@ -139,8 +140,8 @@ class CellData(object):
         self.images.fetch_async(next_keys)
 
         if with_keys:
-            return ok_keys, ok_images
-        return ok_images
+            return ok_keys, np.array(ok_images)
+        return np.array(ok_images)
 
     def reset_batching_state(self):
         self.batch_index = 0
