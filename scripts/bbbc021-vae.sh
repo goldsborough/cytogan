@@ -22,4 +22,4 @@ python3 -m cytogan.train.bbbc021                        \
   --latent-moa                                          \
   --confusion-matrix                                    \
   --restore-from /data1/peter/runs/vae_30-08-2017_23-12-04/checkpoints \
-  $1
+  $@
