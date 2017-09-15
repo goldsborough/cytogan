@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, model, vae, infogan
+from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan
 from cytogan.train import common, trainer, visualize
 from cytogan.extra import distributions, logs
 
@@ -32,18 +33,36 @@ elif options.model == 'conv_ae':
     Model = conv_ae.ConvAE
 elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
+    latent_distribution = lambda n: np.random.randn(n, hyper.latent_size)
     Model = vae.VAE
+elif options.model == 'dcgan':
+    hyper = dcgan.Hyper(
+        image_shape,
+        generator_filters=(256, 128, 64, 32),
+        generator_strides=(1, 2, 2, 1),
+        discriminator_filters=(32, 64, 128, 256),
+        discriminator_strides=(2, 2, 2, 1),
+        latent_size=128,
+        noise_size=100,
+        initial_shape=(7, 7))
+    Model = dcgan.DCGAN
 elif options.model == 'infogan':
+    latent_distribution = distributions.mixture({
+        distributions.categorical(10):
+        1,
+        distributions.uniform():
+        2,
+    })
     hyper = infogan.Hyper(
         image_shape,
         generator_filters=(256, 128, 64, 32),
         generator_strides=(1, 2, 2, 1),
         discriminator_filters=(32, 64, 128, 256),
         discriminator_strides=(2, 2, 2, 1),
-        latent_size=10,
+        latent_size=12,
         noise_size=100,
         initial_shape=(7, 7),
-        latent_priors=distributions.categorical(10))
+        latent_distribution=latent_distribution)
     Model = infogan.InfoGAN
 
 trainer_options = trainer.Options(
@@ -80,11 +99,26 @@ with common.get_session(options.gpus) as session:
             latent_vectors, labels, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
+        if options.model == 'infogan':
+            categorical = np.zeros([options.generative_samples, 10])
+            categorical[:, 0] = 1
+            continuous_1 = np.linspace(0, 1, options.generative_samples)
+            continuous_2 = np.linspace(0, 1, options.generative_samples)
+            samples = np.concatenate(
+                [
+                    categorical,
+                    continuous_1.reshape(-1, 1),
+                    continuous_2.reshape(-1, 1),
+                ],
+                axis=1)
+        elif options.model == 'dcgan':
+            samples = np.random.randn(options.generative_samples,
+                                      model.noise_size)
+        else:
+            samples = np.random.randn(options.generative_samples,
+                                      model.latent_size)
         visualize.generative_samples(
-            model,
-            options.generative_samples,
-            gray=True,
-            save_to=options.figure_dir)
+            model, samples, gray=True, save_to=options.figure_dir)
 
 if options.show_figures:
     visualize.show()

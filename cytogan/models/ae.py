@@ -52,8 +52,7 @@ class AE(model.Model):
         return outputs[1]
 
     def encode(self, images):
-        return self.session.run(
-            self.encoder.output, feed_dict={self.original_images: images})
+        return self.encoder.predict_on_batch(np.array(images))
 
     def reconstruct(self, images):
         return self.session.run(

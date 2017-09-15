@@ -1,11 +1,14 @@
 import keras.backend as K
 import numpy as np
+import tensorflow as tf
 
 E = 1e-10  # numerical stability
 
 
 def binary_crossentropy(p, q):
-    return K.mean(K.binary_crossentropy(p, q))
+    p = K.flatten(p)
+    q = K.flatten(q)
+    return K.mean(K.binary_crossentropy(p, q), axis=-1)
 
 
 def squared_errors(p, q):
@@ -37,3 +40,16 @@ def mutual_information(x, x_given_y):
         # minimizable objective for TF's optimizer, we return E[-(H(x) -
         # H(x|y))] = E[H(x|y) - H(x).]
         return K.mean(h_x_given_y - h_x)
+
+
+def mixed_mutual_information(x, x_given_y, discrete_continuous_split):
+    discrete_x = x[:discrete_continuous_split]
+    discrete_x_given_y = x_given_y[:discrete_continuous_split]
+    discrete_mi = mutual_information(discrete_x, discrete_x_given_y)
+
+    continuous_x = x[discrete_continuous_split:]
+    continuous_mean, continuous_sigma = tf.split(
+        x_given_y[discrete_continuous_split:], 2)
+    continuous_nll = 0
+
+    return discrete_mi + continuous_nll

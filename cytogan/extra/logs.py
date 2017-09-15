@@ -9,7 +9,7 @@ def get_root_logger(filename=None):
     logger = logging.getLogger('cytogan')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d | %(message)s')
+        '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d] %(message)s')
     for handler in handlers:
         handler.setFormatter(formatter)
         logger.addHandler(handler)

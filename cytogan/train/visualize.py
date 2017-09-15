@@ -87,20 +87,18 @@ def latent_space(latent_vectors,
 
 
 def generative_samples(model,
-                       number_of_samples,
-                       distribution=np.random.randn,
+                       samples,
                        gray=False,
                        save_to=None,
                        title='Generated Samples'):
-    samples = distribution(number_of_samples, model.latent_size)
     images = model.generate(samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
     figure = plot.figure(figsize=(10, 10))
     figure.suptitle(title)
-    figure_rows = int(np.ceil(np.sqrt(number_of_samples)))
-    figure_columns = int(np.ceil(number_of_samples / figure_rows))
-    for index, image in enumerate(images[:number_of_samples]):
+    figure_rows = int(np.ceil(np.sqrt(len(images))))
+    figure_columns = int(np.ceil(len(images) / figure_rows))
+    for index, image in enumerate(images):
         _plot_image_tile(figure_rows, figure_columns, index, image, gray)
 
     if save_to is not None:

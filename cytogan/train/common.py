@@ -68,7 +68,7 @@ def make_parser(name):
     parser.add_argument(
         '-m',
         '--model',
-        choices=('ae', 'conv_ae', 'vae', 'infogan'),
+        choices=('ae', 'conv_ae', 'vae', 'infogan', 'dcgan'),
         required=True)
     parser.add_argument('--dry', action='store_true')
 
@@ -113,5 +113,7 @@ def get_session(gpus):
 
     session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     K.set_session(session)
+
+    tf.set_random_seed(42)
 
     return session
