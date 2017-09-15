@@ -5,3 +5,4 @@ python3 -m scripts.mask                                 \
   --masks /data1/peter/masks                            \
   --image-path /data1/peter/images/                     \
   --output /data1/peter/segmented/                      \
+  --size 96                                             \

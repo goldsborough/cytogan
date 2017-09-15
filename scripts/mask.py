@@ -248,7 +248,7 @@ def parse():
     parser.add_argument('-i', '--image-path', default='.')
     parser.add_argument('-o', '--output', default='.')
     parser.add_argument('-d', '--metadata', required=True)
-    parser.add_argument('-s', '--size', type=int, default=128)
+    parser.add_argument('-s', '--size', type=int, required=True)
     parser.add_argument('-m', '--masks', required=True)
     parser.add_argument('--cell-limit', type=int)
     parser.add_argument('--cell-count-csv')
