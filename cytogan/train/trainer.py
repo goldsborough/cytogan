@@ -62,12 +62,12 @@ class Trainer(object):
             batch_range = self._get_batch_range(log_file, epoch_index)
             for _ in batch_range:
                 batch = batch_generator(self.batch_size)
-                # if self._is_time_to_write_summary(number_of_iterations):
-                #     current_loss, summary = model.train_on_batch(
-                #         batch, with_summary=True)
-                #     self.summary_writer.add_summary(summary, model.step)
-                # else:
-                current_loss = model.train_on_batch(batch)
+                if self._is_time_to_write_summary(number_of_iterations):
+                    current_loss, summary = model.train_on_batch(
+                        batch, with_summary=True)
+                    self.summary_writer.add_summary(summary, model.step)
+                else:
+                    current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):
                     model.save(self.checkpoint_directory)
                 self._update_progressbar(batch_range, model.learning_rate,

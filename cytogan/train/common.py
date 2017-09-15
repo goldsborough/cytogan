@@ -30,13 +30,14 @@ class Frequency(object):
             self.iterations = number
         else:
             self.seconds = number * Frequency.UNITS[unit]
-            self.last_check = 0
+            self.last_elapsed = 0
 
     def elapsed(self, number_of_iterations):
         if self.iterations is None:
             now = int(time.time())
-            has_elapsed = (now - self.last_check) >= self.seconds
-            self.last_check = now
+            has_elapsed = (now - self.last_elapsed) >= self.seconds
+            if has_elapsed:
+                self.last_elapsed = now
             return has_elapsed
         return number_of_iterations % self.iterations == 0
 

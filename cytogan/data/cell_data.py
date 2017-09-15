@@ -156,7 +156,7 @@ class CellData(object):
             images = self.images[keys]
             next_keys = self.metadata.iloc[end:end + batch_size].index
             self.images.fetch_async(next_keys)
-            yield np.arary(images)
+            yield images
 
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
