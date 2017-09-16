@@ -117,6 +117,7 @@ def get_session(gpus):
 
     session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     K.set_session(session)
+    K.manual_variable_initialization(True)
 
     tf.set_random_seed(42)
 

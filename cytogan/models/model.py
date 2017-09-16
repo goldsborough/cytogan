@@ -12,8 +12,6 @@ log = logs.get_logger(__name__)
 
 Learning = collections.namedtuple('Learning', 'rate, decay, steps_per_decay')
 
-import tensorflow.contrib.framework
-
 class Model(abc.ABC):
     def __init__(self, learning, session):
         assert isinstance(learning, Learning)
@@ -23,7 +21,7 @@ class Model(abc.ABC):
         self._learning_rate = None
 
         # The training step indicator variable.
-        self.global_step = tf.Variable(0, trainable=False, name='global_step')
+        self.global_step = tf.Variable(0, trainable=False)
 
         # Define the graph structure and setup the model architecture.
         self._define_graph()
@@ -85,7 +83,6 @@ class Model(abc.ABC):
         if os.path.isdir(checkpoint):
             checkpoint = tf.train.latest_checkpoint(checkpoint)
         log.info('Restoring from {0}'.format(checkpoint))
-        print(tf.contrib.framework.list_variables(checkpoint))
         if checkpoint is None:
             raise RuntimeError(
                 'Could not find any valid checkpoints under {0}!'.format(
