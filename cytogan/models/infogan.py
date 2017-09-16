@@ -164,5 +164,5 @@ class InfoGAN(dcgan.DCGAN):
             self.discrete_variables + 2 * self.continuous_variables,
             name='Q_final_dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
-        continuous = Activation('tanh')(logits[:, self.discrete_variables:])
+        continuous = Activation('linear')(logits[:, self.discrete_variables:])
         return Concatenate(axis=1)([discrete, continuous])

@@ -118,9 +118,7 @@ class DCGAN(model.Model):
         tf.summary.scalar('G_loss', self.loss['G'])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
 
-        fake_split = tf.shape(self.fake_images)[0]
-        fake_probability = self.gan.outputs[0][:fake_split]
-        real_probability = self.gan.outputs[0][fake_split:]
+        fake_probability, real_probability = tf.split(self.gan.outputs[0], 2)
         tf.summary.histogram('fake_probability', fake_probability)
         tf.summary.histogram('real_probability', real_probability)
 
