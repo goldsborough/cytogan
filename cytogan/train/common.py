@@ -79,6 +79,9 @@ def make_parser(name):
 def parse_args(parser):
     options = parser.parse_args()
 
+    if len(options.lr) == 1:
+        options.lr = options.lr[0]
+
     options.checkpoint_dir = None
     options.summary_dir = None
     options.figure_dir = None

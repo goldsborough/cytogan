@@ -62,6 +62,7 @@ class Model(abc.ABC):
 
     @property
     def learning_rate(self):
+        assert not isinstance(self._learning_rate, collections.Iterable)
         if isinstance(self._learning_rate, float):
             return self._learning_rate
         return self._learning_rate.eval(session=self.session)
