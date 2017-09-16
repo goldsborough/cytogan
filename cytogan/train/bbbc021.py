@@ -57,7 +57,7 @@ elif options.model == 'dcgan':
         discriminator_strides=(2, 2, 2, 2),
         latent_size=100,
         noise_size=100,
-        initial_shape=(16, 16))
+        initial_shape=(12, 12))
     Model = dcgan.DCGAN
 elif options.model == 'infogan':
     discrete_variables = 32
@@ -76,7 +76,7 @@ elif options.model == 'infogan':
         discriminator_strides=(2, 2, 2, 2),
         latent_size=100,
         noise_size=100,
-        initial_shape=(16, 16),
+        initial_shape=(12, 12),
         latent_distribution=latent_distribution,
         discrete_variables=discrete_variables,
         continuous_variables=continuous_variables,
