@@ -47,7 +47,7 @@ class Trainer(object):
         try:
             self._train_loop(model, batch_generator)
         except KeyboardInterrupt:
-            pass
+            print()
         elapsed_time = time.time() - start_time
 
         if self.checkpoint_directory is not None:

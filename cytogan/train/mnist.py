@@ -80,7 +80,7 @@ with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)
     log.info('\n%s', model)
     if options.restore_from is None:
-        tf.global_variables_initializer().run(session=session)
+        session.run(tf.global_variables_initializer())
     else:
         model.restore(options.restore_from)
     if not options.skip_training:

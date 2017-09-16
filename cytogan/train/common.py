@@ -51,7 +51,7 @@ def make_parser(name):
     parser = argparse.ArgumentParser(description=name)
     parser.add_argument('-e', '--epochs', type=int, default=10)
     parser.add_argument('-b', '--batch-size', type=int, default=128)
-    parser.add_argument('--lr', type=float, default=1e-3, nargs='+')
+    parser.add_argument('--lr', type=float, default=[1e-3], nargs='+')
     parser.add_argument('--lr-decay', type=float)
     parser.add_argument('--lr-decay-steps', type=int)
     parser.add_argument('-r', '--reconstruction-samples', type=int)
