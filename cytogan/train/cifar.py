@@ -8,7 +8,7 @@ from cytogan.data.batch_generator import BatchGenerator
 from cytogan.models import ae, conv_ae, model, vae
 from cytogan.train import common, trainer, visualize
 from cytogan.train.common import Dataset, make_parser
-from cytogan.extra import logs
+from cytogan.extra import logs, misc
 
 parser = make_parser('cytogan-cifar')
 options = common.parse_args(parser)
@@ -40,6 +40,8 @@ elif options.model == 'vae':
     hyper = vae.Hyper(
         image_shape, filter_sizes=[128, 128, 128], latent_size=512)
     Model = vae.VAE
+
+log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size)

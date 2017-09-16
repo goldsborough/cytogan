@@ -50,7 +50,8 @@ def log_likelihood(p, mean, log_variance):
     return K.mean(K.sum(pointwise, axis=1))
 
 
-def mixed_mutual_information(x, x_given_y, discrete_continuous_split):
+def mixed_mutual_information(x, x_given_y, discrete_continuous_split,
+                             continuous_lambda):
     discrete_prior = x[:, :discrete_continuous_split]
     discrete_posterior = x_given_y[:, :discrete_continuous_split]
     discrete_mi = mutual_information(discrete_prior, discrete_posterior)
@@ -68,4 +69,4 @@ def mixed_mutual_information(x, x_given_y, discrete_continuous_split):
     posterior_likelihood = log_likelihood(continuous_prior, mean, log_variance)
     continuous_likelihood_difference = posterior_likelihood - prior_likelihood
 
-    return discrete_mi + continuous_likelihood_difference
+    return discrete_mi + continuous_lambda * continuous_likelihood_difference

@@ -6,7 +6,7 @@ from tensorflow.examples.tutorials import mnist
 
 from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan
 from cytogan.train import common, trainer, visualize
-from cytogan.extra import distributions, logs
+from cytogan.extra import distributions, misc, logs
 
 parser = common.make_parser('cytogan-mnist')
 options = common.parse_args(parser)
@@ -64,8 +64,11 @@ elif options.model == 'infogan':
         initial_shape=(7, 7),
         latent_distribution=latent_distribution,
         discrete_variables=10,
-        continuous_variables=1)
+        continuous_variables=1,
+        continuous_lambda=0.8)
     Model = infogan.InfoGAN
+
+log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
 trainer_options = trainer.Options(
     summary_directory=options.summary_dir,

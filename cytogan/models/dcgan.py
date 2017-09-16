@@ -47,7 +47,7 @@ class DCGAN(model.Model):
         self.generator = None  # G(z, c)
         self.discriminator = None  # D(x)
         self.encoder = None
-        self.infogan = None  # D(G(z, c)) + Q(G(z, c))
+        self.gan = None  # D(G(z, c))
 
         super(DCGAN, self).__init__(learning, session)
 
@@ -73,14 +73,11 @@ class DCGAN(model.Model):
             self.loss['D'] = losses.binary_crossentropy(
                 self.labels, self.discriminator.output)
 
-        self.infogan = Model(
+        self.gan = Model(
             self.noise, self.discriminator(self.fake_images), name='DCGAN')
         with K.name_scope('G_loss'):
             self.loss['G'] = losses.binary_crossentropy(
-                K.ones_like(self.infogan.outputs[0]), self.infogan.outputs[0])
-
-        self.fake_probability, self.real_probability = tf.split(
-            self.infogan.output, 2, axis=0)
+                K.ones_like(self.gan.outputs[0]), self.gan.outputs[0])
 
     def encode(self, images):
         return self.encoder.predict_on_batch(np.array(images))
@@ -117,10 +114,13 @@ class DCGAN(model.Model):
     def _add_summaries(self):
         super(DCGAN, self)._add_summaries()
         tf.summary.histogram('noise', self.noise)
-        tf.summary.histogram('fake_probability', self.fake_probability)
-        tf.summary.histogram('real_probability', self.real_probability)
         tf.summary.scalar('G_loss', self.loss['G'])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
+
+        fake_probability, real_probability = tf.split(
+            self.gan.outputs[0], 2, axis=0)
+        tf.summary.histogram('fake_probability', fake_probability)
+        tf.summary.histogram('real_probability', real_probability)
 
     def _define_generator(self, input_tensor):
         first_filter = self.generator_filters[0]

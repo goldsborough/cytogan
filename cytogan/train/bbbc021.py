@@ -8,7 +8,7 @@ from cytogan.data.cell_data import CellData
 from cytogan.metrics import profiling
 from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan
 from cytogan.train import common, trainer, visualize
-from cytogan.extra import distributions, logs
+from cytogan.extra import distributions, logs, misc
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
@@ -79,8 +79,11 @@ elif options.model == 'infogan':
         initial_shape=(16, 16),
         latent_distribution=latent_distribution,
         discrete_variables=discrete_variables,
-        continuous_variables=continuous_variables)
+        continuous_variables=continuous_variables,
+        continuous_lambda=0.8)
     Model = infogan.InfoGAN
+
+log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size)

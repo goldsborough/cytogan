@@ -21,6 +21,7 @@ Hyper = collections.namedtuple('Hyper', [
     'latent_distribution',
     'discrete_variables',
     'continuous_variables',
+    'continuous_lambda',
 ])
 
 
@@ -60,9 +61,10 @@ class InfoGAN(dcgan.DCGAN):
         with K.name_scope('Q_loss'):
             self.loss['Q'] = losses.mixed_mutual_information(
                 self.latent_prior, self.encoder.output,
-                self.discrete_variables)
+                self.discrete_variables,
+                self.continuous_lambda)
 
-        self.infogan = Model(
+        self.gan = Model(
             [
                 self.noise,
                 self.latent_prior,
@@ -73,10 +75,11 @@ class InfoGAN(dcgan.DCGAN):
             name='InfoGAN')
         with K.name_scope('G_loss'):
             self.infogan_bce = losses.binary_crossentropy(
-                K.ones_like(self.infogan.outputs[0]), self.infogan.outputs[0])
+                K.ones_like(self.gan.outputs[0]), self.gan.outputs[0])
             self.infogan_mi = losses.mixed_mutual_information(
-                self.latent_prior, self.infogan.outputs[1],
-                self.discrete_variables)
+                self.latent_prior, self.gan.outputs[1],
+                self.discrete_variables,
+                self.continuous_lambda)
             self.loss['G'] = self.infogan_bce + self.infogan_mi
 
     def generate(self, latent_samples):
@@ -107,7 +110,7 @@ class InfoGAN(dcgan.DCGAN):
     def _add_summaries(self):
         super(InfoGAN, self)._add_summaries()
         tf.summary.histogram('latent_prior', self.latent_prior)
-        tf.summary.histogram('latent_posterior', self.infogan.outputs[1])
+        tf.summary.histogram('latent_posterior', self.gan.outputs[1])
         tf.summary.scalar('G_bce', self.infogan_bce)
         tf.summary.scalar('G_mi', self.infogan_mi)
 
@@ -161,5 +164,5 @@ class InfoGAN(dcgan.DCGAN):
             self.discrete_variables + 2 * self.continuous_variables,
             name='Q_final_dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
-        continuous = Activation('linear')(logits[:, self.discrete_variables:])
+        continuous = Activation('tanh')(logits[:, self.discrete_variables:])
         return Concatenate(axis=1)([discrete, continuous])
