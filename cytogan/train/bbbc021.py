@@ -34,7 +34,7 @@ cell_data = CellData(
     patterns=options.pattern)
 
 number_of_batches = cell_data.number_of_images // options.batch_size
-image_shape = (128, 128, 3)
+image_shape = (96, 96, 3)
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
                           or number_of_batches)

@@ -92,7 +92,8 @@ class DCGAN(model.Model):
         batch_size = len(real_images)
         noise = self._sample_noise(batch_size)
         fake_images = self.generator.predict(noise)
-        assert len(fake_images) == len(real_images)
+        assert fake_images.shape[1:] == real_images.shape[1:], (
+            fake_images.shape, real_images.shape)
         all_images = np.concatenate([fake_images, real_images], axis=0)
         all_images += np.random.normal(0, 0.1, all_images.shape)
 
@@ -117,8 +118,9 @@ class DCGAN(model.Model):
         tf.summary.scalar('G_loss', self.loss['G'])
         tf.summary.image('generated_images', self.fake_images, max_outputs=4)
 
-        fake_probability, real_probability = tf.split(
-            self.gan.outputs[0], 2, axis=0)
+        fake_split = tf.shape(self.fake_images)[0]
+        fake_probability = self.gan.outputs[0][:fake_split]
+        real_probability = self.gan.outputs[0][fake_split:]
         tf.summary.histogram('fake_probability', fake_probability)
         tf.summary.histogram('real_probability', real_probability)
 
