@@ -43,7 +43,7 @@ elif options.model == 'vae':
 elif options.model == 'dcgan':
     hyper = dcgan.Hyper(
         image_shape,
-        generator_filters=(256, 128, 64, 32),
+        generator_filters=(128, 64, 32, 16),
         generator_strides=(1, 2, 2, 1),
         discriminator_filters=(128, 64, 32, 16),
         discriminator_strides=(1, 2, 2, 2),
@@ -58,7 +58,7 @@ elif options.model == 'infogan':
     })
     hyper = infogan.Hyper(
         image_shape,
-        generator_filters=(256, 128, 64, 32),
+        generator_filters=(128, 64, 32, 16),
         generator_strides=(1, 2, 2, 1),
         discriminator_filters=(128, 64, 32, 16),
         discriminator_strides=(1, 2, 2, 2),
