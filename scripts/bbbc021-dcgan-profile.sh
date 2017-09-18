@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm dcgan.prof
+
 python3 -m cProfile -o dcgan.prof cytogan/train/bbbc021.py \
   --epochs 20                                             \
   --model dcgan                                           \
