@@ -38,7 +38,7 @@ class AsyncImageLoader(object):
             return load_image(self.root_path, key, self.extension)
 
     def __init__(self, root_path, extension='png'):
-        self.images = {}
+        self.futures = {}
         self.pool = multiprocessing.Pool()
         self.load_job = AsyncImageLoader.Job(root_path, extension)
 
@@ -57,7 +57,7 @@ class AsyncImageLoader(object):
         # than spin.
         while want:
             key = want[index]
-            future = self.images.get(key)
+            future = self.futures.get(key)
             if future is None:
                 # Haven't started fetching this image yet at all.
                 self.fetch_async([key])
@@ -72,7 +72,7 @@ class AsyncImageLoader(object):
                     log.error(error)
                 del want[index]
                 # Free memory.
-                del self.images[key]
+                del self.futures[key]
             else:
                 # Job is still pending.
                 index += 1
@@ -86,7 +86,7 @@ class AsyncImageLoader(object):
     def fetch_async(self, image_keys):
         for key in image_keys:
             future = self.pool.apply_async(self.load_job, [key])
-            self.images[key] = future
+            self.futures[key] = future
 
 
 class ImageLoader(object):
