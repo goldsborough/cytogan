@@ -1,12 +1,12 @@
 #!/bin/bash
 
 python3 -m cytogan.train.bbbc021                          \
-  --epochs 30                                             \
+  --epochs 100                                            \
   --model dcgan                                           \
-  --lr 8e-4 5e-4                                          \
+  --lr 2e-4 2e-4                                          \
   --lr-decay 0.999                                        \
   --lr-decay-steps 100                                    \
-  --batch-size 64                                         \
+  --batch-size 128                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '30s'                                 \
   --summary-freq '30s'                                    \
@@ -20,4 +20,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-compounds                                      \
   --latent-moa                                            \
   --confusion-matrix                                      \
+  --normalize-luminance                                   \
   $@
