@@ -102,7 +102,6 @@ class DCGAN(model.Model):
     def train_on_batch(self, real_images, with_summary=False):
         real_images = (real_images * 2) - 1
         fake_images = self.generate(len(real_images), rescale=False)
-        assert fake_images.shape[1:] == real_images.shape[1:]
 
         d_loss = self._train_discriminator(fake_images, real_images)
         g_tensors = self._train_generator(len(real_images), with_summary)

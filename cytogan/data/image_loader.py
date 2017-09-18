@@ -128,4 +128,4 @@ class ImageLoader(object):
                 ok_keys.append(key)
                 ok_images.append(image)
 
-        return ok_keys, np.array(ok_images)
+        return ok_keys, ok_images

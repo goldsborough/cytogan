@@ -149,8 +149,8 @@ class CellData(object):
             ok_images = _normalize_luminance(ok_images)
 
         if with_keys:
-            return ok_keys, np.array(ok_images)
-        return np.array(ok_images)
+            return ok_keys, ok_images
+        return ok_images
 
     def reset_batching_state(self):
         self.batch_index = 0
