@@ -100,7 +100,7 @@ class DCGAN(model.Model):
         return (images + 1) / 2 if rescale else images
 
     def train_on_batch(self, real_images, with_summary=False):
-        real_images = (real_images * 2) - 1
+        real_images = (np.array(real_images) * 2) - 1
         fake_images = self.generate(len(real_images), rescale=False)
 
         d_loss = self._train_discriminator(fake_images, real_images)
