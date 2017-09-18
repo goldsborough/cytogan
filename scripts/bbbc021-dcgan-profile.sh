@@ -7,7 +7,7 @@ fi
 python3 -m cProfile -o dcgan.prof cytogan/train/bbbc021.py \
   --epochs 30                                              \
   --model dcgan                                            \
-  --lr 5e-5 2e-4                                           \
+  --lr 2e-4 2e-4                                           \
   --lr-decay 0.999                                         \
   --lr-decay-steps 100                                     \
   --batch-size 128                                         \
