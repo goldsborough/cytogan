@@ -124,7 +124,9 @@ class DCGAN(model.Model):
         tf.summary.scalar('G_loss', self.loss['G'])
         tf.summary.image('generated_images', self.fake_images, max_outputs=8)
 
-        fake_probability, real_probability = tf.split(self.gan.outputs[0], 2)
+        batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+        fake_probability = self.gan.outputs[0][:batch_size]
+        real_probability = self.gan.outputs[0][batch_size:]
         tf.summary.histogram('fake_probability', fake_probability)
         tf.summary.histogram('real_probability', real_probability)
 
