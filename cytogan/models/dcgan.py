@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from keras.layers import (Activation, BatchNormalization, Conv2D, Dense,
                           Flatten, Input, LeakyReLU, Reshape, UpSampling2D,
-                          Lambda)
+                          Lambda, ELU)
 from keras.models import Model
 
 from cytogan.metrics import losses
@@ -134,7 +134,7 @@ class DCGAN(model.Model):
         first_filter = self.generator_filters[0]
         G = Dense(np.prod(self.initial_shape) * first_filter)(input_tensor)
         G = BatchNormalization(momentum=0.9)(G)
-        G = LeakyReLU(alpha=0.2)(G)
+        G = ELU()(G)
         G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
         for filters, stride in zip(self.generator_filters[1:],
@@ -143,7 +143,7 @@ class DCGAN(model.Model):
                 G = UpSampling2D(stride)(G)
             G = Conv2D(filters, (5, 5), padding='same')(G)
             G = BatchNormalization(momentum=0.9)(G)
-            G = LeakyReLU(alpha=0.2)(G)
+            G = ELU()(G)
 
         G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
         G = Activation('tanh')(G)
@@ -164,7 +164,7 @@ class DCGAN(model.Model):
                                    self.discriminator_strides):
             D = Conv2D(
                 filters, (5, 5), strides=(stride, stride), padding='same')(D)
-            D = LeakyReLU(alpha=0.2)(D)
+            D = ELU()(D)
         D = Flatten()(D)
 
         return x, D
