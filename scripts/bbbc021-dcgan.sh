@@ -20,5 +20,4 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-compounds                                      \
   --latent-moa                                            \
   --confusion-matrix                                      \
-  --normalize-luminance                                   \
   $@

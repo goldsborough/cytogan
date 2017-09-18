@@ -23,4 +23,6 @@ python3 -m cProfile -o dcgan.prof cytogan/train/bbbc021.py \
   --latent-compounds                                       \
   --latent-moa                                             \
   --confusion-matrix                                       \
-  -p 'Week3_25421'
+  -p 'Week3_25421'                                         \
+  --normalize-luminance                                    \
+  $@
