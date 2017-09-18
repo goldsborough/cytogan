@@ -35,6 +35,7 @@ class DCGAN(model.Model):
         self.images = None  # x
         self.labels = None  # 0/1
 
+        self.batch_size = None
         self.noise = None  # z
         self.probability = None  # D(x)
 
@@ -47,7 +48,14 @@ class DCGAN(model.Model):
 
     def _define_graph(self):
         with K.name_scope('G'):
-            self.noise = Input(shape=[self.noise_size])
+            self.batch_size = Input(batch_shape=[1], name='batch_size')
+
+            def sample_noise(batch_size):
+                return tf.random_normal(shape=[
+                    tf.squeeze(tf.cast(batch_size, tf.int32)), self.noise_size
+                ])
+
+            self.noise = Lambda(sample_noise)(self.batch_size)
             self.fake_images = self._define_generator(self.noise)
 
         self.images, logits = self._define_discriminator()
@@ -56,7 +64,7 @@ class DCGAN(model.Model):
         self.probability = Dense(
             1, activation='sigmoid', name='D_final')(self.latent)
 
-        self.generator = Model(self.noise, self.fake_images, name='G')
+        self.generator = Model(self.batch_size, self.fake_images, name='G')
         self.encoder = Model(self.images, self.latent, name='E')
 
         self.loss = {}
@@ -71,7 +79,9 @@ class DCGAN(model.Model):
                 noisy_labels, self.discriminator.output)
 
         self.gan = Model(
-            self.noise, self.discriminator(self.fake_images), name='DCGAN')
+            self.batch_size,
+            self.discriminator(self.fake_images),
+            name='DCGAN')
         with K.name_scope('G_loss'):
             self.loss['G'] = losses.binary_crossentropy(
                 K.ones_like(self.gan.outputs[0]), self.gan.outputs[0])
@@ -79,21 +89,23 @@ class DCGAN(model.Model):
     def encode(self, images):
         return self.encoder.predict_on_batch(np.array(images))
 
-    def generate(self, latent_samples):
-        images = self.generator.predict_on_batch(np.array(latent_samples))
+    def generate(self, latent_samples, rescale=True):
+        feed_dict = {K.learning_phase(): 0}
+        if isinstance(latent_samples, int):
+            feed_dict[self.batch_size] = [latent_samples]
+        else:
+            feed_dict[self.noise] = latent_samples
+        images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
-        return (images + 1) / 2
+        return (images + 1) / 2 if rescale else images
 
     def train_on_batch(self, real_images, with_summary=False):
         real_images = (real_images * 2) - 1
-        batch_size = len(real_images)
-        noise = self._sample_noise(batch_size)
-        fake_images = self.generator.predict(noise)
-        assert fake_images.shape[1:] == real_images.shape[1:], (
-            fake_images.shape, real_images.shape)
+        fake_images = self.generate(len(real_images), rescale=False)
+        assert fake_images.shape[1:] == real_images.shape[1:]
 
         d_loss = self._train_discriminator(fake_images, real_images)
-        g_tensors = self._train_generator(batch_size, with_summary)
+        g_tensors = self._train_generator(len(real_images), with_summary)
 
         losses = dict(D=d_loss, G=g_tensors[0])
         return (losses, g_tensors[1]) if with_summary else losses
@@ -174,14 +186,14 @@ class DCGAN(model.Model):
         return discriminator_loss
 
     def _train_generator(self, batch_size, with_summary):
-        noise = self._sample_noise(batch_size)
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.summary)
 
         results = self.session.run(
-            fetches, feed_dict={
-                self.noise: noise,
+            fetches,
+            feed_dict={
+                self.batch_size: [batch_size],
                 K.learning_phase(): 0,
             })
 
@@ -212,9 +224,6 @@ class DCGAN(model.Model):
                     self.loss['G'],
                     var_list=self.generator.trainable_weights,
                     global_step=self.global_step)
-
-    def _sample_noise(self, size):
-        return np.random.randn(size, self.noise_size)
 
     def __repr__(self):
         lines = [self.__class__.__name__]
