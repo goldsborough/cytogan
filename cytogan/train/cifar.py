@@ -5,10 +5,10 @@ import tensorflow as tf
 from keras.datasets import cifar10
 
 from cytogan.data.batch_generator import BatchGenerator
-from cytogan.models import ae, conv_ae, model, vae
+from cytogan.models import ae, conv_ae, model, vae, dcgan, infogan
 from cytogan.train import common, trainer, visualize
 from cytogan.train.common import Dataset, make_parser
-from cytogan.extra import logs, misc
+from cytogan.extra import distributions, logs, misc
 
 parser = make_parser('cytogan-cifar')
 options = common.parse_args(parser)
@@ -40,6 +40,36 @@ elif options.model == 'vae':
     hyper = vae.Hyper(
         image_shape, filter_sizes=[128, 128, 128], latent_size=512)
     Model = vae.VAE
+elif options.model == 'dcgan':
+    hyper = dcgan.Hyper(
+        image_shape,
+        generator_filters=(256, 128, 64, 32),
+        generator_strides=(1, 2, 2, 1),
+        discriminator_filters=(32, 64, 128, 256),
+        discriminator_strides=(2, 2, 2, 1),
+        latent_size=100,
+        noise_size=100,
+        initial_shape=(8, 8))
+    Model = dcgan.DCGAN
+elif options.model == 'infogan':
+    latent_distribution = distributions.mixture({
+        distributions.categorical(10): 1,
+        distributions.uniform(): 2,
+    })
+    hyper = infogan.Hyper(
+        image_shape,
+        generator_filters=(256, 128, 64, 32),
+        generator_strides=(1, 2, 2, 1),
+        discriminator_filters=(32, 64, 128, 256),
+        discriminator_strides=(2, 2, 2, 1),
+        latent_size=12,
+        noise_size=100,
+        initial_shape=(8, 8),
+        latent_distribution=latent_distribution,
+        discrete_variables=10,
+        continuous_variables=2,
+        continuous_lambda=0.8)
+    Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
@@ -66,14 +96,32 @@ with common.get_session(options.gpus) as session:
 
     if options.latent_samples is not None:
         original_images = test.images[:options.latent_samples]
-        labels = test.labels[:options.latent_samples]
+        labels = test.labels[:options.latent_samples].squeeze()
         latent_vectors = model.encode(original_images)
         visualize.latent_space(
             latent_vectors, labels, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
+        if options.model == 'infogan':
+            categorical = np.zeros([options.generative_samples, 10])
+            categorical[:, 0] = 1
+            continuous_1 = np.linspace(0, 1, options.generative_samples)
+            continuous_2 = np.linspace(0, 1, options.generative_samples)
+            samples = np.concatenate(
+                [
+                    categorical,
+                    continuous_1.reshape(-1, 1),
+                    continuous_2.reshape(-1, 1),
+                ],
+                axis=1)
+        elif options.model == 'dcgan':
+            samples = np.random.randn(options.generative_samples,
+                                      model.noise_size)
+        else:
+            samples = np.random.randn(options.generative_samples,
+                                      model.latent_size)
         visualize.generative_samples(
-            model, options.generative_samples, save_to=options.figure_dir)
+            model, samples, save_to=options.figure_dir)
 
 if options.show_figures:
     visualize.show()

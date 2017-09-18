@@ -64,7 +64,7 @@ elif options.model == 'infogan':
         initial_shape=(7, 7),
         latent_distribution=latent_distribution,
         discrete_variables=10,
-        continuous_variables=1,
+        continuous_variables=2,
         continuous_lambda=0.8)
     Model = infogan.InfoGAN
 
