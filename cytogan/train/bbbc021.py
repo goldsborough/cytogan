@@ -19,6 +19,7 @@ parser.add_argument('-p', '--pattern', action='append')
 parser.add_argument('--confusion-matrix', action='store_true')
 parser.add_argument('--latent-compounds', action='store_true')
 parser.add_argument('--latent-moa', action='store_true')
+parser.add_argument('--normalize-luminance', action='store_true')
 options = common.parse_args(parser)
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
@@ -26,12 +27,9 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-cell_data = CellData(
-    metadata_file_path=options.metadata,
-    labels_file_path=options.labels,
-    image_root=options.images,
-    cell_count_path=options.cell_count_file,
-    patterns=options.pattern)
+cell_data = CellData(options.metadata, options.labels, options.images,
+                     options.cell_count_file, options.pattern,
+                     options.normalize_luminance)
 
 number_of_batches = cell_data.number_of_images // options.batch_size
 image_shape = (96, 96, 3)

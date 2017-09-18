@@ -12,6 +12,10 @@ from cytogan.extra import logs
 log = logs.get_logger(__name__)
 
 
+def _normalize_luminance(images):
+    return [i / i.max() for i in images]
+
+
 def _image_key_for_path(path, root_path):
     # We use the path relative to the root_path, without the file extension, as
     # the image key.
@@ -103,7 +107,8 @@ class CellData(object):
                  labels_file_path,
                  image_root,
                  cell_count_path=None,
-                 patterns=None):
+                 patterns=None,
+                 normalize_luminance=False):
         self.image_root = os.path.realpath(image_root)
 
         self.labels = pd.read_csv(labels_file_path)
@@ -120,6 +125,7 @@ class CellData(object):
                      len(unique_compounds), len(self.labels)))
 
         self.images = AsyncImageLoader(self.image_root)
+        self.normalize_luminance = normalize_luminance
         self.batch_index = 0
 
     @property
@@ -139,6 +145,9 @@ class CellData(object):
             self.batch_index:self.batch_index + number_of_images].index
         self.images.fetch_async(next_keys)
 
+        if self.normalize_luminance:
+            ok_images = _normalize_luminance(ok_images)
+
         if with_keys:
             return ok_keys, np.array(ok_images)
         return np.array(ok_images)
@@ -156,6 +165,8 @@ class CellData(object):
             images = self.images[keys]
             next_keys = self.metadata.iloc[end:end + batch_size].index
             self.images.fetch_async(next_keys)
+            if self.normalize_luminance:
+                images = _normalize_luminance(images)
             yield images
 
     def create_dataset_from_profiles(self, keys, profiles):
