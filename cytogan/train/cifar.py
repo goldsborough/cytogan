@@ -46,7 +46,7 @@ elif options.model == 'dcgan':
         generator_filters=(128, 64, 32, 16),
         generator_strides=(1, 2, 2, 1),
         discriminator_filters=(128, 64, 32, 16),
-        discriminator_strides=(1, 2, 2, 2),
+        discriminator_strides=(1, 2, 2, 1),
         latent_size=100,
         noise_size=100,
         initial_shape=(8, 8))
@@ -61,7 +61,7 @@ elif options.model == 'infogan':
         generator_filters=(128, 64, 32, 16),
         generator_strides=(1, 2, 2, 1),
         discriminator_filters=(128, 64, 32, 16),
-        discriminator_strides=(1, 2, 2, 2),
+        discriminator_strides=(1, 2, 2, 1),
         latent_size=12,
         noise_size=100,
         initial_shape=(8, 8),
