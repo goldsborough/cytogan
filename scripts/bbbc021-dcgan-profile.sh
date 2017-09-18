@@ -6,7 +6,7 @@ python3 -m cProfile -o dcgan.prof cytogan/train/bbbc021.py \
   --lr 5e-4 2e-4                                          \
   --lr-decay 0.9975                                       \
   --lr-decay-steps 100                                    \
-  --batch-size 256                                        \
+  --batch-size 64                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '1min'                                \
   --summary-freq '1min'                                   \
