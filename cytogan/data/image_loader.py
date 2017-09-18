@@ -81,7 +81,7 @@ class AsyncImageLoader(object):
                 index = 0
                 time.sleep(0.005)
 
-        return got_keys, got_images
+        return got_keys, np.array(got_images)
 
     def fetch_async(self, image_keys):
         for key in image_keys:
