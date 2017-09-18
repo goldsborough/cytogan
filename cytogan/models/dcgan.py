@@ -4,7 +4,8 @@ import keras.backend as K
 import numpy as np
 import tensorflow as tf
 from keras.layers import (Activation, BatchNormalization, Conv2D, Dense,
-                          Flatten, Input, LeakyReLU, Reshape, UpSampling2D)
+                          Flatten, Input, LeakyReLU, Reshape, UpSampling2D,
+                          Lambda)
 from keras.models import Model
 
 from cytogan.metrics import losses
@@ -20,13 +21,6 @@ Hyper = collections.namedtuple('Hyper', [
     'noise_size',
     'initial_shape',
 ])
-
-
-def _smooth_labels(fake_images, real_images):
-    fake_labels = np.zeros(len(fake_images))
-    # github.com/soumith/ganhacks#6-use-soft-and-noisy-labels
-    real_labels = np.random.uniform(low=0.8, high=1.0, size=len(real_images))
-    return np.concatenate((fake_labels, real_labels))
 
 
 class DCGAN(model.Model):
@@ -67,11 +61,14 @@ class DCGAN(model.Model):
 
         self.loss = {}
         self.labels = Input(batch_shape=[None], name='labels')
+        with K.name_scope('noisy_labels'):
+            noisy_labels = self.labels * tf.random_uniform(
+                tf.shape(self.labels), 0.8, 1.0)
 
         self.discriminator = Model(self.images, self.probability, name='D')
         with K.name_scope('D_loss'):
             self.loss['D'] = losses.binary_crossentropy(
-                self.labels, self.discriminator.output)
+                noisy_labels, self.discriminator.output)
 
         self.gan = Model(
             self.noise, self.discriminator(self.fake_images), name='DCGAN')
@@ -94,8 +91,6 @@ class DCGAN(model.Model):
         fake_images = self.generator.predict(noise)
         assert fake_images.shape[1:] == real_images.shape[1:], (
             fake_images.shape, real_images.shape)
-        all_images = np.concatenate([fake_images, real_images], axis=0)
-        all_images += np.random.normal(0, 0.1, all_images.shape)
 
         d_loss = self._train_discriminator(fake_images, real_images)
         g_tensors = self._train_generator(batch_size, with_summary)
@@ -145,7 +140,13 @@ class DCGAN(model.Model):
 
     def _define_discriminator(self):
         x = Input(shape=self.image_shape)
-        D = x
+
+        # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
+        def noisy(images):
+            return images + tf.random_normal(
+                tf.shape(images), mean=0.0, stddev=0.1)
+
+        D = Lambda(noisy)(x)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(
@@ -156,12 +157,10 @@ class DCGAN(model.Model):
         return x, D
 
     def _train_discriminator(self, fake_images, real_images):
-        labels = _smooth_labels(fake_images, real_images)
-        assert labels.shape == (2 * len(real_images), ), labels.shape
-
+        labels = np.concatenate(
+            [np.zeros(len(fake_images)),
+             np.ones(len(real_images))], axis=0)
         images = np.concatenate([fake_images, real_images], axis=0)
-        # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
-        images += np.random.normal(0, 0.1, images.shape)
 
         # L_D = -D(x) -D(G(z, c))
         _, discriminator_loss = self.session.run(
