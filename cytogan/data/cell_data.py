@@ -51,7 +51,7 @@ def _load_single_cell_names_from_cell_count_file(metadata, cell_count_path):
         next(cell_count_file)  # skip header
         for line in tqdm.tqdm(cell_count_file, unit=' files'):
             key, count = line.split(',')
-            plate, file_name = os.path.split(key)
+            plate, file_name = key.split('/')
             file_name += '.tif'
             plate_index = metadata['Image_Metadata_Plate_DAPI'] == plate
             file_index = metadata['Image_FileName_DAPI'] == file_name

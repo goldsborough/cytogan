@@ -116,7 +116,7 @@ class DCGAN(model.Model):
         super(DCGAN, self)._add_summaries()
         tf.summary.histogram('noise', self.noise)
         tf.summary.scalar('G_loss', self.loss['G'])
-        tf.summary.image('generated_images', self.fake_images, max_outputs=4)
+        tf.summary.image('generated_images', self.fake_images, max_outputs=8)
 
         fake_probability, real_probability = tf.split(self.gan.outputs[0], 2)
         tf.summary.histogram('fake_probability', fake_probability)
