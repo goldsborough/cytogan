@@ -152,6 +152,7 @@ class DCGAN(model.Model):
 
         self.latent = Dense(self.latent_size, name='latent')(logits)
         self.d_final = self._define_final_discriminator_layer(self.latent)
+        self.labels = Input(batch_shape=[None], name='labels')
 
         self.generator = Model(self.batch_size, self.fake_images, name='G')
         self.discriminator = Model(self.images, self.d_final, name='D')
@@ -161,10 +162,9 @@ class DCGAN(model.Model):
             self.discriminator(self.fake_images),
             name=self.name)
 
-        self.labels = Input(batch_shape=[None], name='labels')
         self.loss = dict(
-            D=self._define_discriminator_loss(self.labels),
-            G=self._define_generator_loss())
+            D=self._define_discriminator_loss(self.labels, self.d_final),
+            G=self._define_generator_loss(self.gan.outputs[0]))
 
     def _define_generator(self, logits):
         first_filter = self.generator_filters[0]
@@ -203,14 +203,13 @@ class DCGAN(model.Model):
 
         return D
 
-    def _define_discriminator_loss(self, labels):
+    def _define_discriminator_loss(self, labels, logits):
         noisy_labels = smooth_labels(labels)
         with K.name_scope('D_loss'):
-            return losses.binary_crossentropy(noisy_labels, self.d_final)
+            return losses.binary_crossentropy(noisy_labels, logits)
 
-    def _define_generator_loss(self):
+    def _define_generator_loss(self, probability):
         with K.name_scope('G_loss'):
-            probability = self.gan.outputs[0]
             ones = K.ones_like(probability)
             return losses.binary_crossentropy(ones, probability)
 

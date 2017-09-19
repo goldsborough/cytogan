@@ -11,14 +11,13 @@ class LSGAN(dcgan.DCGAN):
     def __init__(self, hyper, learning, session):
         super(LSGAN, self).__init__(hyper, learning, session)
 
-    def _define_discriminator_loss(self, labels):
+    def _define_discriminator_loss(self, labels, logits):
         noisy_labels = dcgan.smooth_labels(labels)
         with K.name_scope('D_loss'):
-            return keras.losses.mean_squared_error(noisy_labels, self.d_final)
+            return keras.losses.mean_squared_error(noisy_labels, logits)
 
-    def _define_generator_loss(self):
+    def _define_generator_loss(self, probability):
         with K.name_scope('G_loss'):
-            probability = self.gan.outputs[0]
             ones = K.ones_like(probability)
             return keras.losses.mean_squared_error(ones, probability)
 
