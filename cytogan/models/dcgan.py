@@ -45,6 +45,9 @@ def batch_norm(tensor):
     return tf.layers.batch_normalization(
         tensor, axis=-1, momentum=0.9, training=K.learning_phase(), fused=None)
 
+def add_noise(images):
+    return images + tf.random_normal(
+        tf.shape(images), mean=0.0, stddev=0.1)
 
 class DCGAN(model.Model):
     def __init__(self, hyper, learning, session):
@@ -155,7 +158,7 @@ class DCGAN(model.Model):
                 arguments=dict(noise_size=self.noise_size))(self.batch_size)
             self.fake_images = self._define_generator(self.noise)
 
-        self.images = Input(shape=self.image_shape)
+        self.images = Input(shape=self.image_shape, name='images')
         logits = self._define_discriminator(self.images)
 
         self.latent = Dense(self.latent_size, name='latent')(logits)
@@ -197,16 +200,11 @@ class DCGAN(model.Model):
 
     def _define_discriminator(self, images):
         # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
-        def noisy(images):
-            return images + tf.random_normal(
-                tf.shape(images), mean=0.0, stddev=0.1)
-
-        D = Lambda(noisy)(images)
+        D = Lambda(add_noise)(images)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(
                 filters, (5, 5), strides=(stride, stride), padding='same')(D)
-            D = Lambda(batch_norm, output_shape=_output_shape(D))(D)
             D = LeakyReLU(alpha=0.2)(D)
         D = Flatten()(D)
 
