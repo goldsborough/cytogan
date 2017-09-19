@@ -11,7 +11,7 @@ class WGAN(dcgan.DCGAN):
     def __init__(self, hyper, learning, session):
         super(WGAN, self).__init__(hyper, learning, session)
 
-    def _define_discriminator_loss(self, labels, logits):
+    def _define_discriminator_loss(self, _, logits):
         with K.name_scope('D_loss'):
             generated_logits, real_logits = tf.split(logits, 2)
             loss = K.mean(generated_logits) - K.mean(real_logits)
