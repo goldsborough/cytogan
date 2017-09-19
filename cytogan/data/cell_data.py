@@ -12,7 +12,6 @@ log = logs.get_logger(__name__)
 
 
 def _normalize_luminance(images):
-    print(images)
     return [i / max(1, i.max()) for i in images]
 
 
