@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan
+from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan
 from cytogan.train import common, trainer, visualize
 from cytogan.extra import distributions, misc, logs
 
@@ -35,7 +35,7 @@ elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[32], latent_size=512)
     latent_distribution = lambda n: np.random.randn(n, hyper.latent_size)
     Model = vae.VAE
-elif options.model == 'dcgan':
+elif options.model in ('dcgan', 'lsgan', 'wgan'):
     hyper = dcgan.Hyper(
         image_shape,
         generator_filters=(128, 64, 32, 16),
@@ -45,7 +45,8 @@ elif options.model == 'dcgan':
         latent_size=100,
         noise_size=100,
         initial_shape=(7, 7))
-    Model = dcgan.DCGAN
+    models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN)
+    Model = models[options.model]
 elif options.model == 'infogan':
     latent_distribution = distributions.mixture({
         distributions.categorical(10):
