@@ -38,6 +38,16 @@ def smooth_labels(labels, low=0.8, high=1.0):
         return labels * tf.random_uniform(tf.shape(labels), low, high)
 
 
+def batch_norm(tensor):
+    return tf.layers.batch_normalization(
+        tensor,
+        axis=-1,
+        momentum=0.9,
+        training=K.learning_phase(),
+        renorm_momentum=0.99,
+        fused=None)
+
+
 class DCGAN(model.Model):
     def __init__(self, hyper, learning, session):
         assert len(hyper.image_shape) == 3
@@ -169,7 +179,7 @@ class DCGAN(model.Model):
     def _define_generator(self, logits):
         first_filter = self.generator_filters[0]
         G = Dense(np.prod(self.initial_shape) * first_filter)(logits)
-        G = BatchNormalization(momentum=0.9)(G)
+        G = Lambda(batch_norm)(G)
         G = LeakyReLU(alpha=0.2)(G)
         G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
@@ -178,7 +188,7 @@ class DCGAN(model.Model):
             if stride > 1:
                 G = UpSampling2D(stride)(G)
             G = Conv2D(filters, (5, 5), padding='same')(G)
-            G = BatchNormalization(momentum=0.9)(G)
+            G = Lambda(batch_norm)(G)
             G = LeakyReLU(alpha=0.2)(G)
 
         G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
@@ -238,11 +248,13 @@ class DCGAN(model.Model):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
                 learning.steps_per_decay)
-            self.optimizer['G'] = tf.train.AdamOptimizer(
-                self._learning_rate['G'], beta1=0.5).minimize(
-                    self.loss['G'],
-                    var_list=self.generator.trainable_weights,
-                    global_step=self.global_step)
+            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            with tf.control_dependencies(update_ops):
+                self.optimizer['G'] = tf.train.AdamOptimizer(
+                    self._learning_rate['G'], beta1=0.5).minimize(
+                        self.loss['G'],
+                        var_list=self.generator.trainable_weights,
+                        global_step=self.global_step)
 
     def _add_summaries(self):
         with K.name_scope('G'):
