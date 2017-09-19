@@ -2,7 +2,7 @@
 
 python3 -m cytogan.train.bbbc021                          \
   --epochs 100                                            \
-  --model lsgan                                           \
+  --model wgan                                            \
   --lr 5e-5 5e-5                                          \
   --lr-decay 0.999                                        \
   --lr-decay-steps 100                                    \
