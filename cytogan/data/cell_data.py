@@ -12,7 +12,7 @@ log = logs.get_logger(__name__)
 
 
 def _normalize_luminance(images):
-    return [i / max(1, i.max()) for i in images]
+    return [i / (i.max() or 1) for i in images]
 
 
 def _image_key_for_path(path, root_path):

@@ -28,6 +28,8 @@ class AE(model.Model):
 
         super(AE, self).__init__(learning, session)
 
+        self.summary = tf.summary.merge_all()
+
     def _define_graph(self):
         self.original_images = Input(
             shape=self.image_shape, name='original_images')

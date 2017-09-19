@@ -23,6 +23,12 @@ Hyper = collections.namedtuple('Hyper', [
 ])
 
 
+def _merge_summaries(scope):
+    summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
+    print(summaries)
+    return tf.summary.merge(summaries)
+
+
 class DCGAN(model.Model):
     def __init__(self, hyper, learning, session):
         assert len(hyper.image_shape) == 3
@@ -45,6 +51,9 @@ class DCGAN(model.Model):
         self.gan = None  # D(G(z, c))
 
         super(DCGAN, self).__init__(learning, session)
+
+        self.generator_summary = _merge_summaries('G')
+        self.discriminator_summary = _merge_summaries('D')
 
     def _define_graph(self):
         with K.name_scope('G'):
@@ -103,7 +112,8 @@ class DCGAN(model.Model):
         real_images = (np.array(real_images) * 2) - 1
         fake_images = self.generate(len(real_images), rescale=False)
 
-        d_loss = self._train_discriminator(fake_images, real_images)
+        d_loss = self._train_discriminator(fake_images, real_images,
+                                           with_summary)
         g_tensors = self._train_generator(len(real_images), with_summary)
 
         losses = dict(D=d_loss, G=g_tensors[0])
@@ -119,16 +129,20 @@ class DCGAN(model.Model):
         return learning_rates
 
     def _add_summaries(self):
-        super(DCGAN, self)._add_summaries()
-        tf.summary.histogram('noise', self.noise)
-        tf.summary.scalar('G_loss', self.loss['G'])
-        tf.summary.image('generated_images', self.fake_images, max_outputs=8)
+        with K.name_scope('G'):
+            tf.summary.histogram('noise', self.noise)
+            tf.summary.scalar('G_loss', self.loss['G'])
+            tf.summary.image(
+                'generated_images', self.fake_images, max_outputs=8)
 
-        batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-        fake_probability = self.gan.outputs[0][:batch_size]
-        real_probability = self.gan.outputs[0][batch_size:]
-        tf.summary.histogram('fake_probability', fake_probability)
-        tf.summary.histogram('real_probability', real_probability)
+        with K.name_scope('D'):
+            tf.summary.histogram('latent', self.latent)
+            tf.summary.scalar('D_loss', self.loss['D'])
+            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+            fake_probability = self.probability[:batch_size]
+            real_probability = self.probability[batch_size:]
+            tf.summary.histogram('fake_probability', fake_probability)
+            tf.summary.histogram('real_probability', real_probability)
 
     def _define_generator(self, input_tensor):
         first_filter = self.generator_filters[0]
@@ -169,16 +183,20 @@ class DCGAN(model.Model):
 
         return x, D
 
-    def _train_discriminator(self, fake_images, real_images):
+    def _train_discriminator(self, fake_images, real_images, with_summary):
         labels = np.concatenate(
             [np.zeros(len(fake_images)),
              np.ones(len(real_images))], axis=0)
         images = np.concatenate([fake_images, real_images], axis=0)
+        fetches = [self.optimizer['D'], self.loss['D']]
+        if with_summary:
+            fetches.append(self.discriminator_summary)
 
         # L_D = -D(x) -D(G(z, c))
         _, discriminator_loss = self.session.run(
-            [self.optimizer['D'], self.loss['D']],
+            fetches,
             feed_dict={
+                self.batch_size: [len(fake_images)],
                 self.images: images,
                 self.labels: labels,
                 K.learning_phase(): 1,
@@ -189,7 +207,7 @@ class DCGAN(model.Model):
     def _train_generator(self, batch_size, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
-            fetches.append(self.summary)
+            fetches.append(self.generator_summary)
 
         results = self.session.run(
             fetches,
