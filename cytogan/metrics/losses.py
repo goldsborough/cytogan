@@ -5,12 +5,6 @@ import tensorflow as tf
 E = 1e-10  # numerical stability
 
 
-def binary_crossentropy(p, q):
-    p = K.flatten(p)
-    q = K.flatten(q)
-    return K.mean(K.binary_crossentropy(p, q), axis=-1)
-
-
 def squared_error(p, q):
     '''MSE(p, q) = ||p - q||^2'''
     return K.sum(K.square(p - q), axis=1)

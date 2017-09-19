@@ -1,14 +1,14 @@
 import collections
 
 import keras.backend as K
+import keras.losses
 import numpy as np
 import tensorflow as tf
 from keras.layers import (Activation, BatchNormalization, Conv2D, Dense,
-                          Flatten, Input, LeakyReLU, Reshape, UpSampling2D,
-                          Lambda)
+                          Flatten, Input, Lambda, LeakyReLU, Reshape,
+                          UpSampling2D)
 from keras.models import Model
 
-from cytogan.metrics import losses
 from cytogan.models import model
 
 Hyper = collections.namedtuple('Hyper', [
@@ -203,15 +203,17 @@ class DCGAN(model.Model):
 
         return D
 
-    def _define_discriminator_loss(self, labels, logits):
+    def _define_discriminator_loss(self, labels, probability):
         noisy_labels = smooth_labels(labels)
         with K.name_scope('D_loss'):
-            return losses.binary_crossentropy(noisy_labels, logits)
+            probability = K.squeeze(probability, 1)
+            return keras.losses.binary_crossentropy(noisy_labels, probability)
 
     def _define_generator_loss(self, probability):
         with K.name_scope('G_loss'):
+            probability = K.squeeze(probability, 1)
             ones = K.ones_like(probability)
-            return losses.binary_crossentropy(ones, probability)
+            return keras.losses.binary_crossentropy(ones, probability)
 
     def _define_final_discriminator_layer(self, latent):
         return Dense(1, activation='sigmoid', name='Probability')(latent)
