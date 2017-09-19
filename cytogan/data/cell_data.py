@@ -15,11 +15,10 @@ def _normalize_luminance(images):
     normalized = []
     for image in images:
         maxima = image.max(axis=(0, 1))
-        assert len(maxima) == images.shape[-1]
-        if (maxima > 0).any():
-            image /= maxima
+        if maxima.sum() > 0:
+            image /= maxima.reshape(1, 1, -1)
         normalized.append(image)
-    return image
+    return normalized
 
 
 def _image_key_for_path(path, root_path):
