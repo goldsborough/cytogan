@@ -12,6 +12,7 @@ log = logs.get_logger(__name__)
 
 
 def _normalize_luminance(images):
+    print(images)
     return [i / max(1, i.max()) for i in images]
 
 
@@ -161,12 +162,12 @@ class CellData(object):
         for start in range(0, self.number_of_images, batch_size):
             end = start + batch_size
             keys = self.metadata.iloc[start:end].index
-            images = self.images[keys]
+            keys, images = self.images[keys]
             next_keys = self.metadata.iloc[end:end + batch_size].index
             self.images.fetch_async(next_keys)
             if self.normalize_luminance:
                 images = _normalize_luminance(images)
-            yield images
+            yield keys, images
 
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
