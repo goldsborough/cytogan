@@ -177,9 +177,10 @@ class DCGAN(model.Model):
             G=self._define_generator_loss(self.gan.outputs[0]))
 
     def _define_generator(self, logits):
+        get_shape = lambda t: list(map(int, t.shape[1:]))
         first_filter = self.generator_filters[0]
         G = Dense(np.prod(self.initial_shape) * first_filter)(logits)
-        G = Lambda(batch_norm)(G)
+        G = Lambda(batch_norm, output_shape=get_shape(G))(G)
         G = LeakyReLU(alpha=0.2)(G)
         G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
@@ -188,7 +189,7 @@ class DCGAN(model.Model):
             if stride > 1:
                 G = UpSampling2D(stride)(G)
             G = Conv2D(filters, (5, 5), padding='same')(G)
-            G = Lambda(batch_norm)(G)
+            G = Lambda(batch_norm, output_shape=get_shape(G))(G)
             G = LeakyReLU(alpha=0.2)(G)
 
         G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
@@ -235,20 +236,21 @@ class DCGAN(model.Model):
         if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 2
 
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with K.name_scope('D_opt'):
             self._learning_rate['D'] = self._get_learning_rate_tensor(
                 initial_learning_rate[0], learning.decay,
                 learning.steps_per_decay)
-            self.optimizer['D'] = tf.train.AdamOptimizer(
-                self._learning_rate['D'], beta1=0.5).minimize(
-                    self.loss['D'],
-                    var_list=self.discriminator.trainable_weights)
+            with tf.control_dependencies(update_ops):
+                self.optimizer['D'] = tf.train.AdamOptimizer(
+                    self._learning_rate['D'], beta1=0.5).minimize(
+                        self.loss['D'],
+                        var_list=self.discriminator.trainable_weights)
 
         with K.name_scope('G_opt'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
                 learning.steps_per_decay)
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
                 self.optimizer['G'] = tf.train.AdamOptimizer(
                     self._learning_rate['G'], beta1=0.5).minimize(
