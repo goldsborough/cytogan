@@ -32,7 +32,7 @@ class Model(abc.ABC):
         # Boilerplate for management of the model execution.
         self._add_summaries()
         self.saver = tf.train.Saver(
-            max_to_keep=10, keep_checkpoint_every_n_hours=1)
+            max_to_keep=10, keep_checkpoint_every_n_hours=0.5)
 
     @abc.abstractmethod
     def train_on_batch(self, batch, with_summary=False):
