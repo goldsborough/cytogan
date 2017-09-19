@@ -54,6 +54,8 @@ class DCGAN(model.Model):
 
         self.generator_summary = _merge_summaries('G')
         self.discriminator_summary = _merge_summaries('D')
+        self.summary = tf.summary.merge(
+            [self.generator_summary, self.discriminator_summary])
 
     def _define_graph(self):
         with K.name_scope('G'):
@@ -69,7 +71,7 @@ class DCGAN(model.Model):
 
         self.images, logits = self._define_discriminator()
 
-        self.latent = Dense(self.latent_size)(logits)
+        self.latent = Dense(self.latent_size, name='latent')(logits)
         self.probability = Dense(
             1, activation='sigmoid', name='D_final')(self.latent)
 
@@ -112,12 +114,20 @@ class DCGAN(model.Model):
         real_images = (np.array(real_images) * 2) - 1
         fake_images = self.generate(len(real_images), rescale=False)
 
-        d_loss = self._train_discriminator(fake_images, real_images,
+        d_tensors = self._train_discriminator(fake_images, real_images,
                                            with_summary)
         g_tensors = self._train_generator(len(real_images), with_summary)
 
-        losses = dict(D=d_loss, G=g_tensors[0])
-        return (losses, g_tensors[1]) if with_summary else losses
+        losses = dict(D=d_tensors[0], G=g_tensors[0])
+
+        if with_summary:
+            summary = self.session.run(self.summary, feed_dict={
+                self.generator_summary: g_tensors[1],
+                self.discriminator_summary: d_tensors[1],
+            })
+            return losses, summary
+        else:
+            return losses
 
     @property
     def learning_rate(self):
@@ -193,7 +203,7 @@ class DCGAN(model.Model):
             fetches.append(self.discriminator_summary)
 
         # L_D = -D(x) -D(G(z, c))
-        _, discriminator_loss = self.session.run(
+        results = self.session.run(
             fetches,
             feed_dict={
                 self.batch_size: [len(fake_images)],
@@ -202,7 +212,7 @@ class DCGAN(model.Model):
                 K.learning_phase(): 1,
             })
 
-        return discriminator_loss
+        return results[1:]
 
     def _train_generator(self, batch_size, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
