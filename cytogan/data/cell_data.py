@@ -12,7 +12,14 @@ log = logs.get_logger(__name__)
 
 
 def _normalize_luminance(images):
-    return [i / (i.max() or 1) for i in images]
+    normalized = []
+    for image in images:
+        maxima = image.max(axis=(0, 1))
+        assert len(maxima) == images.shape[-1]
+        if (maxima > 0).any():
+            image /= maxima
+        normalized.append(image)
+    return image
 
 
 def _image_key_for_path(path, root_path):
