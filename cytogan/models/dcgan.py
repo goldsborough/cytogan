@@ -25,8 +25,17 @@ Hyper = collections.namedtuple('Hyper', [
 
 def _merge_summaries(scope):
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
-    print(summaries)
     return tf.summary.merge(summaries)
+
+
+def sample_noise(batch_size, noise_size):
+    return tf.random_normal(
+        shape=[tf.squeeze(tf.cast(batch_size, tf.int32)), noise_size])
+
+
+def smooth_labels(labels, low=0.8, high=1.0):
+    with K.name_scope('noisy_labels'):
+        return labels * tf.random_uniform(tf.shape(labels), low, high)
 
 
 class DCGAN(model.Model):
@@ -43,7 +52,7 @@ class DCGAN(model.Model):
 
         self.batch_size = None
         self.noise = None  # z
-        self.probability = None  # D(x)
+        self.d_final = None  # D(x)
 
         self.generator = None  # G(z, c)
         self.discriminator = None  # D(x)
@@ -57,45 +66,14 @@ class DCGAN(model.Model):
         self.summary = tf.summary.merge(
             [self.generator_summary, self.discriminator_summary])
 
-    def _define_graph(self):
-        with K.name_scope('G'):
-            self.batch_size = Input(batch_shape=[1], name='batch_size')
-
-            def sample_noise(batch_size):
-                return tf.random_normal(shape=[
-                    tf.squeeze(tf.cast(batch_size, tf.int32)), self.noise_size
-                ])
-
-            self.noise = Lambda(sample_noise)(self.batch_size)
-            self.fake_images = self._define_generator(self.noise)
-
-        self.images, logits = self._define_discriminator()
-
-        self.latent = Dense(self.latent_size, name='latent')(logits)
-        self.probability = Dense(
-            1, activation='sigmoid', name='D_final')(self.latent)
-
-        self.generator = Model(self.batch_size, self.fake_images, name='G')
-        self.encoder = Model(self.images, self.latent, name='E')
-
-        self.loss = {}
-        self.labels = Input(batch_shape=[None], name='labels')
-        with K.name_scope('noisy_labels'):
-            noisy_labels = self.labels * tf.random_uniform(
-                tf.shape(self.labels), 0.8, 1.0)
-
-        self.discriminator = Model(self.images, self.probability, name='D')
-        with K.name_scope('D_loss'):
-            self.loss['D'] = losses.binary_crossentropy(
-                noisy_labels, self.discriminator.output)
-
-        self.gan = Model(
-            self.batch_size,
-            self.discriminator(self.fake_images),
-            name='DCGAN')
-        with K.name_scope('G_loss'):
-            self.loss['G'] = losses.binary_crossentropy(
-                K.ones_like(self.gan.outputs[0]), self.gan.outputs[0])
+    @property
+    def learning_rate(self):
+        learning_rates = {}
+        for key, lr in self._learning_rate.items():
+            if isinstance(lr, tf.Tensor):
+                lr = lr.eval(session=self.session)
+            learning_rates[key] = lr
+        return learning_rates
 
     def encode(self, images):
         return self.encoder.predict_on_batch(np.array(images))
@@ -115,83 +93,16 @@ class DCGAN(model.Model):
         fake_images = self.generate(len(real_images), rescale=False)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
-                                           with_summary)
+                                              with_summary)
         g_tensors = self._train_generator(len(real_images), with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
 
         if with_summary:
-            summary = self.session.run(self.summary, feed_dict={
-                self.generator_summary: g_tensors[1],
-                self.discriminator_summary: d_tensors[1],
-            })
+            summary = self._get_combined_summaries(g_tensors[1], d_tensors[1])
             return losses, summary
         else:
             return losses
-
-    @property
-    def learning_rate(self):
-        learning_rates = {}
-        for key, lr in self._learning_rate.items():
-            if isinstance(lr, tf.Tensor):
-                lr = lr.eval(session=self.session)
-            learning_rates[key] = lr
-        return learning_rates
-
-    def _add_summaries(self):
-        with K.name_scope('G'):
-            tf.summary.histogram('noise', self.noise)
-            tf.summary.scalar('G_loss', self.loss['G'])
-            tf.summary.image(
-                'generated_images', self.fake_images, max_outputs=8)
-
-        with K.name_scope('D'):
-            tf.summary.histogram('latent', self.latent)
-            tf.summary.scalar('D_loss', self.loss['D'])
-            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            fake_probability = self.probability[:batch_size]
-            real_probability = self.probability[batch_size:]
-            tf.summary.histogram('fake_probability', fake_probability)
-            tf.summary.histogram('real_probability', real_probability)
-
-    def _define_generator(self, input_tensor):
-        first_filter = self.generator_filters[0]
-        G = Dense(np.prod(self.initial_shape) * first_filter)(input_tensor)
-        G = BatchNormalization(momentum=0.9)(G)
-        G = LeakyReLU(alpha=0.2)(G)
-        G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
-
-        for filters, stride in zip(self.generator_filters[1:],
-                                   self.generator_strides[1:]):
-            if stride > 1:
-                G = UpSampling2D(stride)(G)
-            G = Conv2D(filters, (5, 5), padding='same')(G)
-            G = BatchNormalization(momentum=0.9)(G)
-            G = LeakyReLU(alpha=0.2)(G)
-
-        G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
-        G = Activation('tanh')(G)
-        assert G.shape[1:] == self.image_shape, G.shape
-
-        return G
-
-    def _define_discriminator(self):
-        x = Input(shape=self.image_shape)
-
-        # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
-        def noisy(images):
-            return images + tf.random_normal(
-                tf.shape(images), mean=0.0, stddev=0.1)
-
-        D = Lambda(noisy)(x)
-        for filters, stride in zip(self.discriminator_filters,
-                                   self.discriminator_strides):
-            D = Conv2D(
-                filters, (5, 5), strides=(stride, stride), padding='same')(D)
-            D = LeakyReLU(alpha=0.2)(D)
-        D = Flatten()(D)
-
-        return x, D
 
     def _train_discriminator(self, fake_images, real_images, with_summary):
         labels = np.concatenate(
@@ -228,6 +139,84 @@ class DCGAN(model.Model):
 
         return results[1:]
 
+    def _define_graph(self):
+        with K.name_scope('G'):
+            self.batch_size = Input(batch_shape=[1], name='batch_size')
+            self.noise = Lambda(
+                sample_noise,
+                arguments=dict(noise_size=self.noise_size))(self.batch_size)
+            self.fake_images = self._define_generator(self.noise)
+
+        self.images = Input(shape=self.image_shape)
+        logits = self._define_discriminator(self.images)
+
+        self.latent = Dense(self.latent_size, name='latent')(logits)
+        self.d_final = self._define_final_discriminator_layer(self.latent)
+
+        self.generator = Model(self.batch_size, self.fake_images, name='G')
+        self.discriminator = Model(self.images, self.d_final, name='D')
+        self.encoder = Model(self.images, self.latent, name='E')
+        self.gan = Model(
+            self.batch_size,
+            self.discriminator(self.fake_images),
+            name=self.name)
+
+        self.labels = Input(batch_shape=[None], name='labels')
+        self.loss = dict(
+            D=self._define_discriminator_loss(self.labels),
+            G=self._define_generator_loss())
+
+    def _define_generator(self, logits):
+        first_filter = self.generator_filters[0]
+        G = Dense(np.prod(self.initial_shape) * first_filter)(logits)
+        G = BatchNormalization(momentum=0.9)(G)
+        G = LeakyReLU(alpha=0.2)(G)
+        G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
+
+        for filters, stride in zip(self.generator_filters[1:],
+                                   self.generator_strides[1:]):
+            if stride > 1:
+                G = UpSampling2D(stride)(G)
+            G = Conv2D(filters, (5, 5), padding='same')(G)
+            G = BatchNormalization(momentum=0.9)(G)
+            G = LeakyReLU(alpha=0.2)(G)
+
+        G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
+        G = Activation('tanh')(G)
+        assert G.shape[1:] == self.image_shape, G.shape
+
+        return G
+
+    def _define_discriminator(self, images):
+        # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
+        def noisy(images):
+            return images + tf.random_normal(
+                tf.shape(images), mean=0.0, stddev=0.1)
+
+        D = Lambda(noisy)(images)
+        for filters, stride in zip(self.discriminator_filters,
+                                   self.discriminator_strides):
+            D = Conv2D(
+                filters, (5, 5), strides=(stride, stride), padding='same')(D)
+            D = LeakyReLU(alpha=0.2)(D)
+        D = Flatten()(D)
+
+        return D
+
+    def _define_discriminator_loss(self, labels):
+        noisy_labels = smooth_labels(labels)
+        with K.name_scope('D_loss'):
+            return losses.binary_crossentropy(noisy_labels, self.d_final)
+
+    def _define_generator_loss(self):
+        with K.name_scope('G_loss'):
+            probability = self.gan.outputs[0]
+            ones = K.ones_like(probability)
+            return losses.binary_crossentropy(ones, probability)
+
+    def _define_final_discriminator_layer(self, latent):
+        return Dense(1, activation='sigmoid', name='Probability')(latent)
+
     def _add_optimizer(self, learning):
         self.optimizer = {}
         self._learning_rate = {}
@@ -253,6 +242,31 @@ class DCGAN(model.Model):
                     self.loss['G'],
                     var_list=self.generator.trainable_weights,
                     global_step=self.global_step)
+
+    def _add_summaries(self):
+        with K.name_scope('G'):
+            tf.summary.histogram('noise', self.noise)
+            tf.summary.scalar('G_loss', self.loss['G'])
+            tf.summary.image(
+                'generated_images', self.fake_images, max_outputs=8)
+
+        with K.name_scope('D'):
+            tf.summary.histogram('latent', self.latent)
+            tf.summary.scalar('D_loss', self.loss['D'])
+            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+            fake_probability = self.d_final[:batch_size]
+            real_probability = self.d_final[batch_size:]
+            tf.summary.histogram('fake_probability', fake_probability)
+            tf.summary.histogram('real_probability', real_probability)
+
+    def _get_combined_summaries(self, generator_summary,
+                                discriminator_summary):
+        return self.session.run(
+            self.summary,
+            feed_dict={
+                self.generator_summary: generator_summary,
+                self.discriminator_summary: discriminator_summary,
+            })
 
     def __repr__(self):
         lines = [self.__class__.__name__]

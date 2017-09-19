@@ -69,7 +69,7 @@ def make_parser(name):
     parser.add_argument(
         '-m',
         '--model',
-        choices=('ae', 'conv_ae', 'vae', 'infogan', 'dcgan'),
+        choices=('ae', 'conv_ae', 'vae', 'infogan', 'dcgan', 'lsgan', 'wgan'),
         required=True)
     parser.add_argument('--dry', action='store_true')
 

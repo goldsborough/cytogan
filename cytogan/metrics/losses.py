@@ -11,7 +11,7 @@ def binary_crossentropy(p, q):
     return K.mean(K.binary_crossentropy(p, q), axis=-1)
 
 
-def squared_errors(p, q):
+def squared_error(p, q):
     '''MSE(p, q) = ||p - q||^2'''
     return K.sum(K.square(p - q), axis=1)
 
@@ -21,7 +21,7 @@ def reconstruction_loss(original_images, reconstructed_images):
         flat_shape = [-1, int(np.prod(original_images.shape[1:]))]
         original_images = K.reshape(original_images, flat_shape)
         reconstructed_images = K.reshape(reconstructed_images, flat_shape)
-    return squared_errors(original_images, reconstructed_images)
+    return squared_error(original_images, reconstructed_images)
 
 
 def mutual_information(x, x_given_y):
