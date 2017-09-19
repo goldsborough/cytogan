@@ -4,9 +4,8 @@ import keras.backend as K
 import keras.losses
 import numpy as np
 import tensorflow as tf
-from keras.layers import (Activation, BatchNormalization, Conv2D, Dense,
-                          Flatten, Input, Lambda, LeakyReLU, Reshape,
-                          UpSampling2D)
+from keras.layers import (Activation, Conv2D, Dense, Flatten, Input, Lambda,
+                          LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
 from cytogan.models import model
@@ -28,6 +27,10 @@ def _merge_summaries(scope):
     return tf.summary.merge(summaries)
 
 
+def _output_shape(tensor):
+    return list(map(int, tensor.shape[1:]))
+
+
 def sample_noise(batch_size, noise_size):
     return tf.random_normal(
         shape=[tf.squeeze(tf.cast(batch_size, tf.int32)), noise_size])
@@ -40,12 +43,7 @@ def smooth_labels(labels, low=0.8, high=1.0):
 
 def batch_norm(tensor):
     return tf.layers.batch_normalization(
-        tensor,
-        axis=-1,
-        momentum=0.9,
-        training=K.learning_phase(),
-        renorm_momentum=0.99,
-        fused=None)
+        tensor, axis=-1, momentum=0.9, training=K.learning_phase(), fused=None)
 
 
 class DCGAN(model.Model):
@@ -144,7 +142,7 @@ class DCGAN(model.Model):
             fetches,
             feed_dict={
                 self.batch_size: [batch_size],
-                K.learning_phase(): 0,
+                K.learning_phase(): 1,
             })
 
         return results[1:]
@@ -177,10 +175,9 @@ class DCGAN(model.Model):
             G=self._define_generator_loss(self.gan.outputs[0]))
 
     def _define_generator(self, logits):
-        get_shape = lambda t: list(map(int, t.shape[1:]))
         first_filter = self.generator_filters[0]
         G = Dense(np.prod(self.initial_shape) * first_filter)(logits)
-        G = Lambda(batch_norm, output_shape=get_shape(G))(G)
+        G = Lambda(batch_norm, output_shape=_output_shape(G))(G)
         G = LeakyReLU(alpha=0.2)(G)
         G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
@@ -189,7 +186,7 @@ class DCGAN(model.Model):
             if stride > 1:
                 G = UpSampling2D(stride)(G)
             G = Conv2D(filters, (5, 5), padding='same')(G)
-            G = Lambda(batch_norm, output_shape=get_shape(G))(G)
+            G = Lambda(batch_norm, output_shape=_output_shape(G))(G)
             G = LeakyReLU(alpha=0.2)(G)
 
         G = Conv2D(self.number_of_channels, (5, 5), padding='same')(G)
@@ -209,6 +206,7 @@ class DCGAN(model.Model):
                                    self.discriminator_strides):
             D = Conv2D(
                 filters, (5, 5), strides=(stride, stride), padding='same')(D)
+            D = Lambda(batch_norm, output_shape=_output_shape(D))(D)
             D = LeakyReLU(alpha=0.2)(D)
         D = Flatten()(D)
 
