@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan
+from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan, wgan
 from cytogan.train import common, trainer, visualize
 from cytogan.extra import distributions, misc, logs
 
@@ -45,7 +45,7 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         latent_size=100,
         noise_size=100,
         initial_shape=(7, 7))
-    models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN)
+    models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'infogan':
     latent_distribution = distributions.mixture({
