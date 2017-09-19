@@ -42,12 +42,18 @@ def smooth_labels(labels, low=0.8, high=1.0):
 
 
 def batch_norm(tensor):
-    return tf.layers.batch_normalization(
-        tensor, axis=-1, momentum=0.9, training=K.learning_phase(), fused=None)
+    with K.name_scope('bach_norm'):
+        return tf.layers.batch_normalization(
+            tensor,
+            axis=-1,
+            momentum=0.9,
+            training=K.learning_phase(),
+            fused=None)
+
 
 def add_noise(images):
-    return images + tf.random_normal(
-        tf.shape(images), mean=0.0, stddev=0.1)
+    return images + tf.random_normal(tf.shape(images), mean=0.0, stddev=0.1)
+
 
 class DCGAN(model.Model):
     def __init__(self, hyper, learning, session):
