@@ -4,7 +4,7 @@ python3 -m cytogan.train.bbbc021                          \
   --epochs 100                                            \
   --model wgan                                            \
   --lr 5e-5 5e-5                                          \
-  --lr-decay 0.999                                        \
+  --lr-decay 0.9995                                       \
   --lr-decay-steps 100                                    \
   --batch-size 64                                         \
   --workspace /data1/peter/runs                           \
