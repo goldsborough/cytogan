@@ -51,12 +51,12 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
 elif options.model == 'began':
     hyper = began.Hyper(
         image_shape,
-        generator_filters=(128, 128, 128, 128),
-        generator_strides=(1, 2, 2, 1),
+        generator_filters=(128, 128, 128),
+        generator_strides=(1, 2, 2),
         encoder_filters=(128, 256, 384),
         encoder_strides=(1, 2, 2, 1),
-        decoder_filters=(128, 128, 128, 128),
-        decoder_strides=(1, 2, 2, 1),
+        decoder_filters=(128, 128, 128),
+        decoder_strides=(1, 2, 2),
         latent_size=100,
         noise_size=100,
         initial_shape=(7, 7),

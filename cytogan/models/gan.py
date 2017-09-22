@@ -34,7 +34,6 @@ class GAN(model.Model):
 
         self.generator_summary = _merge_summaries('G')
         self.discriminator_summary = _merge_summaries('D')
-        print(self.generator_summary, self.discriminator_summary)
         self.summary = tf.summary.merge(
             [self.generator_summary, self.discriminator_summary])
 
@@ -55,7 +54,7 @@ class GAN(model.Model):
         if isinstance(latent_samples, int):
             feed_dict[self.batch_size] = [latent_samples]
         else:
-            feed_dict[self.generator.inputs[0]] = latent_samples
+            feed_dict[self.noise] = latent_samples
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2 if rescale else images
