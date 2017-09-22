@@ -7,9 +7,10 @@ E = 1e-10  # numerical stability
 
 
 def l1_distance(x, y):
-    x = K.flatten(x)
-    y = K.flatten(y)
-    return keras.losses.mean_absolute_error(x, y)
+    with K.name_scope('l1_distance'):
+        x = K.flatten(x)
+        y = K.flatten(y)
+        return keras.losses.mean_absolute_error(x, y)
 
 
 def squared_error(p, q):

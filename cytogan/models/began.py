@@ -40,8 +40,10 @@ class BEGAN(gan.GAN):
 
         self.images = Input(shape=self.image_shape, name='images')
 
-        self.latent = self._define_encoder(self.images)
-        self.reconstructions = self._define_decoder(self.latent)
+        with K.name_scope('E'):
+            self.latent = self._define_encoder(self.images)
+        with K.name_scope('D'):
+            self.reconstructions = self._define_decoder(self.latent)
 
         self.generator = Model(self.batch_size, self.fake_images, name='G')
         self.discriminator = Model(self.images, self.reconstructions, name='D')
@@ -140,11 +142,12 @@ class BEGAN(gan.GAN):
 
     def _define_discriminator_loss(self, reconstructions):
         with K.name_scope('D_loss'):
-            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            fake_images = self.images[:batch_size]
-            real_images = self.images[batch_size:]
-            fake_reconstructions = reconstructions[:batch_size]
-            real_reconstructions = reconstructions[batch_size:]
+            with K.name_scope('slicing'):
+                batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+                fake_images = self.images[:batch_size]
+                real_images = self.images[batch_size:]
+                fake_reconstructions = reconstructions[:batch_size]
+                real_reconstructions = reconstructions[batch_size:]
 
             real_loss = losses.l1_distance(real_images, real_reconstructions)
             fake_loss = losses.l1_distance(fake_images, fake_reconstructions)
@@ -177,12 +180,12 @@ class BEGAN(gan.GAN):
         with K.name_scope('D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('D_loss', self.loss['D'])
-            # tf.summary.scalar('k', self.k)
-            # tf.summary.scalar('convergence', self.convergence_measure)
-            # batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            # fake_reconstructions = self.reconstructions[:batch_size]
-            # real_reconstructions = self.reconstructions[batch_size:]
-            # tf.summary.image(
-            #     'fake_reconstructions', fake_reconstructions, max_outputs=4)
-            # tf.summary.image(
-            #     'real_reconstructions', real_reconstructions, max_outputs=4)
+            tf.summary.scalar('k', self.k)
+            tf.summary.scalar('convergence', self.convergence_measure)
+            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+            fake_reconstructions = self.reconstructions[:batch_size]
+            real_reconstructions = self.reconstructions[batch_size:]
+            tf.summary.image(
+                'fake_reconstructions', fake_reconstructions, max_outputs=4)
+            tf.summary.image(
+                'real_reconstructions', real_reconstructions, max_outputs=4)
