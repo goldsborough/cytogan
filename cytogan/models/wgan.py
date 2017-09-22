@@ -16,12 +16,16 @@ class WGAN(dcgan.DCGAN):
             generated_logits, real_logits = tf.split(logits, 2)
             loss = K.mean(generated_logits) - K.mean(real_logits)
 
-            generated_images, real_images = tf.split(self.images, 2)
-            epsilon = tf.random_uniform(shape=K.shape(generated_images))
-            mix = epsilon * real_images + (1 - epsilon) * generated_images
-            gradients = K.gradients(self.discriminator(mix), mix)[0]
-            slopes = K.sqrt(K.sum(K.square(gradients), axis=[1, 2, 3]))
-            gradient_penalty = 10 * K.mean(K.square(slopes - 1), axis=0)
+            with K.name_scope('gradient_penalty'):
+                batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+                available = tf.shape(self.images)[0] - batch_size
+                generated_images = self.images[:available]
+                real_images = self.images[-available:]
+                epsilon = tf.random_uniform(shape=K.shape(generated_images))
+                mix = epsilon * real_images + (1 - epsilon) * generated_images
+                gradients = K.gradients(self.discriminator(mix), mix)[0]
+                slopes = K.sqrt(K.sum(K.square(gradients), axis=[1, 2, 3]))
+                gradient_penalty = 10 * K.mean(K.square(slopes - 1), axis=0)
 
             return loss + gradient_penalty
 
