@@ -34,6 +34,7 @@ class GAN(model.Model):
 
         self.generator_summary = _merge_summaries('G')
         self.discriminator_summary = _merge_summaries('D')
+        print(self.generator_summary, self.discriminator_summary)
         self.summary = tf.summary.merge(
             [self.generator_summary, self.discriminator_summary])
 
