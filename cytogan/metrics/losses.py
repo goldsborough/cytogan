@@ -1,8 +1,15 @@
 import keras.backend as K
 import numpy as np
 import tensorflow as tf
+import keras.losses
 
 E = 1e-10  # numerical stability
+
+
+def l1_distance(x, y):
+    x = K.flatten(x)
+    y = K.flatten(y)
+    return keras.losses.mean_absolute_error(x, y)
 
 
 def squared_error(p, q):

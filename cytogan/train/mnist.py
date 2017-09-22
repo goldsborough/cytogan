@@ -4,9 +4,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
-from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan, wgan
+from cytogan.extra import distributions, logs, misc
+from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
+                            vae, wgan)
 from cytogan.train import common, trainer, visualize
-from cytogan.extra import distributions, misc, logs
 
 parser = common.make_parser('cytogan-mnist')
 options = common.parse_args(parser)
@@ -47,6 +48,21 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         initial_shape=(7, 7))
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
+elif options.model == 'began':
+    hyper = began.Hyper(
+        image_shape,
+        generator_filters=(128, 128, 128, 128),
+        generator_strides=(1, 2, 2, 1),
+        encoder_filters=(128, 256, 384),
+        encoder_strides=(1, 2, 2, 1),
+        decoder_filters=(128, 128, 128, 128),
+        decoder_strides=(1, 2, 2, 1),
+        latent_size=100,
+        noise_size=100,
+        initial_shape=(7, 7),
+        diversity_factor=0.5,
+        proportional_gain=1e-4)
+    Model = began.BEGAN
 elif options.model == 'infogan':
     latent_distribution = distributions.mixture({
         distributions.categorical(10):
@@ -117,7 +133,7 @@ with common.get_session(options.gpus) as session:
                     continuous_2.reshape(-1, 1),
                 ],
                 axis=1)
-        elif options.model == 'dcgan':
+        elif options.model.endswith('gan'):
             samples = np.random.randn(options.generative_samples,
                                       model.noise_size)
         else:

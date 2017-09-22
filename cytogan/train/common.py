@@ -9,6 +9,7 @@ import keras.backend as K
 import tensorflow as tf
 
 from cytogan.extra import logs
+from cytogan import models
 
 log = logs.get_logger(__name__)
 
@@ -66,11 +67,7 @@ def make_parser(name):
         '--checkpoint-freq', type=Frequency, default=Frequency('30s'))
     parser.add_argument('--restore-from', metavar='CHECKPOINT_DIR')
     parser.add_argument('-w', '--workspace')
-    parser.add_argument(
-        '-m',
-        '--model',
-        choices=('ae', 'conv_ae', 'vae', 'infogan', 'dcgan', 'lsgan', 'wgan'),
-        required=True)
+    parser.add_argument('-m', '--model', choices=models.MODELS, required=True)
     parser.add_argument('--dry', action='store_true')
 
     return parser
