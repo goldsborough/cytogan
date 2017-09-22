@@ -29,6 +29,7 @@ Hyper = collections.namedtuple('Hyper', [
 class BEGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
         self.k = None
+        self.reconstructions = None
         super(BEGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
@@ -56,9 +57,10 @@ class BEGAN(gan.GAN):
 
     def _train_discriminator(self, fake_images, real_images, with_summary):
         images = np.concatenate([fake_images, real_images], axis=0)
-        fetches = [self.optimizer['D'], self.loss['D'], self.update_k]
+        fetches = [self.optimizer['D'], self.loss['D']]
         if with_summary:
             fetches.append(self.discriminator_summary)
+        fetches.append(self.update_k)
 
         results = self.session.run(
             fetches,
