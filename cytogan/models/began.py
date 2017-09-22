@@ -111,8 +111,8 @@ class BEGAN(gan.GAN):
                 strides=(stride, stride),
                 padding='same',
                 activation='elu')(E)
-            E = Conv2D(128, (3, 3), padding='same', activation='elu')(E)
-            E = Conv2D(128, (3, 3), padding='same', activation='elu')(E)
+            E = Conv2D(filters, (3, 3), padding='same', activation='elu')(E)
+            E = Conv2D(filters, (3, 3), padding='same', activation='elu')(E)
 
         E = Flatten()(E)
         H = Dense(self.latent_size)(E)

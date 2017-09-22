@@ -55,9 +55,9 @@ elif options.model == 'began':
     hyper = began.Hyper(
         image_shape,
         generator_filters=(128, 128, 128),
-        generator_strides=(1, 2, 2),
+        generator_strides=(1, 1, 2, 2),
         encoder_filters=(128, 256, 384),
-        encoder_strides=(1, 2, 2, 1),
+        encoder_strides=(1, 2, 2),
         decoder_filters=(128, 128, 128),
         decoder_strides=(1, 2, 2),
         latent_size=100,

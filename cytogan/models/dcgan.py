@@ -76,7 +76,8 @@ class DCGAN(gan.GAN):
             self.fake_images = self._define_generator(self.noise)
 
         self.images = Input(shape=self.image_shape, name='images')
-        logits = self._define_discriminator(self.images)
+        with K.name_scope('D'):
+            logits = self._define_discriminator(self.images)
 
         self.latent = Dense(self.latent_size, name='latent')(logits)
         self.d_final = self._define_final_discriminator_layer(self.latent)
