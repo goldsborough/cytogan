@@ -56,7 +56,7 @@ class BEGAN(gan.GAN):
 
     def _train_discriminator(self, fake_images, real_images, with_summary):
         images = np.concatenate([fake_images, real_images], axis=0)
-        fetches = [self.optimizer['D'], self.loss['D']]
+        fetches = [self.optimizer['D'], self.loss['D'], self.update_k]
         if with_summary:
             fetches.append(self.discriminator_summary)
 
@@ -160,8 +160,8 @@ class BEGAN(gan.GAN):
 
             with K.name_scope('k_update'):
                 new_k = self.k + self.proportional_gain * equilibrium
-                update_k = tf.assign(self.k, tf.clip_by_value(new_k, 0, 1))
-                tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_k)
+                self.update_k = tf.assign(self.k, tf.clip_by_value(
+                    new_k, 0, 1))
 
             return loss
 
