@@ -149,8 +149,12 @@ class BEGAN(gan.GAN):
                 fake_reconstructions = reconstructions[:batch_size]
                 real_reconstructions = reconstructions[batch_size:]
 
-            real_loss = losses.l1_distance(real_images, real_reconstructions)
-            fake_loss = losses.l1_distance(fake_images, fake_reconstructions)
+            with K.name_scope('real_loss'):
+                real_loss = losses.l1_distance(real_images,
+                                               real_reconstructions)
+            with K.name_scope('fake_loss'):
+                fake_loss = losses.l1_distance(fake_images,
+                                               fake_reconstructions)
 
             self.k = tf.Variable(1e-8, trainable=False, name='k')
 
@@ -164,9 +168,9 @@ class BEGAN(gan.GAN):
                 self.convergence_measure = real_loss + tf.abs(equilibrium)
 
             with K.name_scope('k_update'):
-                new_k = self.k + self.proportional_gain * equilibrium
-                self.update_k = tf.assign(self.k, tf.clip_by_value(
-                    new_k, 0, 1))
+                self.k_pre_clip = self.k + self.proportional_gain * equilibrium
+                new_k = tf.clip_by_value(self.k_pre_clip, 0, 1)
+                self.update_k = tf.assign(self.k, new_k)
 
             return loss
 
@@ -180,12 +184,13 @@ class BEGAN(gan.GAN):
         with K.name_scope('D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('D_loss', self.loss['D'])
+            tf.summary.scalar('k_pre_clip', self.k_pre_clip)
             tf.summary.scalar('k', self.k)
             tf.summary.scalar('convergence', self.convergence_measure)
             batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
             fake_reconstructions = self.reconstructions[:batch_size]
             real_reconstructions = self.reconstructions[batch_size:]
             tf.summary.image(
-                'fake_reconstructions', fake_reconstructions, max_outputs=4)
+                'fake_reconstructions', fake_reconstructions, max_outputs=2)
             tf.summary.image(
-                'real_reconstructions', real_reconstructions, max_outputs=4)
+                'real_reconstructions', real_reconstructions, max_outputs=2)

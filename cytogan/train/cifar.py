@@ -5,7 +5,7 @@ import tensorflow as tf
 from keras.datasets import cifar10
 
 from cytogan.data.batch_generator import BatchGenerator
-from cytogan.models import ae, conv_ae, model, vae, dcgan, infogan
+from cytogan.models import ae, conv_ae, model, vae, dcgan, infogan, began
 from cytogan.train import common, trainer, visualize
 from cytogan.train.common import Dataset, make_parser
 from cytogan.extra import distributions, logs, misc
@@ -51,10 +51,27 @@ elif options.model == 'dcgan':
         noise_size=100,
         initial_shape=(8, 8))
     Model = dcgan.DCGAN
+elif options.model == 'began':
+    hyper = began.Hyper(
+        image_shape,
+        generator_filters=(128, 128, 128),
+        generator_strides=(1, 2, 2),
+        encoder_filters=(128, 256, 384),
+        encoder_strides=(1, 2, 2, 1),
+        decoder_filters=(128, 128, 128),
+        decoder_strides=(1, 2, 2),
+        latent_size=100,
+        noise_size=100,
+        initial_shape=(8, 8),
+        diversity_factor=0.5,
+        proportional_gain=1e-4)
+    Model = began.BEGAN
 elif options.model == 'infogan':
     latent_distribution = distributions.mixture({
-        distributions.categorical(10): 1,
-        distributions.uniform(): 2,
+        distributions.categorical(10):
+        1,
+        distributions.uniform():
+        2,
     })
     hyper = infogan.Hyper(
         image_shape,
@@ -114,7 +131,7 @@ with common.get_session(options.gpus) as session:
                     continuous_2.reshape(-1, 1),
                 ],
                 axis=1)
-        elif options.model == 'dcgan':
+        elif options.model.endswith('gan'):
             samples = np.random.randn(options.generative_samples,
                                       model.noise_size)
         else:
