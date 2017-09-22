@@ -175,12 +175,12 @@ class BEGAN(gan.GAN):
         with K.name_scope('D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('D_loss', self.loss['D'])
-            tf.summary.scalar('k', self.k)
-            tf.summary.scalar('convergence', self.convergence_measure)
-            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            fake_reconstructions = self.reconstructions[:batch_size]
-            real_reconstructions = self.reconstructions[batch_size:]
-            tf.summary.image(
-                'fake_reconstructions', fake_reconstructions, max_outputs=4)
-            tf.summary.image(
-                'real_reconstructions', real_reconstructions, max_outputs=4)
+            # tf.summary.scalar('k', self.k)
+            # tf.summary.scalar('convergence', self.convergence_measure)
+            # batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+            # fake_reconstructions = self.reconstructions[:batch_size]
+            # real_reconstructions = self.reconstructions[batch_size:]
+            # tf.summary.image(
+            #     'fake_reconstructions', fake_reconstructions, max_outputs=4)
+            # tf.summary.image(
+            #     'real_reconstructions', real_reconstructions, max_outputs=4)
