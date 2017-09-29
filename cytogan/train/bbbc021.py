@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
 from cytogan.metrics import profiling
-from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan, wgan
+from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan, wgan, began
 from cytogan.train import common, trainer, visualize
 from cytogan.extra import distributions, logs, misc
 
@@ -58,6 +58,21 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         initial_shape=(12, 12))
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
+elif options.model == 'began':
+    hyper = began.Hyper(
+        image_shape,
+        generator_filters=(128, 128, 128, 128),
+        generator_strides=(1, 2, 2, 2),
+        encoder_filters=(64, 128, 256, 384),
+        encoder_strides=(2, 2, 2, 2),
+        decoder_filters=(128, 128, 128, 128),
+        decoder_strides=(1, 2, 2, 2),
+        latent_size=100,
+        noise_size=100,
+        initial_shape=(12, 12),
+        diversity_factor=0.5,
+        proportional_gain=1e-4)
+    Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 32
     continuous_variables = 68
