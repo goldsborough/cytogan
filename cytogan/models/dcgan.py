@@ -60,9 +60,9 @@ class DCGAN(gan.GAN):
             self.labels: labels,
             K.learning_phase(): 1,
         }
-        # if self.discriminator_conditional is not None:
-        #     conditional = np.concatenate([conditional, conditional], axis=0)
-        #     feed_dict[self.discriminator_conditional] = conditional
+        if self.discriminator_conditional is not None:
+            conditional = np.concatenate([conditional, conditional], axis=0)
+            feed_dict[self.discriminator_conditional] = conditional
 
         return self.session.run(fetches, feed_dict)[1:]
 
@@ -88,8 +88,8 @@ class DCGAN(gan.GAN):
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
-            # self.discriminator_conditional = get_conditional_input(
-            #     self.conditional_shape)
+            self.discriminator_conditional = get_conditional_input(
+                self.conditional_shape)
             logits = self._define_discriminator(self.images,
                                                 self.discriminator_conditional)
 
@@ -103,16 +103,17 @@ class DCGAN(gan.GAN):
         generator_outputs = [self.fake_images]
         if self.is_conditional:
             generator_inputs += [self.generator_conditional]
-            # generator_outputs += [self.generator_conditional]
-            # discriminator_inputs += [self.discriminator_conditional]
+            generator_outputs += [self.generator_conditional]
+            discriminator_inputs += [self.discriminator_conditional]
             self.gan_conditional = self.generator_conditional
 
         self.generator = Model(generator_inputs, self.fake_images, name='G')
-        self.discriminator = Model(self.images, self.d_final, name='D')
-        self.encoder = Model(self.images, self.latent, name='E')
+        self.discriminator = Model(
+            discriminator_inputs, self.d_final, name='D')
+        self.encoder = Model(discriminator_inputs, self.latent, name='E')
         self.gan = Model(
-            [self.noise, self.generator_conditional],
-            self.discriminator(self.fake_images),
+            generator_inputs,
+            self.discriminator(generator_outputs),
             name=self.name)
 
         self.loss = dict(
