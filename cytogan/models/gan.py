@@ -22,7 +22,7 @@ class GAN(model.Model):
         self.flat_image_shape = np.prod(hyper.image_shape)
 
         self.images = None  # x
-        self.conditional_input = None
+        self.gan_conditional = None
         self.batch_size = None
         self.noise = None  # z
 
@@ -41,7 +41,7 @@ class GAN(model.Model):
     @property
     def name(self):
         _name = super(GAN, self).name
-        if self.conditional_input is None:
+        if self.gan_conditional is None:
             return _name
         else:
             return 'Conditional {0}'.format(_name)
@@ -65,13 +65,13 @@ class GAN(model.Model):
         else:
             feed_dict[self.noise] = latent_samples
         if conditionals is not None:
-            feed_dict[self.conditional_input] = conditionals
+            feed_dict[self.gan_conditional] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
-        if self.conditional_input is None:
+        if self.gan_conditional is None:
             real_images, conditionals = batch, None
         else:
             real_images, conditionals = batch

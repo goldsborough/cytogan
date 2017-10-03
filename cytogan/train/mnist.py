@@ -18,10 +18,17 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-data = mnist.input_data.read_data_sets('MNIST_data', one_hot=False)
-get_batch = lambda n: data.train.next_batch(n)[0].reshape([-1, 28, 28, 1])
-number_of_batches = data.train.num_examples // options.batch_size
 image_shape = (28, 28, 1)
+data = mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
+number_of_batches = data.train.num_examples // options.batch_size
+conditional = (10, ) if options.conditional else None
+
+
+def get_batch(n):
+    batch = data.train.next_batch(n)
+    images = batch[0].reshape((-1, ) + image_shape)
+    return (images, batch[1].reshape(-1, 10)) if conditional else images
+
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
                           or number_of_batches)
@@ -45,7 +52,8 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         noise_size=100,
-        initial_shape=(7, 7))
+        initial_shape=(7, 7),
+        conditional_shape=conditional)
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
@@ -139,6 +147,10 @@ with common.get_session(options.gpus) as session:
         else:
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
+        if conditional:
+            samples = [samples]
+            variables = distributions.categorical(10)
+            samples.append(variables((options.generative_samples)))
         visualize.generative_samples(
             model, samples, gray=True, save_to=options.figure_dir)
 

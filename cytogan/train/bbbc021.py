@@ -70,8 +70,8 @@ elif options.model == 'began':
         latent_size=100,
         noise_size=100,
         initial_shape=(12, 12),
-        diversity_factor=0.5,
-        proportional_gain=1e-4)
+        diversity_factor=0.7,
+        proportional_gain=1e-3)
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 32
