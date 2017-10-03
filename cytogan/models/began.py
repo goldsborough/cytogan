@@ -61,7 +61,7 @@ class BEGAN(gan.GAN):
             discriminator_inputs, self.reconstructions, name='D')
         self.encoder = Model(discriminator_inputs, self.latent, name='E')
         self.gan = Model(
-            self.batch_size,
+            generator_inputs,
             self.discriminator(generator_outputs),
             name=self.name)
 
