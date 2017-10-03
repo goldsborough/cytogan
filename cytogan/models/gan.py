@@ -1,6 +1,7 @@
-import tensorflow as tf
 import keras.backend as K
 import numpy as np
+import tensorflow as tf
+from keras.layers import Input
 
 from cytogan.models import model
 
@@ -9,6 +10,17 @@ def _merge_summaries(scope):
     scope = 'summaries/{0}'.format(scope)
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
     return tf.summary.merge(summaries)
+
+
+def get_conditional_inputs(scopes, conditional_shape):
+    if conditional_shape is None:
+        return {scope: None for scope in scopes}
+    inputs = {}
+    for scope in scopes:
+        name = '{0}/conditional'.format(scope)
+        inputs[scope] = Input(shape=conditional_shape, name=name)
+
+    return inputs
 
 
 class GAN(model.Model):
@@ -23,8 +35,7 @@ class GAN(model.Model):
         self.flat_image_shape = np.prod(hyper.image_shape)
 
         self.images = None  # x
-        self.generator_conditional = None
-        self.discriminator_conditional = None
+        self.conditional = None
         self.batch_size = None
         self.noise = None  # z
 
@@ -43,7 +54,7 @@ class GAN(model.Model):
     @property
     def name(self):
         _name = super(GAN, self).name
-        if self.generator_conditional is None:
+        if self.is_conditional is None:
             return _name
         else:
             return 'Conditional {0}'.format(_name)
@@ -71,13 +82,13 @@ class GAN(model.Model):
         else:
             feed_dict[self.noise] = latent_samples
         if conditionals is not None:
-            feed_dict[self.generator_conditional] = conditionals
+            feed_dict[self.conditional['G']] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
-        if self.generator_conditional is None:
+        if self.conditional is None:
             real_images, conditionals = batch, None
         else:
             real_images, conditionals = batch

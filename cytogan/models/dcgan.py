@@ -8,7 +8,8 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
                           Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
-from cytogan.extra.layers import AddNoise, BatchNorm, RandomNormal
+from cytogan.extra.layers import (AddNoise, BatchNorm, MixImagesWithVariables,
+                                  RandomNormal)
 from cytogan.models import gan
 
 Hyper = collections.namedtuple('Hyper', [
@@ -27,27 +28,6 @@ Hyper = collections.namedtuple('Hyper', [
 def smooth_labels(labels, low=0.8, high=1.0):
     with K.name_scope('noisy_labels'):
         return labels * tf.random_uniform(tf.shape(labels), low, high)
-
-
-def _conditional_input(conditional_shape):
-    if conditional_shape is None:
-        return None
-    return Input(shape=conditional_shape, name='conditional')
-
-
-def mix_images_with_variables(images, variables):
-    image_shape = list(map(int, images.shape[1:]))
-    flat_size = np.prod(image_shape)
-    new_shape = image_shape[:-1] + [image_shape[-1] * 2]
-
-    with K.name_scope('mix_images_w_vars'):
-        flat_images = Reshape([flat_size])(images)
-        vectors = Concatenate(axis=1)([flat_images, variables])
-        mix = Dense(flat_size * 2)(vectors)
-        mix = LeakyReLU(alpha=0.2)(mix)
-        volume = Reshape(new_shape)(mix)
-
-    return volume
 
 
 class DCGAN(gan.GAN):
@@ -73,13 +53,13 @@ class DCGAN(gan.GAN):
             self.labels: labels,
             K.learning_phase(): 1,
         }
-        if self.discriminator_conditional is not None:
+        if self.conditional['D'] is not None:
             # Not sure why we need to feed the generator conditional, but TF
             # complains otherwise (same with batch_size above).
-            feed_dict[self.generator_conditional] = np.zeros_like(conditional)
+            feed_dict[self.conditional['G']] = np.zeros_like(conditional)
             # Duplicate the conditional (for the real and for the fake images).
             conditional = np.concatenate([conditional, conditional], axis=0)
-            feed_dict[self.discriminator_conditional] = conditional
+            feed_dict[self.conditional['D']] = conditional
 
         return self.session.run(fetches, feed_dict)[1:]
 
@@ -89,26 +69,24 @@ class DCGAN(gan.GAN):
             fetches.append(self.generator_summary)
 
         feed_dict = {self.batch_size: [batch_size], K.learning_phase(): 1}
-        if self.generator_conditional is not None:
-            feed_dict[self.generator_conditional] = conditional
+        if self.conditional['G'] is not None:
+            feed_dict[self.conditional['G']] = conditional
 
         return self.session.run(fetches, feed_dict)[1:]
 
     def _define_graph(self):
+        self.conditional = gan.get_conditional_inputs(('G', 'D'),
+                                                      self.conditional_shape)
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.generator_conditional = _conditional_input(
-                self.conditional_shape)
-            self.fake_images = self._define_generator(
-                self.noise, self.generator_conditional)
+            self.fake_images = self._define_generator(self.noise,
+                                                      self.conditional['G'])
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
-            self.discriminator_conditional = _conditional_input(
-                self.conditional_shape)
             logits = self._define_discriminator(self.images,
-                                                self.discriminator_conditional)
+                                                self.conditional['D'])
 
             self.latent = Dense(self.latent_size, name='latent')(logits)
             self.d_final = self._define_final_discriminator_layer(self.latent)
@@ -119,9 +97,9 @@ class DCGAN(gan.GAN):
         discriminator_inputs = [self.images]
         generator_outputs = [self.fake_images]
         if self.is_conditional:
-            generator_inputs.append(self.generator_conditional)
-            generator_outputs.append(self.generator_conditional)
-            discriminator_inputs.append(self.discriminator_conditional)
+            generator_inputs.append(self.conditional['G'])
+            generator_outputs.append(self.conditional['G'])
+            discriminator_inputs.append(self.conditional['D'])
 
         self.generator = Model(generator_inputs, self.fake_images, name='G')
         self.discriminator = Model(
@@ -166,7 +144,7 @@ class DCGAN(gan.GAN):
         if conditional is None:
             D = noisy_images
         else:
-            D = mix_images_with_variables(noisy_images, conditional)
+            D = MixImagesWithVariables(noisy_images, conditional)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(
@@ -197,8 +175,8 @@ class DCGAN(gan.GAN):
             tf.summary.scalar('G_loss', self.loss['G'])
             tf.summary.image(
                 'generated_images', self.fake_images, max_outputs=8)
-            if self.generator_conditional is not None:
-                tf.summary.histogram('conditional', self.generator_conditional)
+            if self.conditional['G'] is not None:
+                tf.summary.histogram('conditional', self.conditional['G'])
 
         with K.name_scope('summaries/D'):
             tf.summary.histogram('latent', self.latent)
@@ -208,6 +186,5 @@ class DCGAN(gan.GAN):
             real_probability = self.d_final[batch_size:]
             tf.summary.histogram('fake_output', fake_probability)
             tf.summary.histogram('real_output', real_probability)
-            if self.discriminator_conditional is not None:
-                tf.summary.histogram('conditional',
-                                     self.discriminator_conditional)
+            if self.conditional['D'] is not None:
+                tf.summary.histogram('conditional', self.conditional['D'])
