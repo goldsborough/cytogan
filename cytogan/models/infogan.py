@@ -46,7 +46,8 @@ class InfoGAN(dcgan.DCGAN):
 
         self.images = Input(shape=self.image_shape, name='images')
         logits = self._define_discriminator(self.images)
-        self.latent_posterior = self._latent_layer(logits)
+        self.latent_posterior = Lambda(
+            self._latent_layer, name='latent_posterior')(logits)
         self.probability = Dense(
             1, activation='sigmoid', name='probability')(logits)
         self.d_final = self.probability
@@ -166,17 +167,14 @@ class InfoGAN(dcgan.DCGAN):
                     self.loss['Q'], var_list=self.encoder.trainable_weights)
 
     def _latent_layer(self, logits):
-        with K.name_scope('latent_posterior'):
-            # We predict mean and variances of gaussians
-            # for each continuous variable.
-            logits = Dense(
-                units=self.discrete_variables + 2 * self.continuous_variables,
-                name='dense')(logits)
-            discrete = Activation('softmax')(
-                logits[:, :self.discrete_variables])
-            continuous = Activation('tanh')(
-                logits[:, self.discrete_variables:])
-            return Concatenate(axis=1)([discrete, continuous])
+        # We predict mean and variances of gaussians
+        # for each continuous variable.
+        logits = Dense(
+            units=self.discrete_variables + 2 * self.continuous_variables,
+            name='dense')(logits)
+        discrete = Activation('softmax')(logits[:, :self.discrete_variables])
+        continuous = Activation('tanh')(logits[:, self.discrete_variables:])
+        return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
         with K.name_scope('G_loss'):
