@@ -72,7 +72,8 @@ elif options.model == 'began':
         noise_size=100,
         initial_shape=(7, 7),
         diversity_factor=0.75,
-        proportional_gain=1e-3)
+        proportional_gain=1e-3,
+        conditional_shape=conditional_shape)
     Model = began.BEGAN
 elif options.model == 'infogan':
     latent_distribution = distributions.mixture({
