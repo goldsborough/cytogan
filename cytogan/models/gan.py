@@ -9,8 +9,6 @@ def _merge_summaries(scope):
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
     return tf.summary.merge(summaries)
 
-def rescale_images(images, minimum=-1, maximum=+1):
-    return (np.array(images) * (maximum - minimum)) + minimum
 
 class GAN(model.Model):
     def __init__(self, hyper, learning, session):
@@ -19,9 +17,12 @@ class GAN(model.Model):
         for index, field in enumerate(hyper._fields):
             setattr(self, field, hyper[index])
 
+        self.image_shape = list(hyper.image_shape)
         self.number_of_channels = hyper.image_shape[-1]
+        self.flat_image_shape = np.prod(hyper.image_shape)
 
         self.images = None  # x
+        self.conditional_input = None
         self.batch_size = None
         self.noise = None  # z
 
@@ -38,6 +39,14 @@ class GAN(model.Model):
             [self.generator_summary, self.discriminator_summary])
 
     @property
+    def name(self):
+        _name = super(GAN, self).name
+        if self.conditional_input is None:
+            return _name
+        else:
+            return 'Conditional {0}'.format(_name)
+
+    @property
     def learning_rate(self):
         learning_rates = {}
         for key, lr in self._learning_rate.items():
@@ -49,25 +58,34 @@ class GAN(model.Model):
     def encode(self, images):
         return self.encoder.predict_on_batch(np.array(images))
 
-    def generate(self, latent_samples, rescale=True):
+    def generate(self, latent_samples, conditionals=None, rescale=True):
         feed_dict = {K.learning_phase(): 0}
         if isinstance(latent_samples, int):
             feed_dict[self.batch_size] = [latent_samples]
         else:
             feed_dict[self.noise] = latent_samples
+        if conditionals is not None:
+            feed_dict[self.conditional_input] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2 if rescale else images
 
-    def train_on_batch(self, real_images, with_summary=False):
-        real_images = rescale_images(real_images)
-        fake_images = self.generate(len(real_images), rescale=False)
+    def train_on_batch(self, batch, with_summary=False):
+        if self.conditional_input is None:
+            real_images, conditionals = batch, None
+        else:
+            real_images, conditionals = batch
+
+        real_images = (real_images * 2) - 1
+        batch_size = len(real_images)
+        fake_images = self.generate(batch_size, conditionals, rescale=False)
         assert real_images.shape == fake_images.shape, (real_images.shape,
                                                         fake_images.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
-                                              with_summary)
-        g_tensors = self._train_generator(len(real_images), with_summary)
+                                              with_summary, conditionals)
+        g_tensors = self._train_generator(batch_size, with_summary,
+                                          conditionals)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
 
@@ -116,7 +134,7 @@ class GAN(model.Model):
                         global_step=self.global_step)
 
     def __repr__(self):
-        lines = [self.__class__.__name__]
+        lines = [self.name]
         try:
             # >= Keras 2.0.6
             self.generator.summary(print_fn=lines.append)
