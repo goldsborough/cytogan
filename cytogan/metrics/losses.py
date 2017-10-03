@@ -13,6 +13,13 @@ def l1_distance(x, y):
         return keras.losses.mean_absolute_error(x, y)
 
 
+def binary_crossentropy(p, q):
+    with K.name_scope('bce'):
+        p = K.flatten(p)
+        q = K.flatten(q)
+        return keras.losses.binary_crossentropy(p, q)
+
+
 def squared_error(p, q):
     '''MSE(p, q) = ||p - q||^2'''
     return K.sum(K.square(p - q), axis=1)

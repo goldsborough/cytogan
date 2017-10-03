@@ -7,7 +7,7 @@ from cytogan.models import model
 
 
 def _merge_summaries(scope):
-    scope = 'summaries/{0}'.format(scope)
+    scope = 'summary/{0}'.format(scope)
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
     return tf.summary.merge(summaries)
 
@@ -62,6 +62,8 @@ class GAN(model.Model):
 
     @property
     def is_conditional(self):
+        if not hasattr(self, 'conditional_shape'):
+            return False
         return self.conditional_shape is not None
 
     @property
@@ -101,19 +103,19 @@ class GAN(model.Model):
                                                         fake_images.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
-                                              conditionals, with_summary)
-        g_tensors = self._train_generator(batch_size, conditionals,
-                                          with_summary)
+                                              with_summary, conditionals)
+        g_tensors = self._train_generator(batch_size, with_summary,
+                                          conditionals)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
 
         if with_summary:
-            summary = self._get_combined_summaries(g_tensors[1], d_tensors[1])
+            summary = self._get_combined_summary(g_tensors[1], d_tensors[1])
             return losses, summary
         else:
             return losses
 
-    def _get_combined_summaries(self, generator_summary,
+    def _get_combined_summary(self, generator_summary,
                                 discriminator_summary):
         return self.session.run(
             self.summary,
@@ -141,7 +143,7 @@ class GAN(model.Model):
             initial_learning_rate = [initial_learning_rate] * 2
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with K.name_scope('optimizers/D'):
+        with K.name_scope('opt/D'):
             self._learning_rate['D'] = self._get_learning_rate_tensor(
                 initial_learning_rate[0], learning.decay,
                 learning.steps_per_decay)
@@ -151,7 +153,7 @@ class GAN(model.Model):
                         self.loss['D'],
                         var_list=self.discriminator.trainable_weights)
 
-        with K.name_scope('optimizers/G'):
+        with K.name_scope('opt/G'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
                 learning.steps_per_decay)

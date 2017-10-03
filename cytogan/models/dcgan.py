@@ -1,7 +1,6 @@
 import collections
 
 import keras.backend as K
-import keras.losses
 import numpy as np
 import tensorflow as tf
 from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
@@ -11,6 +10,7 @@ from keras.models import Model
 from cytogan.extra.layers import (AddNoise, BatchNorm, MixImagesWithVariables,
                                   RandomNormal)
 from cytogan.models import gan
+from cytogan.metrics import losses
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
@@ -37,8 +37,11 @@ class DCGAN(gan.GAN):
 
         super(DCGAN, self).__init__(hyper, learning, session)
 
-    def _train_discriminator(self, fake_images, real_images, conditional,
-                             with_summary):
+    def _train_discriminator(self,
+                             fake_images,
+                             real_images,
+                             with_summary,
+                             conditional=None):
         labels = np.concatenate(
             [np.zeros(len(fake_images)),
              np.ones(len(real_images))], axis=0)
@@ -63,7 +66,7 @@ class DCGAN(gan.GAN):
 
         return self.session.run(fetches, feed_dict)[1:]
 
-    def _train_generator(self, batch_size, conditional, with_summary):
+    def _train_generator(self, batch_size, with_summary, conditional=None):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.generator_summary)
@@ -150,22 +153,20 @@ class DCGAN(gan.GAN):
         return D
 
     def _define_generator_loss(self, probability):
-        with K.name_scope('G_loss'):
-            probability = K.squeeze(probability, 1)
+        with K.name_scope('G/loss'):
             ones = K.ones_like(probability)
-            return keras.losses.binary_crossentropy(ones, probability)
+            return losses.binary_crossentropy(ones, probability)
 
     def _define_discriminator_loss(self, labels, probability):
-        noisy_labels = smooth_labels(labels)
-        with K.name_scope('D_loss'):
-            probability = K.squeeze(probability, 1)
-            return keras.losses.binary_crossentropy(noisy_labels, probability)
+        labels = smooth_labels(labels)
+        with K.name_scope('D/loss'):
+            return losses.binary_crossentropy(labels, probability)
 
     def _define_final_discriminator_layer(self, latent):
         return Dense(1, activation='sigmoid', name='Probability')(latent)
 
     def _add_summaries(self):
-        with K.name_scope('summaries/G'):
+        with K.name_scope('summary/G'):
             tf.summary.histogram('noise', self.noise)
             tf.summary.scalar('G_loss', self.loss['G'])
             tf.summary.image(
@@ -173,7 +174,7 @@ class DCGAN(gan.GAN):
             if self.conditional['G'] is not None:
                 tf.summary.histogram('conditional', self.conditional['G'])
 
-        with K.name_scope('summaries/D'):
+        with K.name_scope('summary/D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('D_loss', self.loss['D'])
             batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
