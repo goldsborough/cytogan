@@ -4,12 +4,12 @@ import keras.backend as K
 import keras.losses
 import numpy as np
 import tensorflow as tf
-from keras.layers import (Activation, Conv2D, Dense, Flatten, Input, LeakyReLU,
-                          Reshape, UpSampling2D, Concatenate)
+from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
+                          Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
+from cytogan.extra.layers import AddNoise, BatchNorm, RandomNormal
 from cytogan.models import gan
-from cytogan.extra.layers import BatchNorm, AddNoise, RandomNormal, MixImageWithVariables
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
@@ -29,10 +29,24 @@ def smooth_labels(labels, low=0.8, high=1.0):
         return labels * tf.random_uniform(tf.shape(labels), low, high)
 
 
-def get_conditional_input(conditional_shape):
+def _conditional_input(conditional_shape):
     if conditional_shape is None:
         return None
     return Input(shape=conditional_shape, name='conditional')
+
+
+def mix_images_with_variables(images, variables):
+    image_shape = list(map(int, images.shape[1:]))
+    flat_size = np.prod(image_shape)
+    new_shape = image_shape[:-1] + [image_shape[-1] * 2]
+
+    with K.name_scope('mix_images_w_vars'):
+        flat_images = Reshape([flat_size])(images)
+        vectors = Concatenate(axis=1)([flat_images, variables])
+        mix = Dense(flat_size * 2, activation='relu')(vectors)
+        volume = Reshape(new_shape)(mix)
+
+    return volume
 
 
 class DCGAN(gan.GAN):
@@ -61,6 +75,7 @@ class DCGAN(gan.GAN):
             K.learning_phase(): 1,
         }
         if self.discriminator_conditional is not None:
+            feed_dict[self.generator_conditional] = conditional
             conditional = np.concatenate([conditional, conditional], axis=0)
             feed_dict[self.discriminator_conditional] = conditional
 
@@ -81,14 +96,14 @@ class DCGAN(gan.GAN):
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.generator_conditional = get_conditional_input(
+            self.generator_conditional = _conditional_input(
                 self.conditional_shape)
             self.fake_images = self._define_generator(
                 self.noise, self.generator_conditional)
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
-            self.discriminator_conditional = get_conditional_input(
+            self.discriminator_conditional = _conditional_input(
                 self.conditional_shape)
             logits = self._define_discriminator(self.images,
                                                 self.discriminator_conditional)
@@ -150,7 +165,7 @@ class DCGAN(gan.GAN):
         if conditional is None:
             D = noisy_images
         else:
-            D = MixImageWithVariables()([images, conditional])
+            D = mix_images_with_variables(noisy_images, conditional)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(

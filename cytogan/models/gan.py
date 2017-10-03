@@ -125,6 +125,7 @@ class GAN(model.Model):
                     self._learning_rate['D'], beta1=0.5).minimize(
                         self.loss['D'],
                         var_list=self.discriminator.trainable_weights)
+            print(self.discriminator.trainable_weights)
 
         with K.name_scope('G_opt'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
