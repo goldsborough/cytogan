@@ -28,7 +28,7 @@ def get_batch(n):
     images, labels = data.train.next_batch(n)
     images = images.reshape((-1, ) + image_shape)
     if options.conditional:
-        return (images, labels.reshape(-1, conditional_shape))
+        return (images, labels.reshape(-1, *conditional_shape))
     else:
         return images
 
