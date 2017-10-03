@@ -34,22 +34,22 @@ class InfoGAN(dcgan.DCGAN):
         super(InfoGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
-        # with K.name_scope('G'):
-        self.batch_size = Input(batch_shape=[1], name='batch_size')
-        self.noise = RandomNormal(self.noise_size)(self.batch_size)
-        self.latent_prior = Input(
-            shape=[self.latent_size], name='latent_prior')
-        full_latent = Concatenate()([self.noise, self.latent_prior])
-        self.fake_images = self._define_generator(full_latent)
+        with K.name_scope('G'):
+            self.batch_size = Input(batch_shape=[1], name='batch_size')
+            self.noise = RandomNormal(self.noise_size)(self.batch_size)
+            self.latent_prior = Input(
+                shape=[self.latent_size], name='latent_prior')
+            full_latent = Concatenate()([self.noise, self.latent_prior])
+            self.fake_images = self._define_generator(full_latent)
 
-        # with K.name_scope('D'):
-        self.images = Input(shape=self.image_shape, name='images')
-        logits = self._define_discriminator(self.images)
-        self.latent_posterior = Lambda(
-            self._latent_layer, name='Q_final')(logits)
-        self.probability = Dense(
-            1, activation='sigmoid', name='D_final')(logits)
-        self.d_final = self.probability
+        with K.name_scope('D'):
+            self.images = Input(shape=self.image_shape, name='images')
+            logits = self._define_discriminator(self.images)
+            self.latent_posterior = Lambda(
+                self._latent_layer, name='Q_final')(logits)
+            self.probability = Dense(
+                1, activation='sigmoid', name='D_final')(logits)
+            self.d_final = self.probability
 
         generator_inputs = [self.batch_size, self.latent_prior]
         self.generator = Model(generator_inputs, self.fake_images, name='G')
