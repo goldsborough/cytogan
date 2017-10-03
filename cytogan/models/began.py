@@ -89,8 +89,8 @@ class BEGAN(gan.GAN):
         G = Dense(initial_flat_shape, activation='elu')(logits)
         G = Reshape(self.initial_shape + self.generator_filters[:1])(G)
 
-        for filters, stride in zip(self.generator_filters[1:],
-                                   self.generator_strides[1:]):
+        for filters, stride in zip(self.generator_filters,
+                                   self.generator_strides):
             if stride > 1:
                 G = UpSamplingNN(stride)(G)
             G = Conv2D(filters, (3, 3), padding='same', activation='elu')(G)
@@ -124,8 +124,8 @@ class BEGAN(gan.GAN):
         initial_flat_shape = np.prod(self.initial_shape) * first_filter
         D = Dense(initial_flat_shape)(latent_code)
         D = Reshape(self.initial_shape + self.decoder_filters[:1])(D)
-        for filters, stride in zip(self.decoder_filters[1:],
-                                   self.decoder_strides[1:]):
+        for filters, stride in zip(self.decoder_filters,
+                                   self.decoder_strides):
             if stride > 1:
                 D = UpSamplingNN(stride)(D)
             D = Conv2D(filters, (3, 3), padding='same', activation='elu')(D)
@@ -169,7 +169,7 @@ class BEGAN(gan.GAN):
 
             with K.name_scope('k_update'):
                 self.k_pre_clip = self.k + self.proportional_gain * equilibrium
-                new_k = tf.clip_by_value(self.k_pre_clip, 0, 1)
+                new_k = tf.clip_by_value(self.k_pre_clip, 1e-8, 1)
                 self.update_k = tf.assign(self.k, new_k)
 
             return loss
