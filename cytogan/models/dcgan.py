@@ -149,13 +149,13 @@ class DCGAN(gan.GAN):
         return D
 
     def _define_generator_loss(self, probability):
-        with K.name_scope('G/loss'):
+        with K.name_scope('G_loss'):
             ones = K.ones_like(probability)
             return losses.binary_crossentropy(ones, probability)
 
     def _define_discriminator_loss(self, labels, probability):
         labels = gan.smooth_labels(labels)
-        with K.name_scope('D/loss'):
+        with K.name_scope('D_loss'):
             return losses.binary_crossentropy(labels, probability)
 
     def _define_final_discriminator_layer(self, latent):

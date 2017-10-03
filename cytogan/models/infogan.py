@@ -34,22 +34,22 @@ class InfoGAN(dcgan.DCGAN):
         super(InfoGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
+        self.batch_size = Input(batch_shape=[1], name='batch_size')
+        self.latent_prior = Input(
+            shape=[self.latent_size], name='latent_prior')
+
         with K.name_scope('G'):
-            self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.latent_prior = Input(
-                shape=[self.latent_size], name='latent_prior')
             full_latent = Concatenate()([self.noise, self.latent_prior])
             self.fake_images = self._define_generator(full_latent)
 
-        with K.name_scope('D'):
-            self.images = Input(shape=self.image_shape, name='images')
-            logits = self._define_discriminator(self.images)
-            self.latent_posterior = Lambda(
-                self._latent_layer, name='latent_posterior')(logits)
-            self.probability = Dense(
-                1, activation='sigmoid', name='probability')(logits)
-            self.d_final = self.probability
+        self.images = Input(shape=self.image_shape, name='images')
+        logits = self._define_discriminator(self.images)
+        self.latent_posterior = Lambda(
+            self._latent_layer, name='latent_posterior')(logits)
+        self.probability = Dense(
+            1, activation='sigmoid', name='probability')(logits)
+        self.d_final = self.probability
 
         generator_inputs = [self.batch_size, self.latent_prior]
         self.generator = Model(generator_inputs, self.fake_images, name='G')
@@ -174,7 +174,7 @@ class InfoGAN(dcgan.DCGAN):
         return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
-        with K.name_scope('G/loss'):
+        with K.name_scope('G_loss'):
             self.infogan_bce = losses.binary_crossentropy(
                 K.ones_like(probability), probability)
             self.infogan_mi = losses.mixed_mutual_information(
@@ -185,11 +185,11 @@ class InfoGAN(dcgan.DCGAN):
 
     def _define_discriminator_loss(self, labels, probability):
         labels = gan.smooth_labels(labels)
-        with K.name_scope('D/loss'):
+        with K.name_scope('D_loss'):
             return losses.binary_crossentropy(labels, probability)
 
     def _define_encoder_loss(self, latent_prior, latent_posterior):
-        with K.name_scope('Q/loss'):
+        with K.name_scope('Q_loss'):
             return losses.mixed_mutual_information(
                 latent_prior, latent_posterior, self.discrete_variables,
                 self.continuous_lambda)
