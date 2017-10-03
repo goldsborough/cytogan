@@ -42,7 +42,7 @@ class GAN(model.Model):
     @property
     def name(self):
         _name = super(GAN, self).name
-        if self.gan_conditional is None:
+        if self.generator_conditional is None:
             return _name
         else:
             return 'Conditional {0}'.format(_name)
@@ -76,7 +76,7 @@ class GAN(model.Model):
         return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
-        if self.gan_conditional is None:
+        if self.generator_conditional is None:
             real_images, conditionals = batch, None
         else:
             real_images, conditionals = batch
