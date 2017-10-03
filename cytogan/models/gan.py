@@ -6,6 +6,7 @@ from cytogan.models import model
 
 
 def _merge_summaries(scope):
+    scope = 'summaries/{0}'.format(scope)
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
     return tf.summary.merge(summaries)
 
@@ -117,27 +118,26 @@ class GAN(model.Model):
             initial_learning_rate = [initial_learning_rate] * 2
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with K.name_scope('opt'):
-            with K.name_scope('D'):
-                self._learning_rate['D'] = self._get_learning_rate_tensor(
-                    initial_learning_rate[0], learning.decay,
-                    learning.steps_per_decay)
-                with tf.control_dependencies(update_ops):
-                    self.optimizer['D'] = tf.train.AdamOptimizer(
-                        self._learning_rate['D'], beta1=0.5).minimize(
-                            self.loss['D'],
-                            var_list=self.discriminator.trainable_weights)
+        with K.name_scope('optimizers/D'):
+            self._learning_rate['D'] = self._get_learning_rate_tensor(
+                initial_learning_rate[0], learning.decay,
+                learning.steps_per_decay)
+            with tf.control_dependencies(update_ops):
+                self.optimizer['D'] = tf.train.AdamOptimizer(
+                    self._learning_rate['D'], beta1=0.5).minimize(
+                        self.loss['D'],
+                        var_list=self.discriminator.trainable_weights)
 
-            with K.name_scope('G'):
-                self._learning_rate['G'] = self._get_learning_rate_tensor(
-                    initial_learning_rate[1], learning.decay,
-                    learning.steps_per_decay)
-                with tf.control_dependencies(update_ops):
-                    self.optimizer['G'] = tf.train.AdamOptimizer(
-                        self._learning_rate['G'], beta1=0.5).minimize(
-                            self.loss['G'],
-                            var_list=self.generator.trainable_weights,
-                            global_step=self.global_step)
+        with K.name_scope('optimizers/G'):
+            self._learning_rate['G'] = self._get_learning_rate_tensor(
+                initial_learning_rate[1], learning.decay,
+                learning.steps_per_decay)
+            with tf.control_dependencies(update_ops):
+                self.optimizer['G'] = tf.train.AdamOptimizer(
+                    self._learning_rate['G'], beta1=0.5).minimize(
+                        self.loss['G'],
+                        var_list=self.generator.trainable_weights,
+                        global_step=self.global_step)
 
     def __repr__(self):
         lines = [self.name]
