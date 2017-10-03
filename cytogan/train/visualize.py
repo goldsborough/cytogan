@@ -91,7 +91,9 @@ def generative_samples(model,
                        gray=False,
                        save_to=None,
                        title='Generated Samples'):
-    images = model.generate(samples).reshape(-1, *model.image_shape)
+    samples = samples if isinstance(samples, list) else [samples]
+    assert hasattr(model, 'generate'), model.name + ' is not generative'
+    images = model.generate(*samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
     figure = plot.figure(figsize=(10, 10))
