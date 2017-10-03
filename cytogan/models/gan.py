@@ -54,10 +54,10 @@ class GAN(model.Model):
     @property
     def name(self):
         _name = super(GAN, self).name
-        if self.is_conditional is None:
-            return _name
-        else:
+        if self.is_conditional:
             return 'Conditional {0}'.format(_name)
+        else:
+            return _name
 
     @property
     def is_conditional(self):
@@ -88,7 +88,7 @@ class GAN(model.Model):
         return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
-        if self.conditional is None:
+        if self.is_conditional:
             real_images, conditionals = batch, None
         else:
             real_images, conditionals = batch
