@@ -49,7 +49,7 @@ class BEGAN(gan.GAN):
 
         with K.name_scope('E'):
             self.latent = self._define_encoder(self.images,
-                                               self.conditional['G'])
+                                               self.conditional['D'])
         with K.name_scope('D'):
             self.reconstructions = self._define_decoder(self.latent)
 
