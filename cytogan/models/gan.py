@@ -89,9 +89,9 @@ class GAN(model.Model):
 
     def train_on_batch(self, batch, with_summary=False):
         if self.is_conditional:
-            real_images, conditionals = batch, None
-        else:
             real_images, conditionals = batch
+        else:
+            real_images, conditionals = batch, None
 
         real_images = (real_images * 2.0) - 1
         batch_size = len(real_images)
