@@ -196,13 +196,13 @@ class BEGAN(gan.GAN):
             return loss
 
     def _add_summaries(self):
-        with K.name_scope('summaries/G'):
+        with K.name_scope('summary/G'):
             tf.summary.histogram('noise', self.noise)
             tf.summary.scalar('loss', self.loss['G'])
             tf.summary.image(
                 'generated_images', self.fake_images, max_outputs=8)
 
-        with K.name_scope('summaries/D'):
+        with K.name_scope('summary/D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('loss', self.loss['D'])
             tf.summary.scalar('k_pre_clip', self.k_pre_clip)
