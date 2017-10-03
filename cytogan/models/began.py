@@ -72,29 +72,30 @@ class BEGAN(gan.GAN):
     def _train_discriminator(self, fake_images, real_images, conditional,
                              with_summary):
         images = np.concatenate([fake_images, real_images], axis=0)
-        fetches = [self.optimizer['D'], self.loss['D']]
+        fetches = [self.update_k, self.optimizer['D'], self.loss['D']]
         if with_summary:
             fetches.append(self.discriminator_summary)
-        fetches.append(self.update_k)
 
-        results = self.session.run(
-            fetches,
-            feed_dict={
-                self.batch_size: [len(fake_images)],
-                self.images: images,
-            })
+        feed_dict = {self.batch_size: [len(fake_images)], self.images: images}
+        if self.is_conditional:
+            # Not sure why we need to feed the generator conditional, but TF
+            # complains otherwise (same with batch_size above).
+            feed_dict[self.conditional['G']] = np.zeros_like(conditional)
+            # Duplicate the conditional (for the real and for the fake images).
+            conditional = np.concatenate([conditional, conditional], axis=0)
+            feed_dict[self.conditional['D']] = conditional
 
-        return results[1:]
+        return self.session.run(fetches, feed_dict)[2:]
 
     def _train_generator(self, batch_size, conditional, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.generator_summary)
 
-        results = self.session.run(
-            fetches, feed_dict={self.batch_size: [batch_size]})
-
-        return results[1:]
+        feed_dict = {self.batch_size: [batch_size]}
+        if self.is_conditional:
+            feed_dict[self.conditional['G']] = conditional
+        return self.session.run(fetches, feed_dict=feed_dict)[1:]
 
     def _define_generator(self, noise, conditional=None):
         if conditional is None:

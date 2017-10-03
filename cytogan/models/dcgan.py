@@ -53,7 +53,7 @@ class DCGAN(gan.GAN):
             self.labels: labels,
             K.learning_phase(): 1,
         }
-        if self.conditional['D'] is not None:
+        if self.is_conditional:
             # Not sure why we need to feed the generator conditional, but TF
             # complains otherwise (same with batch_size above).
             feed_dict[self.conditional['G']] = np.zeros_like(conditional)
@@ -69,7 +69,7 @@ class DCGAN(gan.GAN):
             fetches.append(self.generator_summary)
 
         feed_dict = {self.batch_size: [batch_size], K.learning_phase(): 1}
-        if self.conditional['G'] is not None:
+        if self.is_conditional:
             feed_dict[self.conditional['G']] = conditional
 
         return self.session.run(fetches, feed_dict)[1:]
