@@ -21,13 +21,16 @@ if not options.show_figures:
 image_shape = (28, 28, 1)
 data = mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
 number_of_batches = data.train.num_examples // options.batch_size
-conditional = (10, ) if options.conditional else None
+conditional_shape = (10, ) if options.conditional else None
 
 
 def get_batch(n):
-    batch = data.train.next_batch(n)
-    images = batch[0].reshape((-1, ) + image_shape)
-    return (images, batch[1].reshape(-1, 10)) if conditional else images
+    images, labels = data.train.next_batch(n)
+    images = images.reshape((-1, ) + image_shape)
+    if options.conditional:
+        return (images, labels.reshape(-1, conditional_shape))
+    else:
+        return images
 
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
@@ -53,7 +56,7 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         latent_size=100,
         noise_size=100,
         initial_shape=(7, 7),
-        conditional_shape=conditional)
+        conditional_shape=conditional_shape)
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':

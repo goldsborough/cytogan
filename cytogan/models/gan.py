@@ -47,6 +47,10 @@ class GAN(model.Model):
             return 'Conditional {0}'.format(_name)
 
     @property
+    def is_conditional(self):
+        return self.conditional_shape is not None
+
+    @property
     def learning_rate(self):
         learning_rates = {}
         for key, lr in self._learning_rate.items():
@@ -68,7 +72,7 @@ class GAN(model.Model):
             feed_dict[self.gan_conditional] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
-        return (images + 1) / 2 if rescale else images
+        return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
         if self.gan_conditional is None:
@@ -76,16 +80,16 @@ class GAN(model.Model):
         else:
             real_images, conditionals = batch
 
-        real_images = (real_images * 2) - 1
+        real_images = (real_images * 2.0) - 1
         batch_size = len(real_images)
         fake_images = self.generate(batch_size, conditionals, rescale=False)
         assert real_images.shape == fake_images.shape, (real_images.shape,
                                                         fake_images.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
-                                              with_summary, conditionals)
-        g_tensors = self._train_generator(batch_size, with_summary,
-                                          conditionals)
+                                              conditionals, with_summary)
+        g_tensors = self._train_generator(batch_size, conditionals,
+                                          with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
 

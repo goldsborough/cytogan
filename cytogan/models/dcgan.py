@@ -44,8 +44,8 @@ class DCGAN(gan.GAN):
 
         super(DCGAN, self).__init__(hyper, learning, session)
 
-    def _train_discriminator(self, fake_images, real_images, with_summary,
-                             conditional):
+    def _train_discriminator(self, fake_images, real_images, conditional,
+                             with_summary):
         labels = np.concatenate(
             [np.zeros(len(fake_images)),
              np.ones(len(real_images))], axis=0)
@@ -67,7 +67,7 @@ class DCGAN(gan.GAN):
 
         return self.session.run(fetches, feed_dict)[1:]
 
-    def _train_generator(self, batch_size, with_summary, conditional):
+    def _train_generator(self, batch_size, conditional, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.generator_summary)
@@ -102,7 +102,7 @@ class DCGAN(gan.GAN):
         generator_inputs = [self.batch_size]
         discriminator_inputs = [self.images]
         generator_outputs = [self.fake_images]
-        if self.conditional_shape:
+        if self.is_conditional:
             generator_inputs += [self.generator_conditional]
             generator_outputs += [self.generator_conditional]
             discriminator_inputs += [self.discriminator_conditional]
