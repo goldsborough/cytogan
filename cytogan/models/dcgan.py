@@ -5,11 +5,11 @@ import keras.losses
 import numpy as np
 import tensorflow as tf
 from keras.layers import (Activation, Conv2D, Dense, Flatten, Input, LeakyReLU,
-                          Reshape, UpSampling2D)
+                          Reshape, UpSampling2D, Concatenate)
 from keras.models import Model
 
 from cytogan.models import gan
-from cytogan.extra.layers import BatchNorm, AddNoise, RandomNormal
+from cytogan.extra.layers import BatchNorm, AddNoise, RandomNormal, MixImageWithVariables
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
@@ -20,6 +20,7 @@ Hyper = collections.namedtuple('Hyper', [
     'latent_size',
     'noise_size',
     'initial_shape',
+    'conditional_shape',
 ])
 
 
@@ -28,14 +29,23 @@ def smooth_labels(labels, low=0.8, high=1.0):
         return labels * tf.random_uniform(tf.shape(labels), low, high)
 
 
+def get_conditional_input(conditional_shape):
+    if conditional_shape is None:
+        return None
+    return Input(shape=conditional_shape, name='conditional')
+
+
 class DCGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
         self.labels = None  # 0/1
         self.d_final = None  # D(x)
+        self.discriminator_conditional = None
+        self.generator_conditional = None
 
         super(DCGAN, self).__init__(hyper, learning, session)
 
-    def _train_discriminator(self, fake_images, real_images, with_summary):
+    def _train_discriminator(self, fake_images, real_images, with_summary,
+                             conditional):
         labels = np.concatenate(
             [np.zeros(len(fake_images)),
              np.ones(len(real_images))], axis=0)
@@ -44,58 +54,78 @@ class DCGAN(gan.GAN):
         if with_summary:
             fetches.append(self.discriminator_summary)
 
-        results = self.session.run(
-            fetches,
-            feed_dict={
-                self.batch_size: [len(fake_images)],
-                self.images: images,
-                self.labels: labels,
-                K.learning_phase(): 1,
-            })
+        feed_dict = {
+            self.batch_size: [len(fake_images)],
+            self.images: images,
+            self.labels: labels,
+            K.learning_phase(): 1,
+        }
+        if self.discriminator_conditional is not None:
+            feed_dict[self.generator_conditional] = conditional
+            conditional = np.concatenate([conditional, conditional], axis=0)
+            feed_dict[self.discriminator_conditional] = conditional
 
-        return results[1:]
+        return self.session.run(fetches, feed_dict)[1:]
 
-    def _train_generator(self, batch_size, with_summary):
+    def _train_generator(self, batch_size, with_summary, conditional):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.generator_summary)
 
-        results = self.session.run(
-            fetches,
-            feed_dict={
-                self.batch_size: [batch_size],
-                K.learning_phase(): 1,
-            })
+        feed_dict = {self.batch_size: [batch_size], K.learning_phase(): 1}
+        if self.generator_conditional is not None:
+            feed_dict[self.generator_conditional] = conditional
 
-        return results[1:]
+        return self.session.run(fetches, feed_dict)[1:]
 
     def _define_graph(self):
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.fake_images = self._define_generator(self.noise)
+            self.generator_conditional = get_conditional_input(
+                self.conditional_shape)
+            self.fake_images = self._define_generator(
+                self.noise, self.generator_conditional)
 
-        self.images = Input(shape=self.image_shape, name='images')
         with K.name_scope('D'):
-            logits = self._define_discriminator(self.images)
+            self.images = Input(shape=self.image_shape, name='images')
+            self.discriminator_conditional = get_conditional_input(
+                self.conditional_shape)
+            logits = self._define_discriminator(self.images,
+                                                self.discriminator_conditional)
 
-        self.latent = Dense(self.latent_size, name='latent')(logits)
-        self.d_final = self._define_final_discriminator_layer(self.latent)
+            self.latent = Dense(self.latent_size, name='latent')(logits)
+            self.d_final = self._define_final_discriminator_layer(self.latent)
+
         self.labels = Input(batch_shape=[None], name='labels')
 
-        self.generator = Model(self.batch_size, self.fake_images, name='G')
-        self.discriminator = Model(self.images, self.d_final, name='D')
-        self.encoder = Model(self.images, self.latent, name='E')
+        generator_inputs = [self.batch_size]
+        discriminator_inputs = [self.images]
+        generator_outputs = [self.fake_images]
+        if self.conditional_shape:
+            generator_inputs += [self.generator_conditional]
+            generator_outputs += [self.generator_conditional]
+            discriminator_inputs += [self.discriminator_conditional]
+            self.gan_conditional = self.generator_conditional
+
+        self.generator = Model(generator_inputs, self.fake_images, name='G')
+        self.discriminator = Model(
+            discriminator_inputs, self.d_final, name='D')
+        self.encoder = Model(discriminator_inputs, self.latent, name='E')
         self.gan = Model(
-            self.batch_size,
-            self.discriminator(self.fake_images),
+            generator_inputs,
+            self.discriminator(generator_outputs),
             name=self.name)
 
         self.loss = dict(
             D=self._define_discriminator_loss(self.labels, self.d_final),
             G=self._define_generator_loss(self.gan.outputs[0]))
 
-    def _define_generator(self, logits):
+    def _define_generator(self, noise, conditional=None):
+        if conditional is None:
+            logits = noise
+        else:
+            logits = Concatenate(axis=1)([noise, conditional])
         first_filter = self.generator_filters[0]
         G = Dense(np.prod(self.initial_shape) * first_filter)(logits)
         G = BatchNorm()(G)
@@ -116,8 +146,12 @@ class DCGAN(gan.GAN):
 
         return G
 
-    def _define_discriminator(self, images):
-        D = AddNoise()(images)
+    def _define_discriminator(self, images, conditional=None):
+        noisy_images = AddNoise()(images)
+        if conditional is None:
+            D = noisy_images
+        else:
+            D = MixImageWithVariables()([images, conditional])
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(
@@ -148,6 +182,8 @@ class DCGAN(gan.GAN):
             tf.summary.scalar('G_loss', self.loss['G'])
             tf.summary.image(
                 'generated_images', self.fake_images, max_outputs=8)
+            if self.generator_conditional is not None:
+                tf.summary.histogram('conditional', self.generator_conditional)
 
         with K.name_scope('D'):
             tf.summary.histogram('latent', self.latent)
@@ -157,3 +193,6 @@ class DCGAN(gan.GAN):
             real_probability = self.d_final[batch_size:]
             tf.summary.histogram('fake_output', fake_probability)
             tf.summary.histogram('real_output', real_probability)
+            if self.discriminator_conditional is not None:
+                tf.summary.histogram('conditional',
+                                     self.discriminator_conditional)
