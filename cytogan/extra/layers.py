@@ -1,6 +1,7 @@
 import tensorflow as tf
 from keras import backend as K
 from keras.engine.topology import Layer
+import numpy as np
 
 
 class BatchNorm(Layer):
@@ -82,3 +83,37 @@ class RandomNormal(Layer):
 
     def compute_output_shape(self, input_shape):
         return (None, self.noise_size)
+
+
+class MixImageWithVariables(Layer):
+    '''Mixes an image with variables.'''
+
+    def __init__(self, output_channels=2, **kwargs):
+        self.output_channels = output_channels
+        super(MixImageWithVariables, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        super(MixImageWithVariables, self).build(input_shape)
+
+    def call(self, tensors):
+        assert isinstance(tensors, list) or isinstance(tensors, tuple), tensors
+        assert len(tensors) == 2, tensors
+
+        images, variables = tensors
+        image_shape = [-1] + list(map(int, images.shape[1:]))
+        flat_shape = np.prod(image_shape[1:])
+
+        flat_images = tf.reshape(images, shape=(-1, flat_shape))
+        vectors = tf.concat((flat_images, variables), axis=1)
+
+        mix = tf.layers.dense(
+            vectors,
+            units=flat_shape * self.output_channels,
+            activation=tf.nn.relu)
+
+        return tf.reshape(mix, shape=self.compute_output_shape([image_shape]))
+
+    def compute_output_shape(self, input_shape):
+        output_shape = list(input_shape[0])
+        output_shape[-1] = self.output_channels
+        return tuple(output_shape)
