@@ -34,6 +34,12 @@ def get_conditional_input(conditional_shape):
         return None
     return Input(shape=conditional_shape, name='conditional')
 
+def get_dependencies(tensor):
+    dependencies = set()
+    dependencies.update(tensor.op.inputs)
+    for sub_op in tensor.op.inputs:
+        dependencies.update(get_dependencies(sub_op))
+    return dependencies
 
 class DCGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
@@ -61,7 +67,8 @@ class DCGAN(gan.GAN):
             K.learning_phase(): 1,
         }
         if self.discriminator_conditional is not None:
-            feed_dict[self.generator_conditional] = conditional
+            v = get_dependencies(self.loss['D'])
+            print([i for i in v if not i.name.startswith('D')])
             conditional = np.concatenate([conditional, conditional], axis=0)
             feed_dict[self.discriminator_conditional] = conditional
 
