@@ -1,6 +1,8 @@
+import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.engine.topology import Layer
+from keras.layers import Concatenate, Dense, LeakyReLU, Reshape
 
 
 class BatchNorm(Layer):
@@ -82,3 +84,18 @@ class RandomNormal(Layer):
 
     def compute_output_shape(self, input_shape):
         return (None, self.noise_size)
+
+
+def MixImagesWithVariables(images, variables):
+    image_shape = list(map(int, images.shape[1:]))
+    flat_size = np.prod(image_shape)
+    new_shape = image_shape[:-1] + [image_shape[-1] * 2]
+
+    with K.name_scope('mix_images_w_vars'):
+        flat_images = Reshape([flat_size])(images)
+        vectors = Concatenate(axis=1)([flat_images, variables])
+        mix = Dense(flat_size * 2)(vectors)
+        mix = LeakyReLU(alpha=0.2)(mix)
+        volume = Reshape(new_shape)(mix)
+
+    return volume
