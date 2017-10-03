@@ -43,7 +43,8 @@ def mix_images_with_variables(images, variables):
     with K.name_scope('mix_images_w_vars'):
         flat_images = Reshape([flat_size])(images)
         vectors = Concatenate(axis=1)([flat_images, variables])
-        mix = Dense(flat_size * 2, activation='relu')(vectors)
+        mix = Dense(flat_size * 2)(vectors)
+        mix = LeakyReLU(alpha=0.2)(mix)
         volume = Reshape(new_shape)(mix)
 
     return volume
@@ -53,8 +54,6 @@ class DCGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
         self.labels = None  # 0/1
         self.d_final = None  # D(x)
-        self.discriminator_conditional = None
-        self.generator_conditional = None
 
         super(DCGAN, self).__init__(hyper, learning, session)
 
@@ -75,7 +74,10 @@ class DCGAN(gan.GAN):
             K.learning_phase(): 1,
         }
         if self.discriminator_conditional is not None:
-            feed_dict[self.generator_conditional] = conditional
+            # Not sure why we need to feed the generator conditional, but TF
+            # complains otherwise (same with batch_size above).
+            feed_dict[self.generator_conditional] = np.zeros_like(conditional)
+            # Duplicate the conditional (for the real and for the fake images).
             conditional = np.concatenate([conditional, conditional], axis=0)
             feed_dict[self.discriminator_conditional] = conditional
 
@@ -117,10 +119,9 @@ class DCGAN(gan.GAN):
         discriminator_inputs = [self.images]
         generator_outputs = [self.fake_images]
         if self.is_conditional:
-            generator_inputs += [self.generator_conditional]
-            generator_outputs += [self.generator_conditional]
-            discriminator_inputs += [self.discriminator_conditional]
-            self.gan_conditional = self.generator_conditional
+            generator_inputs.append(self.generator_conditional)
+            generator_outputs.append(self.generator_conditional)
+            discriminator_inputs.append(self.discriminator_conditional)
 
         self.generator = Model(generator_inputs, self.fake_images, name='G')
         self.discriminator = Model(
@@ -191,22 +192,24 @@ class DCGAN(gan.GAN):
         return Dense(1, activation='sigmoid', name='Probability')(latent)
 
     def _add_summaries(self):
-        with K.name_scope('G'):
-            tf.summary.histogram('noise', self.noise)
-            tf.summary.scalar('G_loss', self.loss['G'])
-            tf.summary.image(
-                'generated_images', self.fake_images, max_outputs=8)
-            if self.generator_conditional is not None:
-                tf.summary.histogram('conditional', self.generator_conditional)
+        with K.name_scope('summaries'):
+            with K.name_scope('G'):
+                tf.summary.histogram('noise', self.noise)
+                tf.summary.scalar('G_loss', self.loss['G'])
+                tf.summary.image(
+                    'generated_images', self.fake_images, max_outputs=8)
+                if self.generator_conditional is not None:
+                    tf.summary.histogram('conditional',
+                                         self.generator_conditional)
 
-        with K.name_scope('D'):
-            tf.summary.histogram('latent', self.latent)
-            tf.summary.scalar('D_loss', self.loss['D'])
-            batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            fake_probability = self.d_final[:batch_size]
-            real_probability = self.d_final[batch_size:]
-            tf.summary.histogram('fake_output', fake_probability)
-            tf.summary.histogram('real_output', real_probability)
-            if self.discriminator_conditional is not None:
-                tf.summary.histogram('conditional',
-                                     self.discriminator_conditional)
+            with K.name_scope('D'):
+                tf.summary.histogram('latent', self.latent)
+                tf.summary.scalar('D_loss', self.loss['D'])
+                batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
+                fake_probability = self.d_final[:batch_size]
+                real_probability = self.d_final[batch_size:]
+                tf.summary.histogram('fake_output', fake_probability)
+                tf.summary.histogram('real_output', real_probability)
+                if self.discriminator_conditional is not None:
+                    tf.summary.histogram('conditional',
+                                         self.discriminator_conditional)

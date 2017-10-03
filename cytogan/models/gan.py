@@ -22,7 +22,8 @@ class GAN(model.Model):
         self.flat_image_shape = np.prod(hyper.image_shape)
 
         self.images = None  # x
-        self.gan_conditional = None
+        self.generator_conditional = None
+        self.discriminator_conditional = None
         self.batch_size = None
         self.noise = None  # z
 
@@ -69,7 +70,7 @@ class GAN(model.Model):
         else:
             feed_dict[self.noise] = latent_samples
         if conditionals is not None:
-            feed_dict[self.gan_conditional] = conditionals
+            feed_dict[self.generator_conditional] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2.0 if rescale else images
@@ -116,27 +117,27 @@ class GAN(model.Model):
             initial_learning_rate = [initial_learning_rate] * 2
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with K.name_scope('D_opt'):
-            self._learning_rate['D'] = self._get_learning_rate_tensor(
-                initial_learning_rate[0], learning.decay,
-                learning.steps_per_decay)
-            with tf.control_dependencies(update_ops):
-                self.optimizer['D'] = tf.train.AdamOptimizer(
-                    self._learning_rate['D'], beta1=0.5).minimize(
-                        self.loss['D'],
-                        var_list=self.discriminator.trainable_weights)
-            print(self.discriminator.trainable_weights)
+        with K.name_scope('opt'):
+            with K.name_scope('D'):
+                self._learning_rate['D'] = self._get_learning_rate_tensor(
+                    initial_learning_rate[0], learning.decay,
+                    learning.steps_per_decay)
+                with tf.control_dependencies(update_ops):
+                    self.optimizer['D'] = tf.train.AdamOptimizer(
+                        self._learning_rate['D'], beta1=0.5).minimize(
+                            self.loss['D'],
+                            var_list=self.discriminator.trainable_weights)
 
-        with K.name_scope('G_opt'):
-            self._learning_rate['G'] = self._get_learning_rate_tensor(
-                initial_learning_rate[1], learning.decay,
-                learning.steps_per_decay)
-            with tf.control_dependencies(update_ops):
-                self.optimizer['G'] = tf.train.AdamOptimizer(
-                    self._learning_rate['G'], beta1=0.5).minimize(
-                        self.loss['G'],
-                        var_list=self.generator.trainable_weights,
-                        global_step=self.global_step)
+            with K.name_scope('G'):
+                self._learning_rate['G'] = self._get_learning_rate_tensor(
+                    initial_learning_rate[1], learning.decay,
+                    learning.steps_per_decay)
+                with tf.control_dependencies(update_ops):
+                    self.optimizer['G'] = tf.train.AdamOptimizer(
+                        self._learning_rate['G'], beta1=0.5).minimize(
+                            self.loss['G'],
+                            var_list=self.generator.trainable_weights,
+                            global_step=self.global_step)
 
     def __repr__(self):
         lines = [self.name]
