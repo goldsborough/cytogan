@@ -25,6 +25,7 @@ Hyper = collections.namedtuple('Hyper', [
     'continuous_lambda',
 ])
 
+
 class InfoGAN(dcgan.DCGAN):
     def __init__(self, hyper, learning, session):
         self.labels = None  # 0/1
@@ -40,13 +41,12 @@ class InfoGAN(dcgan.DCGAN):
 
         with K.name_scope('G'):
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            full_latent = Concatenate()([self.noise, self.latent_prior])
+            full_latent = Concatenate(axis=1)([self.noise, self.latent_prior])
             self.fake_images = self._define_generator(full_latent)
 
         self.images = Input(shape=self.image_shape, name='images')
         logits = self._define_discriminator(self.images)
-        self.latent_posterior = Lambda(
-            self._latent_layer, name='latent_posterior')(logits)
+        self.latent_posterior = self._latent_layer(logits)
         self.probability = Dense(
             1, activation='sigmoid', name='probability')(logits)
         self.d_final = self.probability
@@ -115,7 +115,7 @@ class InfoGAN(dcgan.DCGAN):
             fetches,
             feed_dict={
                 self.batch_size: [batch_size],
-                self.latent_prior: np.zeros((batch_size, self.latent_size)),
+                self.latent_prior: np.zeros([batch_size, self.latent_size]),
                 self.images: images,
                 self.labels: labels,
                 K.learning_phase(): 1,
@@ -166,12 +166,17 @@ class InfoGAN(dcgan.DCGAN):
                     self.loss['Q'], var_list=self.encoder.trainable_weights)
 
     def _latent_layer(self, logits):
-        logits = Dense(
-            self.discrete_variables + 2 * self.continuous_variables,
-            name='Q/final_dense')(logits)
-        discrete = Activation('softmax')(logits[:, :self.discrete_variables])
-        continuous = Activation('linear')(logits[:, self.discrete_variables:])
-        return Concatenate(axis=1)([discrete, continuous])
+        with K.name_scope('latent_posterior'):
+            # We predict mean and variances of gaussians
+            # for each continuous variable.
+            logits = Dense(
+                units=self.discrete_variables + 2 * self.continuous_variables,
+                name='dense')(logits)
+            discrete = Activation('softmax')(
+                logits[:, :self.discrete_variables])
+            continuous = Activation('tanh')(
+                logits[:, self.discrete_variables:])
+            return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
         with K.name_scope('G_loss'):

@@ -94,7 +94,7 @@ elif options.model == 'infogan':
         latent_distribution=latent_distribution,
         discrete_variables=10,
         continuous_variables=2,
-        continuous_lambda=1)
+        continuous_lambda=0.8)
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
