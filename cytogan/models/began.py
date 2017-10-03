@@ -36,7 +36,7 @@ class BEGAN(gan.GAN):
         super(BEGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
-        self.conditional = gan.get_conditional_inputs(('G', 'E'),
+        self.conditional = gan.get_conditional_inputs(('G', 'D'),
                                                       self.conditional_shape)
 
         with K.name_scope('G'):
@@ -49,7 +49,7 @@ class BEGAN(gan.GAN):
 
         with K.name_scope('E'):
             self.latent = self._define_encoder(self.images,
-                                               self.conditional['E'])
+                                               self.conditional['G'])
         with K.name_scope('D'):
             self.reconstructions = self._define_decoder(self.latent)
 
