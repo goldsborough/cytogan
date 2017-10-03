@@ -150,7 +150,7 @@ with common.get_session(options.gpus) as session:
         else:
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
-        if conditional:
+        if conditional_shape:
             samples = [samples]
             variables = distributions.categorical(10)
             samples.append(variables((options.generative_samples)))
