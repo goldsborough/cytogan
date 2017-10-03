@@ -3,12 +3,14 @@ import collections
 import keras.backend as K
 import numpy as np
 import tensorflow as tf
-from keras.layers import (Activation, Conv2D, Dense, Flatten, Input, Reshape)
+from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
+                          Input, Reshape)
 from keras.models import Model
 
-from cytogan.extra.layers import AddNoise, RandomNormal, UpSamplingNN
-from cytogan.models import gan
+from cytogan.extra.layers import (AddNoise, MixImagesWithVariables,
+                                  RandomNormal, UpSamplingNN)
 from cytogan.metrics import losses
+from cytogan.models import gan
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
@@ -23,6 +25,7 @@ Hyper = collections.namedtuple('Hyper', [
     'initial_shape',
     'diversity_factor',
     'proportional_gain',
+    'conditional_shape',
 ])
 
 
@@ -33,15 +36,20 @@ class BEGAN(gan.GAN):
         super(BEGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
+        self.conditional = gan.get_conditional_inputs(('G', 'E'),
+                                                      self.conditional_shape)
+
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.fake_images = self._define_generator(self.noise)
+            self.fake_images = self._define_generator(self.noise,
+                                                      self.conditional['G'])
 
         self.images = Input(shape=self.image_shape, name='images')
 
         with K.name_scope('E'):
-            self.latent = self._define_encoder(self.images)
+            self.latent = self._define_encoder(self.images,
+                                               self.conditional['E'])
         with K.name_scope('D'):
             self.reconstructions = self._define_decoder(self.latent)
 
@@ -57,7 +65,8 @@ class BEGAN(gan.GAN):
             D=self._define_discriminator_loss(self.reconstructions),
             G=self._define_generator_loss(self.gan.outputs[0]))
 
-    def _train_discriminator(self, fake_images, real_images, with_summary):
+    def _train_discriminator(self, fake_images, real_images, conditional,
+                             with_summary):
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.optimizer['D'], self.loss['D']]
         if with_summary:
@@ -73,7 +82,7 @@ class BEGAN(gan.GAN):
 
         return results[1:]
 
-    def _train_generator(self, batch_size, with_summary):
+    def _train_generator(self, batch_size, conditional, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
             fetches.append(self.generator_summary)
@@ -83,7 +92,11 @@ class BEGAN(gan.GAN):
 
         return results[1:]
 
-    def _define_generator(self, logits):
+    def _define_generator(self, noise, conditional=None):
+        if conditional is None:
+            logits = noise
+        else:
+            logits = Concatenate(axis=1)([noise, conditional])
         first_filter = self.generator_filters[0]
         initial_flat_shape = np.prod(self.initial_shape) * first_filter
         G = Dense(initial_flat_shape, activation='elu')(logits)
@@ -102,8 +115,12 @@ class BEGAN(gan.GAN):
 
         return G
 
-    def _define_encoder(self, images):
-        E = AddNoise()(images)
+    def _define_encoder(self, images, conditional=None):
+        noisy_images = AddNoise()(images)
+        if conditional is None:
+            E = noisy_images
+        else:
+            E = MixImagesWithVariables(noisy_images, conditional)
         for filters, stride in zip(self.encoder_filters, self.encoder_strides):
             E = Conv2D(
                 filters,
@@ -124,8 +141,7 @@ class BEGAN(gan.GAN):
         initial_flat_shape = np.prod(self.initial_shape) * first_filter
         D = Dense(initial_flat_shape)(latent_code)
         D = Reshape(self.initial_shape + self.decoder_filters[:1])(D)
-        for filters, stride in zip(self.decoder_filters,
-                                   self.decoder_strides):
+        for filters, stride in zip(self.decoder_filters, self.decoder_strides):
             if stride > 1:
                 D = UpSamplingNN(stride)(D)
             D = Conv2D(filters, (3, 3), padding='same', activation='elu')(D)
@@ -177,13 +193,13 @@ class BEGAN(gan.GAN):
     def _add_summaries(self):
         with K.name_scope('summaries/G'):
             tf.summary.histogram('noise', self.noise)
-            tf.summary.scalar('G_loss', self.loss['G'])
+            tf.summary.scalar('loss', self.loss['G'])
             tf.summary.image(
                 'generated_images', self.fake_images, max_outputs=8)
 
         with K.name_scope('summaries/D'):
             tf.summary.histogram('latent', self.latent)
-            tf.summary.scalar('D_loss', self.loss['D'])
+            tf.summary.scalar('loss', self.loss['D'])
             tf.summary.scalar('k_pre_clip', self.k_pre_clip)
             tf.summary.scalar('k', self.k)
             tf.summary.scalar('convergence', self.convergence_measure)
