@@ -46,9 +46,9 @@ class InfoGAN(dcgan.DCGAN):
             self.images = Input(shape=self.image_shape, name='images')
             logits = self._define_discriminator(self.images)
             self.latent_posterior = Lambda(
-                self._latent_layer, name='Q_final')(logits)
+                self._latent_layer, name='latent_posterior')(logits)
             self.probability = Dense(
-                1, activation='sigmoid', name='D_final')(logits)
+                1, activation='sigmoid', name='probability')(logits)
             self.d_final = self.probability
 
         generator_inputs = [self.batch_size, self.latent_prior]
@@ -153,12 +153,9 @@ class InfoGAN(dcgan.DCGAN):
         return encoder_loss
 
     def _add_optimizer(self, learning):
+        assert len(learning.rate) == 3
         super(InfoGAN, self)._add_optimizer(learning)
         initial_learning_rate = learning.rate
-        if isinstance(initial_learning_rate, float):
-            initial_learning_rate = [initial_learning_rate] * 3
-        else:
-            assert len(initial_learning_rate) == 3
 
         with K.name_scope('opt/Q'):
             self._learning_rate['Q'] = self._get_learning_rate_tensor(
@@ -171,7 +168,7 @@ class InfoGAN(dcgan.DCGAN):
     def _latent_layer(self, logits):
         logits = Dense(
             self.discrete_variables + 2 * self.continuous_variables,
-            name='Q_final_dense')(logits)
+            name='Q/final_dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
         continuous = Activation('linear')(logits[:, self.discrete_variables:])
         return Concatenate(axis=1)([discrete, continuous])
