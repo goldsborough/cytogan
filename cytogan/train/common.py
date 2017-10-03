@@ -76,6 +76,12 @@ def make_parser(name):
 def parse_args(parser):
     options = parser.parse_args()
 
+    if options.model.startswith('c-'):
+        options.model = options.model[2:]
+        options.conditional = True
+    else:
+        options.conditional = False
+
     if len(options.lr) == 1:
         options.lr = options.lr[0]
 
