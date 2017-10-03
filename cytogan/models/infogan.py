@@ -1,15 +1,14 @@
 import collections
 
 import keras.backend as K
-import keras.losses
-import numpy as np
 import tensorflow as tf
+import numpy as np
 from keras.layers import Activation, Concatenate, Dense, Input, Lambda
 from keras.models import Model
 
 from cytogan.extra.layers import RandomNormal
 from cytogan.metrics import losses
-from cytogan.models import dcgan
+from cytogan.models import gan, dcgan
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
@@ -27,8 +26,16 @@ Hyper = collections.namedtuple('Hyper', [
 ])
 
 
+def get_deps(tensor):
+    deps = set(i.name for i in tensor.op.inputs)
+    for n in tensor.op.inputs:
+        deps.update(get_deps(n))
+    return deps
+
+
 class InfoGAN(dcgan.DCGAN):
     def __init__(self, hyper, learning, session):
+        self.labels = None  # 0/1
         self.latent_prior = None  # c
         self.latent_posterior = None  # c|x
 
@@ -38,7 +45,8 @@ class InfoGAN(dcgan.DCGAN):
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.latent_prior = Input(shape=[self.latent_size])
+            self.latent_prior = Input(
+                shape=[self.latent_size], name='latent_prior')
             full_latent = Concatenate()([self.noise, self.latent_prior])
             self.fake_images = self._define_generator(full_latent)
 
@@ -46,9 +54,10 @@ class InfoGAN(dcgan.DCGAN):
             self.images = Input(shape=self.image_shape, name='images')
             logits = self._define_discriminator(self.images)
             self.latent_posterior = Lambda(
-                self._latent_layer, name='Q/final')(logits)
+                self._latent_layer, name='Q_final')(logits)
             self.probability = Dense(
-                1, activation='sigmoid', name='D/final')(logits)
+                1, activation='sigmoid', name='D_final')(logits)
+            self.d_final = self.probability
 
         generator_inputs = [self.batch_size, self.latent_prior]
         self.generator = Model(generator_inputs, self.fake_images, name='G')
@@ -65,47 +74,68 @@ class InfoGAN(dcgan.DCGAN):
             ],
             name=self.name)
 
+        # For summaries
+        self.latent = self.gan.outputs[1]
+
         self.loss = dict(
-            D=self._define_discriminator_loss(self.probability),
-            Q=self._define_encoder_loss(self.encoder.output),
+            D=self._define_discriminator_loss(self.labels, self.probability),
+            Q=self._define_encoder_loss(self.latent_prior,
+                                        self.encoder.outputs[0]),
             G=self._define_generator_loss(*self.gan.outputs))
 
-    def generate(self, latent_samples):
-        images = self.generator.predict_on_batch(
-            [len(latent_samples), latent_samples])
+    def generate(self, latent_prior, rescale=True):
+        images = self.session.run(
+            self.fake_images,
+            feed_dict={
+                self.batch_size: [len(latent_prior)],
+                self.latent_prior: latent_prior,
+                K.learning_phase(): 0,
+            })
 
         # Go from [-1, +1] scale back to [0, 1]
-        return (images + 1) / 2
+        return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, real_images, with_summary=False):
         real_images = (real_images * 2.0) - 1
         batch_size = len(real_images)
 
-        latent_code = self.latent_distribution(batch_size)
-        fake_images = self.generator.predict([batch_size, latent_code])
-        assert len(fake_images) == len(real_images)
-
-        all_images = np.concatenate([fake_images, real_images], axis=0)
-        all_images += np.random.normal(0, 0.1, all_images.shape)
+        latent_prior = self.latent_distribution(batch_size)
+        fake_images = self.generate(latent_prior, rescale=False)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
                                               with_summary)
-        q_loss = self._train_encoder(fake_images, latent_code)
+        q_loss = self._train_encoder(fake_images, latent_prior)
         g_tensors = self._train_generator(batch_size, with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0], Q=q_loss)
+        return self._maybe_with_summary(losses, g_tensors, d_tensors,
+                                        with_summary)
 
-        if with_summary:
-            summary = self._get_combined_summary(g_tensors[1], d_tensors[1])
-            return losses, summary
-        else:
-            return losses
+    def _train_discriminator(self, fake_images, real_images, with_summary):
+        batch_size = len(fake_images)
+        labels = np.concatenate([np.zeros(batch_size), np.ones(batch_size)])
+        images = np.concatenate([fake_images, real_images], axis=0)
+        fetches = [self.optimizer['D'], self.loss['D']]
+        if with_summary and self.discriminator_summary is not None:
+            fetches.append(self.discriminator_summary)
+
+        result = self.session.run(
+            fetches,
+            feed_dict={
+                self.batch_size: [batch_size],
+                self.latent_prior: np.zeros((batch_size, self.latent_size)),
+                self.images: images,
+                self.labels: labels,
+                K.learning_phase(): 1,
+            })
+
+        return result[1:]
 
     def _train_generator(self, batch_size, with_summary):
         latent_code = self.latent_distribution(batch_size)
         fetches = [self.optimizer['G'], self.loss['G']]
-        if with_summary:
-            fetches.append(self.summary)
+        if with_summary and self.generator_summary is not None:
+            fetches.append(self.generator_summary)
 
         results = self.session.run(
             fetches,
@@ -149,37 +179,38 @@ class InfoGAN(dcgan.DCGAN):
     def _latent_layer(self, logits):
         logits = Dense(
             self.discrete_variables + 2 * self.continuous_variables,
-            name='Q/final_dense')(logits)
+            name='Q_final_dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
         continuous = Activation('linear')(logits[:, self.discrete_variables:])
         return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
         with K.name_scope('G/loss'):
-            self.infogan_bce = keras.losses.binary_crossentropy(
+            self.infogan_bce = losses.binary_crossentropy(
                 K.ones_like(probability), probability)
             self.infogan_mi = losses.mixed_mutual_information(
                 self.latent_prior, latent_posterior, self.discrete_variables,
                 self.continuous_lambda)
 
-            return self.infogan_bce + self.infogan_mi
+        return self.infogan_bce + self.infogan_mi
 
-    def _define_discriminator_loss(self, probability):
+    def _define_discriminator_loss(self, labels, probability):
+        labels = gan.smooth_labels(labels)
         with K.name_scope('D/loss'):
-            return keras.losses.binary_crossentropy(self.labels, probability)
+            return losses.binary_crossentropy(labels, probability)
 
-    def _define_encoder_loss(self, latent_posterior):
+    def _define_encoder_loss(self, latent_prior, latent_posterior):
         with K.name_scope('Q/loss'):
             return losses.mixed_mutual_information(
-                self.latent_prior, latent_posterior, self.discrete_variables,
+                latent_prior, latent_posterior, self.discrete_variables,
                 self.continuous_lambda)
 
     def _add_summaries(self):
         super(InfoGAN, self)._add_summaries()
         with K.name_scope('summary/G'):
             tf.summary.histogram('latent_prior', self.latent_prior)
-        with K.name_scope('summary/D'):
-            tf.summary.scalar('bce', self.infogan_bce)
-            tf.summary.scalar('mi', self.infogan_mi)
+            tf.summary.scalar('bce_loss', self.infogan_bce)
+            tf.summary.scalar('mi_loss', self.infogan_mi)
+
         with K.name_scope('summary/Q'):
-            tf.summary.histogram('latent_posterior', self.gan.outputs[1])
+            tf.summary.histogram('latent_posterior', self.latent)

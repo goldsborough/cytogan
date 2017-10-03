@@ -25,13 +25,9 @@ Hyper = collections.namedtuple('Hyper', [
 ])
 
 
-def smooth_labels(labels, low=0.8, high=1.0):
-    with K.name_scope('noisy_labels'):
-        return labels * tf.random_uniform(tf.shape(labels), low, high)
-
-
 class DCGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
+        self.batch_size = None
         self.labels = None  # 0/1
         self.d_final = None  # D(x)
 
@@ -47,7 +43,7 @@ class DCGAN(gan.GAN):
              np.ones(len(real_images))], axis=0)
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.optimizer['D'], self.loss['D']]
-        if with_summary:
+        if with_summary and self.discriminator_summary is not None:
             fetches.append(self.discriminator_summary)
 
         feed_dict = {
@@ -68,7 +64,7 @@ class DCGAN(gan.GAN):
 
     def _train_generator(self, batch_size, with_summary, conditional=None):
         fetches = [self.optimizer['G'], self.loss['G']]
-        if with_summary:
+        if with_summary and self.generator_summary is not None:
             fetches.append(self.generator_summary)
 
         feed_dict = {self.batch_size: [batch_size], K.learning_phase(): 1}
@@ -158,7 +154,7 @@ class DCGAN(gan.GAN):
             return losses.binary_crossentropy(ones, probability)
 
     def _define_discriminator_loss(self, labels, probability):
-        labels = smooth_labels(labels)
+        labels = gan.smooth_labels(labels)
         with K.name_scope('D/loss'):
             return losses.binary_crossentropy(labels, probability)
 
@@ -166,21 +162,16 @@ class DCGAN(gan.GAN):
         return Dense(1, activation='sigmoid', name='Probability')(latent)
 
     def _add_summaries(self):
-        with K.name_scope('summary/G'):
-            tf.summary.histogram('noise', self.noise)
-            tf.summary.scalar('G_loss', self.loss['G'])
-            tf.summary.image(
-                'generated_images', self.fake_images, max_outputs=8)
-            if self.conditional['G'] is not None:
+        super(DCGAN, self)._add_summaries()
+        if self.is_conditional:
+            with K.name_scope('summary/G'):
                 tf.summary.histogram('conditional', self.conditional['G'])
 
         with K.name_scope('summary/D'):
-            tf.summary.histogram('latent', self.latent)
-            tf.summary.scalar('D_loss', self.loss['D'])
             batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
-            fake_probability = self.d_final[:batch_size]
-            real_probability = self.d_final[batch_size:]
-            tf.summary.histogram('fake_output', fake_probability)
-            tf.summary.histogram('real_output', real_probability)
-            if self.conditional['D'] is not None:
+            fake_output = self.d_final[:batch_size]
+            real_output = self.d_final[batch_size:]
+            tf.summary.histogram('fake_output', fake_output)
+            tf.summary.histogram('real_output', real_output)
+            if self.is_conditional:
                 tf.summary.histogram('conditional', self.conditional['D'])

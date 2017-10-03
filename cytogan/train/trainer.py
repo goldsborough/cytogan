@@ -65,7 +65,8 @@ class Trainer(object):
                 if self._is_time_to_write_summary(number_of_iterations):
                     current_loss, summary = model.train_on_batch(
                         batch, with_summary=True)
-                    self.summary_writer.add_summary(summary, model.step)
+                    if summary is not None:
+                        self.summary_writer.add_summary(summary, model.step)
                 else:
                     current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):

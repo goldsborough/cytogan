@@ -9,7 +9,7 @@ from cytogan.models import model
 def _merge_summaries(scope):
     scope = 'summary/{0}'.format(scope)
     summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
-    return tf.summary.merge(summaries)
+    return tf.summary.merge(summaries) if summaries else None
 
 
 def get_conditional_inputs(scopes, conditional_shape):
@@ -21,6 +21,11 @@ def get_conditional_inputs(scopes, conditional_shape):
         inputs[scope] = Input(shape=conditional_shape, name=name)
 
     return inputs
+
+
+def smooth_labels(labels, low=0.8, high=1.0):
+    with K.name_scope('noisy_labels'):
+        return labels * tf.random_uniform(tf.shape(labels), low, high)
 
 
 class GAN(model.Model):
@@ -49,8 +54,10 @@ class GAN(model.Model):
 
         self.generator_summary = _merge_summaries('G')
         self.discriminator_summary = _merge_summaries('D')
-        self.summary = tf.summary.merge(
-            [self.generator_summary, self.discriminator_summary])
+        if (self.generator_summary is not None
+                and self.discriminator_summary is not None):
+            self.summary = tf.summary.merge(
+                [self.generator_summary, self.discriminator_summary])
 
     @property
     def name(self):
@@ -99,8 +106,6 @@ class GAN(model.Model):
         real_images = (real_images * 2.0) - 1
         batch_size = len(real_images)
         fake_images = self.generate(batch_size, conditionals, rescale=False)
-        assert real_images.shape == fake_images.shape, (real_images.shape,
-                                                        fake_images.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
                                               with_summary, conditionals)
@@ -108,15 +113,10 @@ class GAN(model.Model):
                                           conditionals)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
+        return self._maybe_with_summary(losses, g_tensors, d_tensors,
+                                        with_summary)
 
-        if with_summary:
-            summary = self._get_combined_summary(g_tensors[1], d_tensors[1])
-            return losses, summary
-        else:
-            return losses
-
-    def _get_combined_summary(self, generator_summary,
-                                discriminator_summary):
+    def _get_combined_summary(self, generator_summary, discriminator_summary):
         return self.session.run(
             self.summary,
             feed_dict={
@@ -163,6 +163,32 @@ class GAN(model.Model):
                         self.loss['G'],
                         var_list=self.generator.trainable_weights,
                         global_step=self.global_step)
+
+    def _maybe_with_summary(self, losses, g_tensors, d_tensors, with_summary):
+        if with_summary:
+            if len(g_tensors) == len(d_tensors) > 1:
+                summary = self._get_combined_summary(g_tensors[1],
+                                                     d_tensors[1])
+            elif len(g_tensors) > 1:
+                summary = g_tensors[1]
+            elif len(d_tensors) > 1:
+                summary = d_tensors[1]
+            else:
+                summary = None
+            return losses, summary
+        else:
+            return losses
+
+    def _add_summaries(self):
+        with K.name_scope('summary/G'):
+            tf.summary.histogram('noise', self.noise)
+            tf.summary.scalar('loss', self.loss['G'])
+            tf.summary.image(
+                'generated_images', self.fake_images, max_outputs=10)
+
+        with K.name_scope('summary/D'):
+            tf.summary.histogram('latent', self.latent)
+            tf.summary.scalar('loss', self.loss['D'])
 
     def __repr__(self):
         lines = [self.name]
