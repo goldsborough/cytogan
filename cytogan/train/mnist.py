@@ -94,7 +94,7 @@ elif options.model == 'infogan':
         latent_distribution=latent_distribution,
         discrete_variables=10,
         continuous_variables=2,
-        continuous_lambda=0.8)
+        continuous_lambda=1)
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
@@ -136,8 +136,8 @@ with common.get_session(options.gpus) as session:
         if options.model == 'infogan':
             categorical = np.zeros([options.generative_samples, 10])
             categorical[:, 0] = 1
-            continuous_1 = np.linspace(0, 1, options.generative_samples)
-            continuous_2 = np.linspace(0, 1, options.generative_samples)
+            continuous_1 = np.linspace(-2, +2, options.generative_samples)
+            continuous_2 = np.linspace(-2, +2, options.generative_samples)
             samples = np.concatenate(
                 [
                     categorical,
