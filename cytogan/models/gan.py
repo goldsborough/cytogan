@@ -38,8 +38,9 @@ class GAN(model.Model):
         self.conditional = None
         self.batch_size = None
         self.noise = None  # z
+        self.fake_images = None  # G(z)
 
-        self.generator = None  # G(z, c)
+        self.generator = None  # G(z)
         self.discriminator = None  # D(x)
         self.encoder = None
         self.gan = None  # D(G(z, c))
@@ -120,6 +121,17 @@ class GAN(model.Model):
                 self.generator_summary: generator_summary,
                 self.discriminator_summary: discriminator_summary,
             })
+
+    def _get_model_parameters(self, is_conditional):
+        generator_inputs = [self.batch_size]
+        discriminator_inputs = [self.images]
+        generator_outputs = [self.fake_images]
+        if is_conditional:
+            generator_inputs.append(self.conditional['G'])
+            generator_outputs.append(self.conditional['G'])
+            discriminator_inputs.append(self.conditional['D'])
+
+        return generator_inputs, discriminator_inputs, generator_outputs
 
     def _add_optimizer(self, learning):
         self.optimizer = {}

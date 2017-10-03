@@ -53,12 +53,16 @@ class BEGAN(gan.GAN):
         with K.name_scope('D'):
             self.reconstructions = self._define_decoder(self.latent)
 
-        self.generator = Model(self.batch_size, self.fake_images, name='G')
-        self.discriminator = Model(self.images, self.reconstructions, name='D')
-        self.encoder = Model(self.images, self.latent, name='E')
+        parameters = self._get_model_parameters(self.is_conditional)
+        generator_inputs, discriminator_inputs, generator_outputs = parameters
+
+        self.generator = Model(generator_inputs, self.fake_images, name='G')
+        self.discriminator = Model(
+            discriminator_inputs, self.reconstructions, name='D')
+        self.encoder = Model(discriminator_inputs, self.latent, name='E')
         self.gan = Model(
             self.batch_size,
-            self.discriminator(self.fake_images),
+            self.discriminator(generator_outputs),
             name=self.name)
 
         self.loss = dict(

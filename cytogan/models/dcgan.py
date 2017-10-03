@@ -93,13 +93,8 @@ class DCGAN(gan.GAN):
 
         self.labels = Input(batch_shape=[None], name='labels')
 
-        generator_inputs = [self.batch_size]
-        discriminator_inputs = [self.images]
-        generator_outputs = [self.fake_images]
-        if self.is_conditional:
-            generator_inputs.append(self.conditional['G'])
-            generator_outputs.append(self.conditional['G'])
-            discriminator_inputs.append(self.conditional['D'])
+        parameters = self._get_model_parameters(self.is_conditional)
+        generator_inputs, discriminator_inputs, generator_outputs = parameters
 
         self.generator = Model(generator_inputs, self.fake_images, name='G')
         self.discriminator = Model(
