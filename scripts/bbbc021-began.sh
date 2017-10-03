@@ -3,10 +3,10 @@
 python3 -m cytogan.train.bbbc021                          \
   --epochs 100                                            \
   --model began                                           \
-  --lr 5e-5 5e-5                                          \
+  --lr 1e-5 1e-5                                          \
   --lr-decay 0.9995                                       \
   --lr-decay-steps 100                                    \
-  --batch-size 64                                         \
+  --batch-size 16                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '30s'                                 \
   --summary-freq '30s'                                    \
