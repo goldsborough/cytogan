@@ -25,14 +25,6 @@ Hyper = collections.namedtuple('Hyper', [
     'continuous_lambda',
 ])
 
-
-def get_deps(tensor):
-    deps = set(i.name for i in tensor.op.inputs)
-    for n in tensor.op.inputs:
-        deps.update(get_deps(n))
-    return deps
-
-
 class InfoGAN(dcgan.DCGAN):
     def __init__(self, hyper, learning, session):
         self.labels = None  # 0/1
