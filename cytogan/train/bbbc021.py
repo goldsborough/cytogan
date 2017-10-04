@@ -27,9 +27,14 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-cell_data = CellData(options.metadata, options.labels, options.images,
-                     options.cell_count_file, options.pattern,
-                     options.normalize_luminance)
+cell_data = CellData(
+    options.metadata,
+    options.labels,
+    options.images,
+    options.cell_count_file,
+    options.pattern,
+    options.normalize_luminance,
+    with_labels=options.conditional)
 
 image_shape = (96, 96, 3)
 number_of_batches = cell_data.number_of_images // options.batch_size
@@ -38,7 +43,6 @@ if options.conditional:
     # continuous variable for the concentration.
     conditional_shape = (cell_data.number_of_compounds + 1, )
     log.info('conditional shape: %d', conditional_shape[0])
-    cell_data.batches_with_labels = True
 else:
     conditional_shape = None
 
@@ -115,6 +119,9 @@ trainer.summary_directory = options.summary_dir
 trainer.summary_frequency = options.summary_freq
 trainer.checkpoint_directory = options.checkpoint_dir
 trainer.checkpoint_frequency = options.checkpoint_freq
+
+if learning.decay:
+    common.log_learning_rate_decay(options, learning, number_of_batches)
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)

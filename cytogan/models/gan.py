@@ -82,8 +82,9 @@ class GAN(model.Model):
             learning_rates[key] = lr
         return learning_rates
 
-    def encode(self, images):
-        return self.encoder.predict_on_batch(np.array(images))
+    def encode(self, batch):
+        images, conditionals = self._expand_batch(batch)
+        return self.encoder.predict_on_batch([images, conditionals])
 
     def generate(self, latent_samples, conditionals=None, rescale=True):
         feed_dict = {K.learning_phase(): 0}
@@ -98,12 +99,8 @@ class GAN(model.Model):
         return (images + 1) / 2.0 if rescale else images
 
     def train_on_batch(self, batch, with_summary=False):
-        if self.is_conditional:
-            real_images, conditionals = batch
-        else:
-            real_images, conditionals = batch, None
-
-        real_images = (np.array(real_images) * 2.0) - 1
+        real_images, conditionals = self._expand_batch(batch)
+        real_images = (real_images * 2.0) - 1
         batch_size = len(real_images)
         fake_images = self.generate(batch_size, conditionals, rescale=False)
 
@@ -189,6 +186,12 @@ class GAN(model.Model):
         with K.name_scope('summary/D'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('loss', self.loss['D'])
+
+    def _expand_batch(self, batch):
+        if self.is_conditional:
+            return np.array(batch[0]), np.array(batch[1])
+        else:
+            return np.array(batch), None
 
     def __repr__(self):
         lines = [self.name]

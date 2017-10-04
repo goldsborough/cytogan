@@ -125,3 +125,10 @@ def get_session(gpus):
     tf.set_random_seed(42)
 
     return session
+
+
+def log_learning_rate_decay(options, learning, number_of_batches):
+    steps = (number_of_batches / learning.steps_per_decay) * options.epochs
+    final_learning_rate = learning.rate * (learning.decay**steps)
+    log.info('Learning rate will decay from %.5E to %.5E', learning.rate,
+             final_learning_rate)

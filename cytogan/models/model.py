@@ -12,6 +12,7 @@ log = logs.get_logger(__name__)
 
 Learning = collections.namedtuple('Learning', 'rate, decay, steps_per_decay')
 
+
 class Model(abc.ABC):
     def __init__(self, learning, session):
         assert isinstance(learning, Learning)

@@ -23,7 +23,7 @@ data = mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
 number_of_batches = data.train.num_examples // options.batch_size
 if options.conditional:
     conditional_shape = (10, )
-    log.info('conditional shape: %d', conditional_shape)
+    log.info('conditional shape: %d', conditional_shape[0])
 else:
     conditional_shape = None
 
@@ -111,6 +111,9 @@ trainer_options = trainer.Options(
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size, trainer_options)
+
+if learning.decay:
+    common.log_learning_rate_decay(options, learning, number_of_batches)
 
 with common.get_session(options.gpus) as session:
     model = Model(hyper, learning, session)

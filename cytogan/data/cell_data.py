@@ -92,7 +92,7 @@ def _load_single_cell_names_from_cell_count_file(metadata, cell_count_path):
 # Note that for a particular image path in the original dataframe, we will not
 # actually use the path of that image, but of the single cell images, assumed to
 # have the original image name as a prefix.
-def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
+def _preprocess_metadata(metadata, patterns, root_path, cell_count_path, with_labels):
     plate_names = list(metadata['Image_Metadata_Plate_DAPI'])
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
@@ -112,6 +112,13 @@ def _preprocess_metadata(metadata, patterns, root_path, cell_count_path):
     concentrations = metadata['Image_Metadata_Concentration'].iloc[indices]
 
     data = dict(compound=list(compounds), concentration=list(concentrations))
+    if with_labels:
+        one_hot = _make_one_hot_map(set(compounds))
+        one_hot_compounds = [one_hot[c] for c in compounds]
+        concentrations = np.expand_dims(concentrations, 1)
+        labels = np.concatenate([concentrations, one_hot_compounds], axis=1)
+        data['labels'] = list(labels)
+
     processed = pd.DataFrame(data=data, index=image_keys)
     processed.index.name = 'key'
 
@@ -125,7 +132,8 @@ class CellData(object):
                  image_root,
                  cell_count_path=None,
                  patterns=None,
-                 normalize_luminance=False):
+                 normalize_luminance=False,
+                 with_labels=False):
         self.image_root = os.path.realpath(image_root)
 
         self.labels = pd.read_csv(labels_file_path)
@@ -133,9 +141,9 @@ class CellData(object):
 
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = _preprocess_metadata(all_metadata, patterns,
-                                             self.image_root, cell_count_path)
+                                             self.image_root, cell_count_path, with_labels)
 
-        unique_treatments = set(map(tuple, self.metadata.values))
+        unique_treatments = set(map(tuple, self.metadata.values[:, :-1]))
         log.info('Have {0:,} single-cell images for {1} unique '
                  '(compound, concentration) pairs with {2} MOA labels'.format(
                      len(self.metadata),
@@ -144,9 +152,7 @@ class CellData(object):
         self.images = AsyncImageLoader(self.image_root)
         self.normalize_luminance = normalize_luminance
         self.batch_index = 0
-        self.batches_with_labels = False
-        self.one_hot_compounds = _make_one_hot_map(
-            self.metadata['compound'].unique())
+        self.batches_with_labels = with_labels
 
     @property
     def number_of_images(self):
@@ -223,19 +229,7 @@ class CellData(object):
         return dataset
 
     def labels_for(self, keys):
-        relevant = self.metadata.loc[keys]
-        print(relevant)
-        compounds = list(relevant['compound'])
-        concentrations = list(relevant['concentration'])
-        one_hot_compounds = [self.one_hot_compounds[c] for c in compounds]
-        labels = np.concatenate(
-            [np.array(one_hot_compounds),
-             np.array(concentrations)], axis=1)
-        print(compounds)
-        print('-' * 100)
-        print(concentrations)
-
-        return labels
+        return list(self.metadata.loc[keys]['labels'])
 
     def get_treatment_indices(self, keys):
         filtered = self.metadata.loc[keys][['compound', 'concentration']]
