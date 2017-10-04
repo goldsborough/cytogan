@@ -150,6 +150,8 @@ class GAN(model.Model):
                         self.loss['D'],
                         var_list=self.discriminator.trainable_weights)
 
+        b = tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope='batch_norm')
         with K.name_scope('opt/G'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
@@ -158,7 +160,7 @@ class GAN(model.Model):
                 self.optimizer['G'] = tf.train.AdamOptimizer(
                     self._learning_rate['G'], beta1=0.5).minimize(
                         self.loss['G'],
-                        var_list=self.generator.trainable_weights,
+                        var_list=self.generator.trainable_weights + b,
                         global_step=self.global_step)
 
     def _maybe_with_summary(self, losses, g_tensors, d_tensors, with_summary):
