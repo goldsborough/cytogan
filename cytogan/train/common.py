@@ -128,7 +128,11 @@ def get_session(gpus):
 
 
 def log_learning_rate_decay(options, learning, number_of_batches):
-    steps = (number_of_batches / learning.steps_per_decay) * options.epochs
-    final_learning_rate = learning.rate * (learning.decay**steps)
-    log.info('Learning rate will decay from %.5E to %.5E', learning.rate,
-             final_learning_rate)
+    learning_rates = learning.rate
+    if isinstance(learning.rate, float):
+        learning_rates = [learning_rates]
+    for index, lr in enumerate(learning_rates):
+        steps = (number_of_batches / learning.steps_per_decay) * options.epochs
+        final_learning_rate = lr * (learning.decay**steps)
+        log.info('Learning rate %d will decay from %.5E to %.5E', index, lr,
+                 final_learning_rate)
