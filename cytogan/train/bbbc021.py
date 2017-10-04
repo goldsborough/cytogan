@@ -31,8 +31,16 @@ cell_data = CellData(options.metadata, options.labels, options.images,
                      options.cell_count_file, options.pattern,
                      options.normalize_luminance)
 
-number_of_batches = cell_data.number_of_images // options.batch_size
 image_shape = (96, 96, 3)
+number_of_batches = cell_data.number_of_images // options.batch_size
+if options.conditional:
+    # one-hot encode the compound and have a
+    # continuous variable for the concentration.
+    conditional_shape = cell_data.number_of_compounds + 1
+    log.info('conditional shape: %d', conditional_shape)
+    cell_data.batches_with_labels = True
+else:
+    conditional_shape = None
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
                           or number_of_batches)
@@ -55,7 +63,8 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         noise_size=100,
-        initial_shape=(12, 12))
+        initial_shape=(12, 12),
+        conditional_shape=conditional_shape)
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
@@ -71,7 +80,8 @@ elif options.model == 'began':
         noise_size=100,
         initial_shape=(12, 12),
         diversity_factor=0.7,
-        proportional_gain=1e-3)
+        proportional_gain=1e-3,
+        conditional_shape=conditional_shape)
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 32

@@ -2,6 +2,7 @@ import glob
 import os.path
 import re
 
+import numpy as np
 import pandas as pd
 import tqdm
 
@@ -19,6 +20,17 @@ def _normalize_luminance(images):
             image /= maxima.reshape(1, 1, -1)
         normalized.append(image)
     return normalized
+
+
+def _make_one_hot_map(values):
+    one_hot_map = {}
+    size = len(values)
+    for index, value in enumerate(sorted(values)):
+        one_hot = np.zeros(size)
+        one_hot[index] = 1
+        one_hot_map[value] = one_hot
+
+    return one_hot_map
 
 
 def _image_key_for_path(path, root_path):
@@ -123,19 +135,26 @@ class CellData(object):
         self.metadata = _preprocess_metadata(all_metadata, patterns,
                                              self.image_root, cell_count_path)
 
-        unique_compounds = set(map(tuple, self.metadata.values))
+        unique_treatments = set(map(tuple, self.metadata.values))
         log.info('Have {0:,} single-cell images for {1} unique '
                  '(compound, concentration) pairs with {2} MOA labels'.format(
                      len(self.metadata),
-                     len(unique_compounds), len(self.labels)))
+                     len(unique_treatments), len(self.labels)))
 
         self.images = AsyncImageLoader(self.image_root)
         self.normalize_luminance = normalize_luminance
         self.batch_index = 0
+        self.batches_with_labels = False
+        self.one_hot_compounds = _make_one_hot_map(
+            self.metadata['compound'].unique())
 
     @property
     def number_of_images(self):
         return self.metadata.shape[0]
+
+    @property
+    def number_of_compounds(self):
+        return len(self.metadata['compound'].unique())
 
     def next_batch(self, number_of_images, with_keys=False):
         last_index = self.batch_index + number_of_images
@@ -153,9 +172,14 @@ class CellData(object):
         if self.normalize_luminance:
             ok_images = _normalize_luminance(ok_images)
 
+        if self.batches_with_labels:
+            values = ok_images, self.labels_for(ok_keys)
+        else:
+            values = ok_images
+
         if with_keys:
-            return ok_keys, ok_images
-        return ok_images
+            return ok_keys, values
+        return values
 
     def reset_batching_state(self):
         self.batch_index = 0
@@ -172,7 +196,10 @@ class CellData(object):
             self.images.fetch_async(next_keys)
             if self.normalize_luminance:
                 images = _normalize_luminance(images)
-            yield keys, images
+            if self.batches_with_labels:
+                yield keys, (images, self.labels_for(keys))
+            else:
+                yield keys, images
 
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
@@ -194,6 +221,21 @@ class CellData(object):
         dataset.dropna(inplace=True)
 
         return dataset
+
+    def labels_for(self, keys):
+        relevant = self.metadata.loc[keys]
+        print(relevant)
+        compounds = list(relevant['compound'])
+        concentrations = list(relevant['concentration'])
+        one_hot_compounds = [self.one_hot_compounds[c] for c in compounds]
+        labels = np.concatenate(
+            [np.array(one_hot_compounds),
+             np.array(concentrations)], axis=1)
+        print(compounds)
+        print('-' * 100)
+        print(concentrations)
+
+        return labels
 
     def get_treatment_indices(self, keys):
         filtered = self.metadata.loc[keys][['compound', 'concentration']]

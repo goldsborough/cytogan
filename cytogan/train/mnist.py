@@ -21,7 +21,11 @@ if not options.show_figures:
 image_shape = (28, 28, 1)
 data = mnist.input_data.read_data_sets('MNIST_data', one_hot=True)
 number_of_batches = data.train.num_examples // options.batch_size
-conditional_shape = (10, ) if options.conditional else None
+if options.conditional:
+    conditional_shape = (10, )
+    log.info('conditional shape: %d', conditional_shape)
+else:
+    conditional_shape = None
 
 
 def get_batch(n):
@@ -94,7 +98,7 @@ elif options.model == 'infogan':
         latent_distribution=latent_distribution,
         discrete_variables=10,
         continuous_variables=2,
-        continuous_lambda=0.8)
+        continuous_lambda=1)
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
@@ -136,7 +140,9 @@ with common.get_session(options.gpus) as session:
         if options.model == 'infogan':
             categorical = np.zeros([options.generative_samples, 10])
             categorical[:, 0] = 1
-            continuous_1 = np.linspace(-2, +2, options.generative_samples)
+            continuous_1 = np.zeros(
+                options.generative_samples
+            )  #np.linspace(-2, +2, options.generative_samples)
             continuous_2 = np.zeros(options.generative_samples)
             samples = np.concatenate(
                 [

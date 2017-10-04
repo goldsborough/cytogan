@@ -103,7 +103,7 @@ class GAN(model.Model):
         else:
             real_images, conditionals = batch, None
 
-        real_images = (real_images * 2.0) - 1
+        real_images = (np.array(real_images) * 2.0) - 1
         batch_size = len(real_images)
         fake_images = self.generate(batch_size, conditionals, rescale=False)
 
