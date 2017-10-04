@@ -142,7 +142,9 @@ with common.get_session(options.gpus) as session:
     if options.generative_samples is not None:
         if options.model == 'infogan':
             categorical = np.zeros([options.generative_samples, 10])
-            categorical[:, 0] = 1
+            half = options.generative_samples // 2
+            categorical[:half, 0] = 4
+            categorical[half:, 0] = 7
             continuous_1 = np.zeros(
                 options.generative_samples
             )  #np.linspace(-2, +2, options.generative_samples)
