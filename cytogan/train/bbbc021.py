@@ -36,8 +36,8 @@ number_of_batches = cell_data.number_of_images // options.batch_size
 if options.conditional:
     # one-hot encode the compound and have a
     # continuous variable for the concentration.
-    conditional_shape = cell_data.number_of_compounds + 1
-    log.info('conditional shape: %d', conditional_shape)
+    conditional_shape = (cell_data.number_of_compounds + 1, )
+    log.info('conditional shape: %d', conditional_shape[0])
     cell_data.batches_with_labels = True
 else:
     conditional_shape = None

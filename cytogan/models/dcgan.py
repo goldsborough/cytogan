@@ -84,11 +84,14 @@ class DCGAN(gan.GAN):
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
-            logits = self._define_discriminator(self.images,
-                                                self.conditional['D'])
-
+            logits = self._define_discriminator(self.images)
             self.latent = Dense(self.latent_size, name='latent')(logits)
-            self.d_final = self._define_final_discriminator_layer(self.latent)
+            if self.is_conditional:
+                final_input = Concatenate(
+                    axis=1)([self.latent, self.conditional['D']])
+            else:
+                final_input = self.latent
+            self.d_final = self._define_final_discriminator_layer(final_input)
 
         self.labels = Input(batch_shape=[None], name='labels')
 
@@ -133,12 +136,8 @@ class DCGAN(gan.GAN):
 
         return G
 
-    def _define_discriminator(self, images, conditional=None):
-        noisy_images = AddNoise()(images)
-        if conditional is None:
-            D = noisy_images
-        else:
-            D = MixImagesWithVariables(noisy_images, conditional)
+    def _define_discriminator(self, images):
+        D = AddNoise()(images)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
             D = Conv2D(
@@ -158,8 +157,8 @@ class DCGAN(gan.GAN):
         with K.name_scope('D_loss'):
             return losses.binary_crossentropy(labels, probability)
 
-    def _define_final_discriminator_layer(self, latent):
-        return Dense(1, activation='sigmoid', name='Probability')(latent)
+    def _define_final_discriminator_layer(self, logits):
+        return Dense(1, activation='sigmoid', name='Probability')(logits)
 
     def _add_summaries(self):
         super(DCGAN, self)._add_summaries()
