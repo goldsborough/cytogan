@@ -2,7 +2,7 @@ import keras.backend as K
 import keras.losses
 from keras.layers import Dense
 
-from cytogan.models import dcgan
+from cytogan.models import gan, dcgan
 
 Hyper = dcgan.Hyper
 
@@ -12,7 +12,7 @@ class LSGAN(dcgan.DCGAN):
         super(LSGAN, self).__init__(hyper, learning, session)
 
     def _define_discriminator_loss(self, labels, probability):
-        noisy_labels = dcgan.smooth_labels(labels)
+        noisy_labels = gan.smooth_labels(labels)
         with K.name_scope('D_loss'):
             probability = K.squeeze(probability, 1)
             return keras.losses.mean_squared_error(noisy_labels, probability)
