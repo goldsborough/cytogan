@@ -139,19 +139,16 @@ class GAN(model.Model):
         if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 2
 
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with K.name_scope('opt/D'):
             self._learning_rate['D'] = self._get_learning_rate_tensor(
                 initial_learning_rate[0], learning.decay,
                 learning.steps_per_decay)
-            with tf.control_dependencies(update_ops):
-                self.optimizer['D'] = tf.train.AdamOptimizer(
-                    self._learning_rate['D'], beta1=0.5).minimize(
-                        self.loss['D'],
-                        var_list=self.discriminator.trainable_weights)
+            self.optimizer['D'] = tf.train.AdamOptimizer(
+                self._learning_rate['D'], beta1=0.5).minimize(
+                    self.loss['D'],
+                    var_list=self.discriminator.trainable_weights)
 
-        b = tf.get_collection(
-            tf.GraphKeys.TRAINABLE_VARIABLES, scope='batch_norm')
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with K.name_scope('opt/G'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
@@ -160,7 +157,7 @@ class GAN(model.Model):
                 self.optimizer['G'] = tf.train.AdamOptimizer(
                     self._learning_rate['G'], beta1=0.5).minimize(
                         self.loss['G'],
-                        var_list=self.generator.trainable_weights + b,
+                        var_list=self.generator.trainable_weights,
                         global_step=self.global_step)
 
     def _maybe_with_summary(self, losses, g_tensors, d_tensors, with_summary):

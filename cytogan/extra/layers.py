@@ -6,6 +6,87 @@ from keras.layers import Concatenate, Dense, LeakyReLU, Reshape
 
 
 class BatchNorm(Layer):
+    def __init__(self, axis=-1, momentum=0.9, variance_epsilon=1e-3, **kwargs):
+        self.axis = axis
+        self.momentum = momentum
+        self.variance_epsilon = variance_epsilon
+
+        self.scale = None
+        self.offset = None
+        self.population_mean = None
+        self.population_variance = None
+
+        super(BatchNorm, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        shape = (input_shape[self.axis], )
+        with K.name_scope('batch_norm'):
+            self.scale = self.add_weight(
+                shape=shape, name='scale', initializer='ones')
+            self.offset = self.add_weight(
+                shape=shape, name='offset', initializer='zeros')
+
+            self.population_mean = self.add_weight(
+                shape=shape,
+                name='population_mean',
+                initializer='zeros',
+                trainable=False)
+            self.population_variance = self.add_weight(
+                shape=shape,
+                name='population_variance',
+                initializer='ones',
+                trainable=False)
+
+        super(BatchNorm, self).build(input_shape)
+
+    def call(self, inputs):
+        with K.name_scope('batch_norm'):
+            return tf.cond(K.learning_phase(),
+                           lambda: self._training_graph(inputs),
+                           lambda: self._test_graph(inputs))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def _training_graph(self, inputs):
+        reduction_axes = list(range(len(inputs.shape)))
+        reduction_axes.pop(self.axis)
+
+        mean, variance = tf.nn.moments(
+            inputs, axes=reduction_axes, name='moments')
+        variance = tf.maximum(variance, tf.constant(0.0))
+
+        updated_mean = self._mix(self.population_mean, mean)
+        update_population_mean = tf.assign(self.population_mean, updated_mean)
+
+        updated_variance = self._mix(self.population_variance, variance)
+        update_population_variance = tf.assign(self.population_variance,
+                                               updated_variance)
+
+        with tf.control_dependencies(
+            [update_population_mean, update_population_variance]):
+            return tf.nn.batch_normalization(
+                inputs,
+                mean,
+                variance,
+                self.offset,
+                self.scale,
+                variance_epsilon=self.variance_epsilon)
+
+    def _test_graph(self, inputs):
+        return tf.nn.batch_normalization(
+            inputs,
+            self.population_mean,
+            self.population_variance,
+            self.offset,
+            self.scale,
+            variance_epsilon=self.variance_epsilon)
+
+    def _mix(self, old, new):
+        return self.momentum * old + (1 - self.momentum) * new
+
+
+class BatchNorm2(Layer):
     def __init__(self, **kwargs):
         super(BatchNorm, self).__init__(**kwargs)
 

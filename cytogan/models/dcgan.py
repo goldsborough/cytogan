@@ -7,8 +7,7 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
                           Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
-from cytogan.extra.layers import (AddNoise, BatchNorm, MixImagesWithVariables,
-                                  RandomNormal)
+from cytogan.extra.layers import (AddNoise, BatchNorm, RandomNormal)
 from cytogan.models import gan
 from cytogan.metrics import losses
 
@@ -54,7 +53,7 @@ class DCGAN(gan.GAN):
         }
         if self.is_conditional:
             # Not sure why we need to feed the generator conditional, but TF
-            # complains otherwise (same with batch_size above).
+            # complains otherwise.
             feed_dict[self.conditional['G']] = np.zeros_like(conditional)
             # Duplicate the conditional (for the real and for the fake images).
             conditional = np.concatenate([conditional, conditional], axis=0)
