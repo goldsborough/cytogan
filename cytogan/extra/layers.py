@@ -88,10 +88,10 @@ class BatchNorm(Layer):
 
 class BatchNorm2(Layer):
     def __init__(self, **kwargs):
-        super(BatchNorm, self).__init__(**kwargs)
+        super(BatchNorm2, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        super(BatchNorm, self).build(input_shape)
+        super(BatchNorm2, self).build(input_shape)
 
     def call(self, tensor):
         with K.name_scope('batch_norm'):

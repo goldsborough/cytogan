@@ -174,7 +174,7 @@ class InfoGAN(dcgan.DCGAN):
             units=self.discrete_variables + 2 * self.continuous_variables,
             name='dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
-        continuous = Activation('linear')(logits[:, self.discrete_variables:])
+        continuous = Activation('tanh')(logits[:, self.discrete_variables:])
         return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
