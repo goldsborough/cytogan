@@ -43,19 +43,19 @@ class Model(abc.ABC):
 
     @abc.abstractmethod
     def train_on_batch(self, batch, with_summary=False):
-        ...
+        pass
 
     @abc.abstractmethod
     def _define_graph(self):
-        ...
+        pass
 
     @abc.abstractmethod
     def _add_optimizer(self, learning, loss):
-        ...
+        pass
 
     @abc.abstractmethod
     def _add_summaries(self):
-        ...
+        pass
 
     @property
     def name(self):
