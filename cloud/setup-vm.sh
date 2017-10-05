@@ -54,6 +54,7 @@ sudo pip3 install -r requirements.txt
 # Download the data
 sudo mkdir -p /data1/peter/segmented
 sudo mkdir -p /data1/peter/metadata
+sudo chown -R $(whoami) /data1/peter
 
 gsutil -m rsync -r gs://bbbc021-metadata /data1/peter/metadata
 gsutil -m rsync -r gs://bbbc021-segmented /data1/peter/segmented
