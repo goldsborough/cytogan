@@ -12,7 +12,7 @@ python3 -m cytogan.train.bbbc021                          \
   --summary-freq '30s'                                    \
   --latent-samples 256                                    \
   --generative-samples 50                                 \
-  --gpus 2 3                                              \
+  --gpus 3                                                \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv       \
   --images /data1/peter/segmented                         \
@@ -21,4 +21,7 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
+  --whiten-profiles \
+  --skip-training \
+  --restore-from /data1/peter/runs/lsgan_20-09-2017_20-18-34/checkpoints \
   $@
