@@ -92,7 +92,8 @@ def _load_single_cell_names_from_cell_count_file(metadata, cell_count_path):
 # Note that for a particular image path in the original dataframe, we will not
 # actually use the path of that image, but of the single cell images, assumed to
 # have the original image name as a prefix.
-def _preprocess_metadata(metadata, patterns, root_path, cell_count_path, with_labels):
+def _preprocess_metadata(metadata, patterns, root_path, cell_count_path,
+                         with_labels):
     plate_names = list(metadata['Image_Metadata_Plate_DAPI'])
     full_file_names = metadata['Image_FileName_DAPI']
     file_names = [os.path.splitext(name)[0] for name in full_file_names]
@@ -141,7 +142,8 @@ class CellData(object):
 
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = _preprocess_metadata(all_metadata, patterns,
-                                             self.image_root, cell_count_path, with_labels)
+                                             self.image_root, cell_count_path,
+                                             with_labels)
 
         unique_treatments = set(map(tuple, self.metadata.values[:, :-1]))
         log.info('Have {0:,} single-cell images for {1} unique '
@@ -230,6 +232,9 @@ class CellData(object):
 
     def labels_for(self, keys):
         return list(self.metadata.loc[keys]['labels'])
+
+    def sample_labels(self, amount):
+        return self.metadata['labels'].sample(amount)
 
     def get_treatment_indices(self, keys):
         filtered = self.metadata.loc[keys][['compound', 'concentration']]

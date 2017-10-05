@@ -218,6 +218,10 @@ with common.get_session(options.gpus) as session:
         else:
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
+        if conditional_shape:
+            samples = [samples]
+            labels = cell_data.sample_labels(options.generative_samples)
+            samples.append(labels)
         visualize.generative_samples(
             model, samples, save_to=options.figure_dir)
 
