@@ -152,9 +152,7 @@ with common.get_session(options.gpus) as session:
             half = options.generative_samples // 2
             categorical[:half, 0] = 4
             categorical[half:, 0] = 7
-            continuous_1 = np.zeros(
-                options.generative_samples
-            )  #np.linspace(-2, +2, options.generative_samples)
+            continuous_1 = np.linspace(-2, +2, options.generative_samples)
             continuous_2 = np.zeros(options.generative_samples)
             samples = np.concatenate(
                 [
