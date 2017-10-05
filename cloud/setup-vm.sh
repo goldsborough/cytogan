@@ -5,7 +5,7 @@ sudo apt-get install -y \
 software-properties-common apt-utils build-essential linux-headers-$(uname -r)
 
 # NVIDIA Drivers
-sudo add-apt-repository ppa:graphics-drivers/ppa
+sudo add-apt-repository ppa:graphics-drivers/ppa -y
 sudo apt-get update
 
 # Basic NVIDIA packages
@@ -41,7 +41,7 @@ sudo apt-get install -y \
 sudo apt-get install -y emacs vim
 
 # Install TensorFlow
-pip3 install --upgrade pip && pip3 install tensorflow-gpu
+sudo pip3 install --upgrade pip && sudo pip3 install tensorflow-gpu
 
 # Install Cytogan
 if [[ ! -d cytogan ]]; then
@@ -49,7 +49,7 @@ if [[ ! -d cytogan ]]; then
 fi
 
 cd cytogan
-pip3 install -r requirements.txt
+sudo pip3 install -r requirements.txt
 
 # Download the data
 sudo mkdir -p /data1/peter/segmented

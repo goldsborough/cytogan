@@ -196,6 +196,7 @@ class BEGAN(gan.GAN):
             return loss
 
     def _add_summaries(self):
+        super(BEGAN, self)._add_summaries()
         with K.name_scope('summary/D'):
             tf.summary.scalar('k_pre_clip', self.k_pre_clip)
             tf.summary.scalar('k', self.k)
@@ -204,6 +205,6 @@ class BEGAN(gan.GAN):
             fake_reconstructions = self.reconstructions[:batch_size]
             real_reconstructions = self.reconstructions[batch_size:]
             tf.summary.image(
-                'fake_reconstructions', fake_reconstructions, max_outputs=2)
+                'fake_reconstructions', fake_reconstructions, max_outputs=4)
             tf.summary.image(
-                'real_reconstructions', real_reconstructions, max_outputs=2)
+                'real_reconstructions', real_reconstructions, max_outputs=4)
