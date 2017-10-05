@@ -48,10 +48,10 @@ class BEGAN(gan.GAN):
         self.images = Input(shape=self.image_shape, name='images')
 
         with K.name_scope('E'):
-            self.latent = self._define_encoder(self.images,
-                                               self.conditional['D'])
+            self.latent = self._define_encoder(self.images)
         with K.name_scope('D'):
-            self.reconstructions = self._define_decoder(self.latent)
+            self.reconstructions = self._define_decoder(
+                self.latent, self.conditional['D'])
 
         parameters = self._get_model_parameters(self.is_conditional)
         generator_inputs, discriminator_inputs, generator_outputs = parameters
@@ -120,12 +120,8 @@ class BEGAN(gan.GAN):
 
         return G
 
-    def _define_encoder(self, images, conditional=None):
-        noisy_images = AddNoise()(images)
-        if conditional is None:
-            E = noisy_images
-        else:
-            E = MixImagesWithVariables(noisy_images, conditional)
+    def _define_encoder(self, images):
+        E = AddNoise()(images)
         for filters, stride in zip(self.encoder_filters, self.encoder_strides):
             E = Conv2D(
                 filters,
@@ -141,10 +137,15 @@ class BEGAN(gan.GAN):
 
         return H
 
-    def _define_decoder(self, latent_code):
+    def _define_decoder(self, latent_code, conditional=None):
+        if conditional is not None:
+            logits = Concatenate(axis=1)([latent_code, conditional])
+        else:
+            logits = latent_code
+
         first_filter = self.decoder_filters[0]
         initial_flat_shape = np.prod(self.initial_shape) * first_filter
-        D = Dense(initial_flat_shape)(latent_code)
+        D = Dense(initial_flat_shape)(logits)
         D = Reshape(self.initial_shape + self.decoder_filters[:1])(D)
         for filters, stride in zip(self.decoder_filters, self.decoder_strides):
             if stride > 1:
