@@ -137,8 +137,8 @@ class CellData(object):
                  with_labels=False):
         self.image_root = os.path.realpath(image_root)
 
-        self.labels = pd.read_csv(labels_file_path)
-        self.labels.set_index(['compound', 'concentration'], inplace=True)
+        self.moa = pd.read_csv(labels_file_path)
+        self.moa.set_index(['compound', 'concentration'], inplace=True)
 
         all_metadata = pd.read_csv(metadata_file_path)
         self.metadata = _preprocess_metadata(all_metadata, patterns,
@@ -149,7 +149,7 @@ class CellData(object):
         log.info('Have {0:,} single-cell images for {1} unique '
                  '(compound, concentration) pairs with {2} MOA labels'.format(
                      len(self.metadata),
-                     len(unique_treatments), len(self.labels)))
+                     len(unique_treatments), len(self.moa)))
 
         self.images = AsyncImageLoader(self.image_root)
         self.normalize_luminance = normalize_luminance
@@ -214,18 +214,18 @@ class CellData(object):
         relevant_metadata = self.metadata.loc[keys]
         compounds = relevant_metadata['compound']
         concentrations = relevant_metadata['concentration']
-        # The keys to the labels dataframe are (compound, concentration) pairs.
-        labels = self.labels.loc[list(zip(compounds, concentrations))]
+        # The keys to the MOA dataframe are (compound, concentration) pairs.
+        moas = self.moa.loc[list(zip(compounds, concentrations))]
 
         dataset = pd.DataFrame(
             index=keys,
             data=dict(
                 compound=compounds,
                 concentration=concentrations,
-                moa=list(labels.moa),
+                moa=list(moas.moa),
                 profile=list(profiles)))
 
-        # Ignore (compound, concentration) pairs for which we don't have labels.
+        # Ignore (compound, concentration) pairs for which we don't have MOAs.
         dataset.dropna(inplace=True)
 
         return dataset

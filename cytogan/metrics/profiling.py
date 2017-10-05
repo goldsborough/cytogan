@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.linalg
 import sklearn.metrics.pairwise
 
 from cytogan.extra import logs
@@ -28,6 +29,24 @@ def reduce_profiles_across_treatments(dataset):
     return pd.DataFrame(reduced_profiles, columns=keys + ('profile', ))
 
 
+def get_whitening_transform(X, epsilon, rotate=True):
+    C = (1.0 / X.shape[0]) * np.dot(X.T, X)
+    s, V = scipy.linalg.eigh(C)
+    D = np.diag(1.0 / np.sqrt(s + epsilon))
+    W = np.dot(V, D)
+    if rotate:
+        W = np.dot(W, V.T)
+    return W
+
+
+def whiten(dataset):
+    controls = dataset[dataset['compound'] == 'DMSO']
+    mean_control = controls['profile'].mean()
+    centered_controls = controls['profile'] - mean_control
+    W = get_whitening_transform(centered_controls, epsilon=1e-6, rotate=False)
+    dataset['profile'] = np.dot(dataset['profile'] - mean_control, W)
+
+
 # Performs leave-one-compound-out cross-validation
 # Result is a dataframe with columns:
 # - image key
@@ -37,6 +56,8 @@ def reduce_profiles_across_treatments(dataset):
 # - MOA
 def score_profiles(dataset):
     accuracies = []
+    # The DMSO should not participate in the MOA classification.
+    dataset = dataset[dataset['compound'] != 'DMSO']
     labels = dataset['moa'].unique()
     log.info('Have %d MOAs among the profiles.', len(labels))
     confusion_matrix = pd.DataFrame(
@@ -44,6 +65,7 @@ def score_profiles(dataset):
         data=np.zeros([len(labels), len(labels)]),
         columns=labels)
     for holdout_compound in dataset['compound'].unique():
+        assert holdout_compound != 'DMSO'
         log.info('Holding out %s', holdout_compound)
         test_mask = dataset['compound'] == holdout_compound
         # Leaves all the concentrations for the holdout compound.

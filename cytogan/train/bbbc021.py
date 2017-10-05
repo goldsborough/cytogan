@@ -20,6 +20,7 @@ parser.add_argument('--confusion-matrix', action='store_true')
 parser.add_argument('--latent-compounds', action='store_true')
 parser.add_argument('--latent-moa', action='store_true')
 parser.add_argument('--normalize-luminance', action='store_true')
+parser.add_argument('--whiten-profiles', action='store_true')
 options = common.parse_args(parser)
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
@@ -148,6 +149,9 @@ with common.get_session(options.gpus) as session:
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     log.info('Matching {0:,} profiles to {1} MOAs'.format(
         len(dataset), len(dataset.moa.unique())))
+    if options.whiten:
+        dataset = profiling.whiten(dataset)
+        log.info('Whitened data')
     treatment_profiles = profiling.reduce_profiles_across_treatments(dataset)
     log.info('Reduced dataset from %d to %d profiles for each treatment',
              len(dataset), len(treatment_profiles))

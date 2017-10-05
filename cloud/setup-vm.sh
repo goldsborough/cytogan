@@ -52,6 +52,10 @@ cd cytogan
 sudo pip3 install -r requirements.txt
 
 # Download the data
+
+# Remove 3GB of cache
+sudo apt-get clean
+
 sudo mkdir -p /data1/peter/segmented
 sudo mkdir -p /data1/peter/metadata
 sudo chown -R $(whoami) /data1/peter
