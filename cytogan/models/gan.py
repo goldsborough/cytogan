@@ -141,7 +141,7 @@ class GAN(model.Model):
         if isinstance(initial_learning_rate, float):
             initial_learning_rate = [initial_learning_rate] * 2
 
-        with K.name_scope('D_opt'):
+        with K.name_scope('opt/D'):
             self._learning_rate['D'] = self._get_learning_rate_tensor(
                 initial_learning_rate[0], learning.decay,
                 learning.steps_per_decay)
@@ -151,7 +151,7 @@ class GAN(model.Model):
                     var_list=self.discriminator.trainable_weights)
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with K.name_scope('G_opt'):
+        with K.name_scope('opt/G'):
             self._learning_rate['G'] = self._get_learning_rate_tensor(
                 initial_learning_rate[1], learning.decay,
                 learning.steps_per_decay)

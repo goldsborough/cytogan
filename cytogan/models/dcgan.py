@@ -81,16 +81,16 @@ class DCGAN(gan.GAN):
             self.fake_images = self._define_generator(self.noise,
                                                       self.conditional['G'])
 
-        # with K.name_scope('D'):
-        self.images = Input(shape=self.image_shape, name='images')
-        logits = self._define_discriminator(self.images)
-        self.latent = Dense(self.latent_size, name='latent')(logits)
-        if self.is_conditional:
-            final_input = Concatenate(
-                axis=1)([self.latent, self.conditional['D']])
-        else:
-            final_input = self.latent
-        self.d_final = self._define_final_discriminator_layer(final_input)
+        with K.name_scope('D'):
+            self.images = Input(shape=self.image_shape, name='images')
+            logits = self._define_discriminator(self.images)
+            self.latent = Dense(self.latent_size, name='latent')(logits)
+            if self.is_conditional:
+                final_input = Concatenate(
+                    axis=1)([self.latent, self.conditional['D']])
+            else:
+                final_input = self.latent
+            self.d_final = self._define_final_discriminator_layer(final_input)
 
         self.labels = Input(batch_shape=[None], name='labels')
 
