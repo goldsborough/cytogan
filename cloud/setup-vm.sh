@@ -29,7 +29,7 @@ gsutil -m cp gs://cudnn-imaging/cudnn.tar.gz
 
 # Install basic python environment
 sudo apt-get install -y \
-  git python3-numpy python3-dev python3-pip python3-wheel ipython
+  git python3-numpy python3-dev python3-pip python3-wheel ipython python3-tk
 
 # Install work tools
 sudo apt-get install -y emacs vim
