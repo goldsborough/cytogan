@@ -17,6 +17,7 @@ Authenticate: `gsutil config`.
 3. For Disk Type, choose Ubuntu 16.04 with 20 GB SSD drive,
 4. Create the instance and wait for it to boot up.
 5. SSH into the machine with your browser (easiest).
+6. Run the `setup.sh` script found in the `cloud/` folder.
 
 # Notes
 
