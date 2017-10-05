@@ -144,17 +144,24 @@ with common.get_session(options.gpus) as session:
             keys += batch_keys
     except KeyboardInterrupt:
         pass
+
     profiles = np.concatenate(profiles, axis=0)
     log.info('Generated %d profiles', len(profiles))
+
     dataset = cell_data.create_dataset_from_profiles(keys, profiles)
     log.info('Matching {0:,} profiles to {1} MOAs'.format(
         len(dataset), len(dataset.moa.unique())))
-    if options.whiten:
-        dataset = profiling.whiten(dataset)
+
+    if options.whiten_profiles:
+        profiling.whiten(dataset)
         log.info('Whitened data')
+
+    # The DMSO (control) should not participate in the MOA classification.
+    dataset = dataset[dataset['compound'] != 'DMSO']
     treatment_profiles = profiling.reduce_profiles_across_treatments(dataset)
     log.info('Reduced dataset from %d to %d profiles for each treatment',
              len(dataset), len(treatment_profiles))
+
     confusion_matrix, accuracy = profiling.score_profiles(treatment_profiles)
     log.info('Final Accuracy: %.3f', accuracy)
 

@@ -84,6 +84,8 @@ class GAN(model.Model):
 
     def encode(self, batch):
         images, conditionals = self._expand_batch(batch)
+        if conditionals is None:
+            return self.encoder.predict_on_batch(images)
         return self.encoder.predict_on_batch([images, conditionals])
 
     def generate(self, latent_samples, conditionals=None, rescale=True):

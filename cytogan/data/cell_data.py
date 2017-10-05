@@ -156,6 +156,8 @@ class CellData(object):
         self.batch_index = 0
         self.batches_with_labels = with_labels
 
+        log.info('Yielding image batches with labels: %d', with_labels)
+
     @property
     def number_of_images(self):
         return self.metadata.shape[0]

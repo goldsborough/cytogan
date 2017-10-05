@@ -40,11 +40,16 @@ def get_whitening_transform(X, epsilon, rotate=True):
 
 
 def whiten(dataset):
-    controls = dataset[dataset['compound'] == 'DMSO']
-    mean_control = controls['profile'].mean()
-    centered_controls = controls['profile'] - mean_control
+    control_data = dataset[dataset['compound'] == 'DMSO']
+    controls = np.array(list(control_data['profile']))
+    mean_control = controls.mean(axis=0).reshape(1, -1)
+    centered_controls = controls - mean_control
+
     W = get_whitening_transform(centered_controls, epsilon=1e-6, rotate=False)
-    dataset['profile'] = np.dot(dataset['profile'] - mean_control, W)
+
+    all_profiles = np.array(list(dataset['profile']))
+    whitened_profiles = np.dot(all_profiles - mean_control, W)
+    dataset['profile'] = list(whitened_profiles)
 
 
 # Performs leave-one-compound-out cross-validation
@@ -56,8 +61,6 @@ def whiten(dataset):
 # - MOA
 def score_profiles(dataset):
     accuracies = []
-    # The DMSO should not participate in the MOA classification.
-    dataset = dataset[dataset['compound'] != 'DMSO']
     labels = dataset['moa'].unique()
     log.info('Have %d MOAs among the profiles.', len(labels))
     confusion_matrix = pd.DataFrame(
