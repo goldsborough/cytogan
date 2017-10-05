@@ -105,9 +105,9 @@ class GAN(model.Model):
         fake_images = self.generate(batch_size, conditionals, rescale=False)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
-                                              with_summary, conditionals)
-        g_tensors = self._train_generator(batch_size, with_summary,
-                                          conditionals)
+                                              conditionals, with_summary)
+        g_tensors = self._train_generator(batch_size, conditionals,
+                                          with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
         return self._maybe_with_summary(losses, g_tensors, d_tensors,
