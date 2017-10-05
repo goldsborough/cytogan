@@ -15,9 +15,14 @@ Authenticate: `gsutil config`.
 1. Select `us-east1-c` or `us-east1-d` region (have GPUs),
 2. For `Machine Type`, click `customize` and set number of GPUs and CPUs,
 3. For Disk Type, choose Ubuntu 16.04 with 20 GB SSD drive,
-4. Create the instance and wait for it to boot up.
-5. SSH into the machine with your browser (easiest).
-6. Run the `setup.sh` script found in the `cloud/` folder.
+4. Create the instance and wait for it to boot up,
+5. Setup the correct firewall rules on your own machine: `gcloud compute firewall-rules create default-allow-ssh --allow tcp:22`,
+6. SSH into the machine with your browser (easiest) or connect from your machine with `gcloud compute ssh --zone <zone> <instance>`,
+7. Run the `setup.sh` script found in the `cloud/` folder.
+
+To set up port forwarding between your local machine and the VM, use these flags for the `gcloud compute ssh` flags:
+
+`--ssh-flag='-L' --ssh-flag='8000:127.0.0.1:6006'`
 
 # Notes
 

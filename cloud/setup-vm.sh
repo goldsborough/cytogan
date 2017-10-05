@@ -21,11 +21,17 @@ fi
 
 sudo dpkg -i "$CUDA_DEB"
 sudo apt-get update
-sudo apt-get install cuda-8.0
+sudo apt-get install -y cuda-8.0
 
 # Install cuDNN
 
 gsutil -m cp gs://cudnn-imaging/cudnn.tar.gz
+tar -xvzf cudnn.tar.gz
+sudo cp cuda/include/* /usr/local/cuda/include
+sudo cp cuda/lib64/* /usr/local/cuda/lib64
+
+echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"' >> ~/.bashrc
+echo 'export CUDA_HOME=/usr/local/cuda' >> ~/.bashrc
 
 # Install basic python environment
 sudo apt-get install -y \

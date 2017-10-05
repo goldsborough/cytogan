@@ -61,9 +61,9 @@ elif options.model == 'vae':
 elif options.model in ('dcgan', 'lsgan', 'wgan'):
     hyper = dcgan.Hyper(
         image_shape,
-        generator_filters=(128, 64, 32, 16),
+        generator_filters=(256, 128, 64, 32),
         generator_strides=(1, 2, 2, 2),
-        discriminator_filters=(128, 64, 32, 16),
+        discriminator_filters=(32, 64, 128, 256),
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         noise_size=100,
@@ -83,7 +83,7 @@ elif options.model == 'began':
         latent_size=100,
         noise_size=100,
         initial_shape=(12, 12),
-        diversity_factor=0.7,
+        diversity_factor=0.75,
         proportional_gain=1e-3,
         conditional_shape=conditional_shape)
     Model = began.BEGAN
@@ -98,9 +98,9 @@ elif options.model == 'infogan':
     })
     hyper = infogan.Hyper(
         image_shape,
-        generator_filters=(128, 64, 32, 16),
+        generator_filters=(256, 128, 64, 32),
         generator_strides=(1, 2, 2, 2),
-        discriminator_filters=(128, 64, 32, 16),
+        discriminator_filters=(32, 64, 128, 256),
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         noise_size=100,
@@ -108,7 +108,8 @@ elif options.model == 'infogan':
         latent_distribution=latent_distribution,
         discrete_variables=discrete_variables,
         continuous_variables=continuous_variables,
-        continuous_lambda=1)
+        continuous_lambda=1,
+        constrain_continuous=False)
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))

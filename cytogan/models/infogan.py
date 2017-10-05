@@ -23,6 +23,7 @@ Hyper = collections.namedtuple('Hyper', [
     'discrete_variables',
     'continuous_variables',
     'continuous_lambda',
+    'constrain_continuous',
 ])
 
 
@@ -174,7 +175,9 @@ class InfoGAN(dcgan.DCGAN):
             units=self.discrete_variables + 2 * self.continuous_variables,
             name='dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
-        continuous = Activation('tanh')(logits[:, self.discrete_variables:])
+        continuous = logits[:, self.discrete_variables:]
+        if self.constrain_continuous:
+            continuous = Activation('tanh')(continuous)
         return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
