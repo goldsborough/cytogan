@@ -13,8 +13,9 @@ sudo apt-get install -y emacs vim
 
 pip3 install --upgrade pip && pip3 install tensorflow-gpu ipython
 
-git clone https://github.com/goldsborough/cytogan
-
-cd cytogan
+if [[ ! -d cytogan ]]; then
+  git clone https://github.com/goldsborough/cytogan
+  cd cytogan
+fi
 
 pip3 install -r requirements.txt
