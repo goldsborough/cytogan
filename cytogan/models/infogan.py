@@ -154,7 +154,8 @@ class InfoGAN(dcgan.DCGAN):
         return encoder_loss
 
     def _add_optimizer(self, learning):
-        assert len(learning.rate) == 3
+        assert isinstance(learning.rate, list), 'lr must be list of 3 floats'
+        assert len(learning.rate) == 3, 'lr must be list of 3 floats'
         super(InfoGAN, self)._add_optimizer(learning)
         initial_learning_rate = learning.rate
 
