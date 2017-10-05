@@ -3,8 +3,12 @@
 sudo apt-get install -y \
   software-properties-common apt-utils build-essential linux-headers-$(uname -r)
 
+
+sudo add-apt-repository ppa:graphics-drivers/ppa
+sudo apt-get update
+
 sudo apt-get install -y  --no-install-recommends \
-  nvidia-cuda-toolkit nvidia-kernel-common nvidia-driver nvidia-smi
+  nvidia-367 nvidia-cuda-toolkit nvidia-kernel-common nvidia-driver nvidia-smi
 
 sudo apt-get install -y \
   git python3-numpy python3-dev python3-pip python3-wheel
