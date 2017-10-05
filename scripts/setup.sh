@@ -15,7 +15,7 @@ pip3 install --upgrade pip && pip3 install tensorflow-gpu ipython
 
 if [[ ! -d cytogan ]]; then
   git clone https://github.com/goldsborough/cytogan
-  cd cytogan
 fi
 
+cd cytogan
 pip3 install -r requirements.txt
