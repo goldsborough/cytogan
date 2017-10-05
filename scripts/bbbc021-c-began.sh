@@ -2,7 +2,7 @@
 
 python3 -m cytogan.train.bbbc021                          \
   --epochs 30                                             \
-  --model began                                           \
+  --model c-began                                         \
   --lr 1e-5 1e-5                                          \
   --lr-decay 0.9999                                       \
   --lr-decay-steps 1000                                   \
