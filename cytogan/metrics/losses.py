@@ -20,6 +20,13 @@ def binary_crossentropy(p, q):
         return keras.losses.binary_crossentropy(p, q)
 
 
+def mean_squared_error(p, q):
+    with K.name_scope('mse'):
+        p = K.flatten(p)
+        q = K.flatten(q)
+        return keras.losses.mean_squared_error(p, q)
+
+
 def squared_error(p, q):
     '''MSE(p, q) = ||p - q||^2'''
     return K.sum(K.square(p - q), axis=1)
