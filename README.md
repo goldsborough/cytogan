@@ -4,7 +4,7 @@
 
 ## Installing GCloud
 
-Install `gcloud`: https://cloud.google.com/sdk/downloads
+Install Google Cloud's CLI, `gcloud`, on your machine:f https://cloud.google.com/sdk/downloads
 Just grab a version and `wget` it. Then run instructions on the website to install.
 
 Install `gsutil`: `pip install gsutil`.
@@ -12,13 +12,13 @@ Authenticate: `gsutil config`.
 
 ## Setting up VM
 
+0. On Google Cloud, go to "Compute Engine", then "VM Instances". Click on "Create Instance".
 1. Select `us-east1-c` or `us-east1-d` region (have GPUs),
 2. For `Machine Type`, click `customize` and set number of GPUs and CPUs,
-3. For Disk Type, choose Ubuntu 16.04 with 20 GB SSD drive,
+3. For Disk Type, choose Ubuntu 16.04 with e.g. 40 GB SSD drive,
 4. Create the instance and wait for it to boot up,
 5. Setup the correct firewall rules on your own machine: `gcloud compute firewall-rules create default-allow-ssh --allow tcp:22`,
-6. SSH into the machine with your browser (easiest) or connect from your machine with `gcloud compute ssh --zone <zone> <instance>`,
-7. Run the `setup.sh` script found in the `cloud/` folder.
+6. SSH into the machine with your browser (easiest) or connect from your machine with `gcloud compute ssh --zone <zone> <instance>`.
 
 To set up port forwarding between your local machine and the VM, use these flags for the `gcloud compute ssh` flags:
 

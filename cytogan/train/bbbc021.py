@@ -89,11 +89,9 @@ elif options.model == 'began':
         conditional_shape=conditional_shape)
     Model = began.BEGAN
 elif options.model == 'infogan':
-    discrete_variables = 32
-    continuous_variables = 68
+    discrete_variables = 0
+    continuous_variables = 32
     latent_distribution = distributions.mixture({
-        distributions.categorical(discrete_variables):
-        1,
         distributions.uniform(-1.0, +1.0):
         continuous_variables,
     })
