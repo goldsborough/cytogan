@@ -129,8 +129,10 @@ class UpSamplingNN(Layer):
 
 
 class AddNoise(Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, mean=0.0, stddev=0.1, **kwargs):
         # github.com/soumith/ganhacks#13-add-noise-to-inputs-decay-over-time
+        self.mean = mean
+        self.stddev = stddev
         super(AddNoise, self).__init__(**kwargs)
 
     def build(self, input_shape):
@@ -139,7 +141,7 @@ class AddNoise(Layer):
     def call(self, images):
         with K.name_scope('add_noise'):
             return images + tf.random_normal(
-                tf.shape(images), mean=0.0, stddev=0.1)
+                tf.shape(images), mean=self.mean, stddev=self.stddev)
 
     def compute_output_shape(self, input_shape):
         return input_shape
