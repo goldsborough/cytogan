@@ -54,16 +54,20 @@ def mutual_information(x, x_given_y):
 def log_likelihood(p, mean, log_variance):
     '''Negative log likelihood of a Gaussian-distributed variable.'''
     # http://docs.chainer.org/en/stable/reference/generated/chainer.functions.gaussian_nll.html#chainer.functions.gaussian_nll
-    epsilon = K.square(p - mean) * K.exp(-log_variance)
-    pointwise = 0.5 * (K.log(2 * np.pi) + log_variance + epsilon)
-    return K.mean(K.sum(pointwise, axis=1))
+    with K.name_scope('log_likelihood'):
+        epsilon = K.square(p - mean) * K.exp(-log_variance)
+        pointwise = 0.5 * (K.log(2 * np.pi) + log_variance + epsilon)
+        return K.mean(K.sum(pointwise, axis=1))
 
 
 def mixed_mutual_information(x, x_given_y, discrete_continuous_split,
                              continuous_lambda):
-    discrete_prior = x[:, :discrete_continuous_split]
-    discrete_posterior = x_given_y[:, :discrete_continuous_split]
-    discrete_mi = mutual_information(discrete_prior, discrete_posterior)
+    if discrete_continuous_split > 0:
+        discrete_prior = x[:, :discrete_continuous_split]
+        discrete_posterior = x_given_y[:, :discrete_continuous_split]
+        discrete_mi = mutual_information(discrete_prior, discrete_posterior)
+    else:
+        discrete_mi = 0
 
     if discrete_continuous_split == x.shape[1]:
         return discrete_mi

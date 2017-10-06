@@ -101,7 +101,7 @@ elif options.model == 'infogan':
         generator_strides=(1, 2, 2, 2),
         discriminator_filters=(32, 64, 128, 256),
         discriminator_strides=(1, 2, 2, 2),
-        latent_size=100,
+        latent_size=discrete_variables + continuous_variables,
         noise_size=100,
         initial_shape=(12, 12),
         latent_distribution=latent_distribution,
