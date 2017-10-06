@@ -30,6 +30,12 @@ To set up port forwarding between your local machine and the VM, use these flags
 - Use whitening for features
 - Concatenate transfer learning features with GAN features
 
+- Try to predict the conditioning code from the images and use that loss
+- Use only the concentration as conditional
+- Feed the conditional into a dense layer shared between G and D
+- Use CellProfiler features, but hand pick a few
+- Categorical GAN
+
 So far:
 
 - DCGAN: 43%

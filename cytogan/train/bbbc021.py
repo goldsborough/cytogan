@@ -224,16 +224,17 @@ with common.get_session(options.gpus) as session:
                 [categorical, categorical_zeros] +
                 [continuous.reshape(-1, 1)] * 10 + [continuous_zeros],
                 axis=1)
-        elif options.model == 'dcgan':
-            samples = np.random.randn(options.generative_samples,
-                                      model.noise_size)
-        else:
+        elif options.model.endswith('began'):
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
+        else:
+            samples = np.random.randn(options.generative_samples,
+                                      model.noise_size)
+
         if conditional_shape:
             samples = [samples]
             labels = cell_data.sample_labels(options.generative_samples)
-            samples.append(labels)
+            samples.append(np.array(list(labels)))
         visualize.generative_samples(
             model, samples, save_to=options.figure_dir)
 
