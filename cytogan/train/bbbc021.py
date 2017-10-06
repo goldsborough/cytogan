@@ -107,8 +107,8 @@ elif options.model == 'infogan':
         latent_distribution=latent_distribution,
         discrete_variables=discrete_variables,
         continuous_variables=continuous_variables,
-        continuous_lambda=1,
-        constrain_continuous=False)
+        continuous_lambda=0.9,
+        constrain_continuous=True)
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
