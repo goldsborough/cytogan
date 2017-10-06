@@ -1,16 +1,16 @@
 #!/bin/bash
 
 python3 -m cytogan.train.bbbc021                          \
-  --epochs 100                                            \
+  --epochs 50                                             \
   --model c-lsgan                                         \
   --lr 5e-5 5e-5                                          \
-  --lr-decay 0.999                                        \
-  --lr-decay-steps 500                                    \
-  --batch-size 128                                        \
+  --lr-decay 0.9995                                       \
+  --lr-decay-steps 100                                    \
+  --batch-size 64                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '30s'                                 \
   --summary-freq '30s'                                    \
-  --latent-samples 100                                    \
+  --latent-samples 256                                    \
   --generative-samples 100                                \
   --gpus 0 3                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
