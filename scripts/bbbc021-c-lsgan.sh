@@ -10,7 +10,7 @@ python3 -m cytogan.train.bbbc021                          \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '30s'                                 \
   --summary-freq '30s'                                    \
-  --latent-samples 256                                    \
+  --latent-samples 100                                    \
   --generative-samples 100                                \
   --gpus 0 3                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
