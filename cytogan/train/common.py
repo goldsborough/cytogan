@@ -76,12 +76,6 @@ def make_parser(name):
 def parse_args(parser):
     options = parser.parse_args()
 
-    if options.model.startswith('c-'):
-        options.model = options.model[2:]
-        options.conditional = True
-    else:
-        options.conditional = False
-
     if len(options.lr) == 1:
         options.lr = options.lr[0]
 
@@ -99,6 +93,12 @@ def parse_args(parser):
         options.summary_dir = os.path.join(options.workspace, 'summaries')
         options.figure_dir = os.path.join(options.workspace, 'figures')
         options.log_file = os.path.join(options.workspace, 'log.log')
+
+    if options.model.startswith('c-'):
+        options.model = options.model[2:]
+        options.conditional = True
+    else:
+        options.conditional = False
 
     option_strings = ['{0} = {1}'.format(*i) for i in options._get_kwargs()]
     options.as_string = '\n'.join(option_strings)
