@@ -61,6 +61,7 @@ sudo apt-get clean
 if [[ ! -d /data1/peter/segmented ]]; then
   sudo mkdir -p /data1/peter/segmented
   sudo mkdir -p /data1/peter/metadata
+  sudo mkdir -p /data1/peter/runs
   sudo chown -R $(whoami) /data1/peter
 
   gsutil -m rsync -r gs://bbbc021-metadata /data1/peter/metadata

@@ -21,6 +21,7 @@ Hyper = collections.namedtuple('Hyper', [
     'noise_size',
     'initial_shape',
     'conditional_shape',
+    'conditional_embedding',
 ])
 
 
@@ -32,10 +33,7 @@ class DCGAN(gan.GAN):
 
         super(DCGAN, self).__init__(hyper, learning, session)
 
-    def _train_discriminator(self,
-                             fake_images,
-                             real_images,
-                             conditional,
+    def _train_discriminator(self, fake_images, real_images, conditional,
                              with_summary):
         labels = np.concatenate(
             [np.zeros(len(fake_images)),
@@ -73,21 +71,28 @@ class DCGAN(gan.GAN):
         return self.session.run(fetches, feed_dict)[1:]
 
     def _define_graph(self):
-        self.conditional = gan.get_conditional_inputs(('G', 'D'),
-                                                      self.conditional_shape)
+        if self.is_conditional:
+            self.conditional = gan.get_conditional_inputs(
+                ('G', 'D'), self.conditional_shape)
+            self.conditional_embedding_layer = Dense(
+                self.conditional_embedding, activation='relu')
+
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.fake_images = self._define_generator(self.noise,
-                                                      self.conditional['G'])
+            if self.is_conditional:
+                conditional = self._get_conditional_embedding('G')
+            else:
+                conditional = None
+            self.fake_images = self._define_generator(self.noise, conditional)
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
             logits = self._define_discriminator(self.images)
             self.latent = Dense(self.latent_size, name='latent')(logits)
             if self.is_conditional:
-                final_input = Concatenate(
-                    axis=1)([self.latent, self.conditional['D']])
+                conditional = self._get_conditional_embedding('D')
+                final_input = Concatenate(axis=1)([self.latent, conditional])
             else:
                 final_input = self.latent
             self.d_final = self._define_final_discriminator_layer(final_input)
@@ -158,6 +163,13 @@ class DCGAN(gan.GAN):
 
     def _define_final_discriminator_layer(self, logits):
         return Dense(1, activation='sigmoid', name='Probability')(logits)
+
+    def _get_conditional_embedding(self, scope):
+        assert self.is_conditional
+        assert self.conditional[scope] is not None
+        if self.conditional_embedding is None:
+            return self.conditional[scope]
+        return self.conditional_embedding_layer(self.conditional[scope])
 
     def _add_summaries(self):
         super(DCGAN, self)._add_summaries()

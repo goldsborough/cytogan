@@ -13,8 +13,6 @@ def _merge_summaries(scope):
 
 
 def get_conditional_inputs(scopes, conditional_shape):
-    if conditional_shape is None:
-        return {scope: None for scope in scopes}
     inputs = {}
     for scope in scopes:
         name = '{0}/conditional'.format(scope)

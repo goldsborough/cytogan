@@ -69,7 +69,8 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         latent_size=100,
         noise_size=100,
         initial_shape=(12, 12),
-        conditional_shape=conditional_shape)
+        conditional_shape=conditional_shape,
+        conditional_embedding=16)
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
