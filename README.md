@@ -45,3 +45,18 @@ So far:
 - C-LSGAN + Whitening: 76%? But images look crap?
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL for continuous variables. Also, it seems discriminator wins too early. Will try lower learning rate for discriminator.
+
+### Saturday, 10/07/2017
+
+- gpu-vm-1:
+  - Continue BEGAN from old run
+  - New conditional BEGAN with conditional embedding
+- gpu-vm-2:
+  - InfoGan with BCE and 1e-5 8e-5 8e-5
+  - InfoGan with 1e-5 8e-5 8e-5
+  - InfoGan with 7e-5 2e-4 2e-4
+- gpu-vm-3:
+ - Conditional LSGAN with 1e-5 7e-5
+ - LSGAN with 7e-5 2e-4
+- gpu-vm-5:
+ - LSGAN with 7e-5 2e-4 and no noise in D layers
