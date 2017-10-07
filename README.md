@@ -4,7 +4,7 @@
 
 ## Installing GCloud
 
-Install Google Cloud's CLI, `gcloud`, on your machine:f https://cloud.google.com/sdk/downloads
+Install Google Cloud's CLI, `gcloud`, on your machine: https://cloud.google.com/sdk/downloads
 Just grab a version and `wget` it. Then run instructions on the website to install.
 
 Install `gsutil`: `pip install gsutil`.
@@ -41,4 +41,4 @@ So far:
 - DCGAN: 43%
 - LSGAN: 61%
 - LSGAN + Whitening: 68%
-- BEGAN: Mode Collapse after 3 epochs
+- BEGAN: Mode Collapse after 2 epochs (low variety): 55%
