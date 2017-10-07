@@ -87,7 +87,9 @@ elif options.model == 'began':
         initial_shape=(12, 12),
         diversity_factor=0.75,
         proportional_gain=1e-3,
-        conditional_shape=conditional_shape)
+        conditional_shape=conditional_shape,
+        conditional_embedding=None,
+        denoising=False)
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 0
@@ -110,7 +112,8 @@ elif options.model == 'infogan':
         continuous_variables=continuous_variables,
         continuous_lambda=1,
         constrain_continuous=False,
-        probability_loss='mse')
+        probability_loss='bce',
+        continuous_loss='bce')
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))

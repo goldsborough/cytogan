@@ -42,3 +42,6 @@ So far:
 - LSGAN: 61%
 - LSGAN + Whitening: 68%
 - BEGAN: Mode Collapse after 2 epochs (low variety): 55%
+- C-LSGAN + Whitening: 76%? But images look crap?
+
+InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL for continuous variables. Also, it seems discriminator wins too early. Will try lower learning rate for discriminator.

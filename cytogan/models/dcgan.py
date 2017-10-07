@@ -74,16 +74,14 @@ class DCGAN(gan.GAN):
         if self.is_conditional:
             self.conditional = gan.get_conditional_inputs(
                 ('G', 'D'), self.conditional_shape)
-            self.conditional_embedding_layer = Dense(
-                self.conditional_embedding, activation='relu')
+            if self.conditional_embedding is not None:
+                self.conditional_embedding_layer = Dense(
+                    self.conditional_embedding, activation='relu')
 
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            if self.is_conditional:
-                conditional = self._get_conditional_embedding('G')
-            else:
-                conditional = None
+            conditional = self._get_conditional_embedding('G')
             self.fake_images = self._define_generator(self.noise, conditional)
 
         with K.name_scope('D'):
@@ -164,13 +162,6 @@ class DCGAN(gan.GAN):
 
     def _define_final_discriminator_layer(self, logits):
         return Dense(1, activation='sigmoid', name='Probability')(logits)
-
-    def _get_conditional_embedding(self, scope):
-        assert self.is_conditional
-        assert self.conditional[scope] is not None
-        if self.conditional_embedding is None:
-            return self.conditional[scope]
-        return self.conditional_embedding_layer(self.conditional[scope])
 
     def _add_summaries(self):
         super(DCGAN, self)._add_summaries()

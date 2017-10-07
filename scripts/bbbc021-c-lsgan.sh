@@ -3,13 +3,13 @@
 python3 -m cytogan.train.bbbc021                          \
   --epochs 50                                             \
   --model c-lsgan                                         \
-  --lr 5e-5 5e-5                                          \
+  --lr 1e-5 7e-5                                          \
   --lr-decay 0.9995                                       \
   --lr-decay-steps 100                                    \
   --batch-size 128                                        \
   --workspace /data1/peter/runs                           \
-  --checkpoint-freq '30s'                                 \
-  --summary-freq '30s'                                    \
+  --checkpoint-freq '10min'                               \
+  --summary-freq '10min'                                  \
   --latent-samples 256                                    \
   --generative-samples 100                                \
   --gpus 0 1                                              \
@@ -21,5 +21,4 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
-  --whiten \
   $@

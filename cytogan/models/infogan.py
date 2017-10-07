@@ -25,6 +25,7 @@ Hyper = collections.namedtuple('Hyper', [
     'continuous_lambda',
     'constrain_continuous',
     'probability_loss',
+    'continuous_loss',
 ])
 
 
@@ -36,7 +37,8 @@ class InfoGAN(dcgan.DCGAN):
 
         super(InfoGAN, self).__init__(hyper, learning, session)
 
-        assert self.probability_loss in ('mse', 'bce', None)
+        assert self.probability_loss in ('mse', 'bce')
+        assert self.continuous_loss in ('ll', 'bce')
 
     def _define_graph(self):
         self.batch_size = Input(batch_shape=[1], name='batch_size')
@@ -176,22 +178,24 @@ class InfoGAN(dcgan.DCGAN):
     def _latent_layer(self, logits):
         # We predict mean and variances of gaussians
         # for each continuous variable.
-        logits = Dense(
-            units=self.discrete_variables + 2 * self.continuous_variables,
-            name='dense')(logits)
+        final_units = self.discrete_variables + self.continuous_variables
+        if self.continuous_loss != 'bce':
+            final_units += self.continuous_variables
+        logits = Dense(units=final_units, name='dense')(logits)
         discrete = Activation('softmax')(logits[:, :self.discrete_variables])
         continuous = logits[:, self.discrete_variables:]
         if self.constrain_continuous:
             continuous = Activation('tanh', name='tanh')(continuous)
+        elif self.continuous_loss == 'bce':
+            continuous = Activation('sigmoid', name='sigmoid')(continuous)
         return Concatenate(axis=1)([discrete, continuous])
 
     def _define_generator_loss(self, probability, latent_posterior):
         with K.name_scope('G_loss'):
             self.infogan_bce = self._probability_loss(
                 K.ones_like(probability), probability)
-            self.infogan_mi = losses.mixed_mutual_information(
-                self.latent_prior, latent_posterior, self.discrete_variables,
-                self.continuous_lambda)
+            self.infogan_mi = self._mutual_information(self.latent_prior,
+                                                       latent_posterior)
 
         return self.infogan_bce + self.infogan_mi
 
@@ -202,14 +206,20 @@ class InfoGAN(dcgan.DCGAN):
 
     def _define_encoder_loss(self, latent_prior, latent_posterior):
         with K.name_scope('Q_loss'):
-            return losses.mixed_mutual_information(
-                latent_prior, latent_posterior, self.discrete_variables,
-                self.continuous_lambda)
+            return self._mutual_information(latent_prior, latent_posterior)
 
     def _probability_loss(self, p, q):
         if self.probability_loss == 'mse':
             return losses.mean_squared_error(p, q)
         return losses.binary_crossentropy(p, q)
+
+    def _mutual_information(self, prior, posterior):
+        return losses.mixed_mutual_information(
+            prior,
+            posterior,
+            self.discrete_variables,
+            self.continuous_lambda,
+            self.continuous_loss, )
 
     def _add_summaries(self):
         super(InfoGAN, self)._add_summaries()

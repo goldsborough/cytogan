@@ -36,22 +36,27 @@ class BEGAN(gan.GAN):
         super(BEGAN, self).__init__(hyper, learning, session)
 
     def _define_graph(self):
-        self.conditional = gan.get_conditional_inputs(('G', 'D'),
-                                                      self.conditional_shape)
+        if self.is_conditional:
+            self.conditional = gan.get_conditional_inputs(
+                ('G', 'D'), self.conditional_shape)
+            if self.conditional_embedding is not None:
+                self.conditional_embedding_layer = Dense(
+                    self.conditional_embedding, activation='relu')
 
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
             self.noise = RandomNormal(self.noise_size)(self.batch_size)
-            self.fake_images = self._define_generator(self.noise,
-                                                      self.conditional['G'])
+            conditional = self._get_conditional_embedding('G')
+            self.fake_images = self._define_generator(self.noise, conditional)
 
         self.images = Input(shape=self.image_shape, name='images')
 
         with K.name_scope('E'):
             self.latent = self._define_encoder(self.images)
         with K.name_scope('D'):
+            conditional = self._get_conditional_embedding('D')
             self.reconstructions = self._define_decoder(
-                self.latent, self.conditional['D'])
+                self.latent, conditional)
 
         parameters = self._get_model_parameters(self.is_conditional)
         generator_inputs, discriminator_inputs, generator_outputs = parameters
@@ -121,7 +126,10 @@ class BEGAN(gan.GAN):
         return G
 
     def _define_encoder(self, images):
-        E = AddNoise()(images)
+        if self.denoising:
+            E = AddNoise()(images)
+        else:
+            E = images
         for filters, stride in zip(self.encoder_filters, self.encoder_strides):
             E = Conv2D(
                 filters,

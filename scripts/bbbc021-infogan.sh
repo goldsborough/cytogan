@@ -3,13 +3,13 @@
 python3 -m cytogan.train.bbbc021                          \
   --epochs 50                                             \
   --model infogan                                         \
-  --lr 8e-5 8e-5 8e-5                                     \
+  --lr 1e-5 8e-5 8e-5                                     \
   --lr-decay 0.999                                        \
   --lr-decay-steps 100                                    \
   --batch-size 128                                        \
   --workspace /data1/peter/runs                           \
-  --checkpoint-freq '30s'                                 \
-  --summary-freq '30s'                                    \
+  --checkpoint-freq '10min'                               \
+  --summary-freq '10min'                                  \
   --latent-samples 100                                    \
   --generative-samples 100                                \
   --gpus 2 3                                              \

@@ -41,6 +41,7 @@ class GAN(model.Model):
 
         self.images = None  # x
         self.conditional = None
+        self.conditional_embedding = None
         self.batch_size = None
         self.noise = None  # z
         self.fake_images = None  # G(z)
@@ -193,6 +194,13 @@ class GAN(model.Model):
             return np.array(batch[0]), np.array(batch[1])
         else:
             return np.array(batch), None
+
+    def _get_conditional_embedding(self, scope):
+        if not self.is_conditional:
+            return None
+        if self.conditional_embedding is None:
+            return self.conditional[scope]
+        return self.conditional_embedding_layer(self.conditional[scope])
 
     def __repr__(self):
         lines = [self.name]
