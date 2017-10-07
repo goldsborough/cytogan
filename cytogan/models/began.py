@@ -25,6 +25,7 @@ Hyper = collections.namedtuple('Hyper', [
     'diversity_factor',
     'proportional_gain',
     'conditional_shape',
+    'conditional_embedding',
     'denoising',
 ])
 
