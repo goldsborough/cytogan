@@ -180,7 +180,7 @@ class GAN(model.Model):
             tf.summary.histogram('noise', self.noise)
             tf.summary.scalar('loss', self.loss['G'])
             tf.summary.image(
-                'generated_images', self.fake_images, max_outputs=10)
+                'generated_images', self.fake_images, max_outputs=4)
 
         with K.name_scope('summary/D'):
             tf.summary.histogram('latent', self.latent)

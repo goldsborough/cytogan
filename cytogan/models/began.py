@@ -206,6 +206,6 @@ class BEGAN(gan.GAN):
             fake_reconstructions = self.reconstructions[:batch_size]
             real_reconstructions = self.reconstructions[batch_size:]
             tf.summary.image(
-                'fake_reconstructions', fake_reconstructions, max_outputs=4)
+                'fake_reconstructions', fake_reconstructions, max_outputs=2)
             tf.summary.image(
-                'real_reconstructions', real_reconstructions, max_outputs=4)
+                'real_reconstructions', real_reconstructions, max_outputs=2)

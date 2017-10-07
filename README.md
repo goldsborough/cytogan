@@ -41,3 +41,4 @@ So far:
 - DCGAN: 43%
 - LSGAN: 61%
 - LSGAN + Whitening: 68%
+- BEGAN: Mode Collapse after 3 epochs
