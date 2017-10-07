@@ -179,10 +179,12 @@ class InfoGAN(dcgan.DCGAN):
         # We predict mean and variances of gaussians
         # for each continuous variable.
         final_units = self.discrete_variables + self.continuous_variables
-        if self.continuous_loss != 'bce':
+        if self.continuous_loss == 'll':
+            # 2x for means + log_variances
             final_units += self.continuous_variables
         logits = Dense(units=final_units, name='dense')(logits)
-        discrete = Activation('softmax')(logits[:, :self.discrete_variables])
+        discrete = Activation(
+            'softmax', name='softmax')(logits[:, :self.discrete_variables])
         continuous = logits[:, self.discrete_variables:]
         if self.constrain_continuous:
             continuous = Activation('tanh', name='tanh')(continuous)

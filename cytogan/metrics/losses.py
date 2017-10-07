@@ -49,7 +49,7 @@ def mutual_information(x,
     target.
     '''
     assert x.shape.as_list() == x_given_y.shape.as_list(), (x, x_given_y)
-    with K.name_scope('mutual_information'):
+    with K.name_scope('mutual_info'):
         # The cross entropy between x and x is just the entropy H(x).
         h_x = cross_entropy_function(x, x)
         # The cross entropy between x and x|y is H(x|y).
@@ -62,7 +62,8 @@ def mutual_information(x,
 
 
 def binary_mutual_information(x, x_given_y):
-    return mutual_information(x, x_given_y, K.binary_crossentropy)
+    with K.name_scope('binary_mutual_info'):
+        return mutual_information(x, x_given_y, K.binary_crossentropy)
 
 
 def log_likelihood(p, mean, log_variance):
