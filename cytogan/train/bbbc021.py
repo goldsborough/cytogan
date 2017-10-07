@@ -88,8 +88,8 @@ elif options.model == 'began':
         diversity_factor=0.75,
         proportional_gain=1e-3,
         conditional_shape=conditional_shape,
-        conditional_embedding=None,
-        denoising=False)
+        conditional_embedding=16,
+        denoising=True)
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 0
