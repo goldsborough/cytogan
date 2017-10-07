@@ -51,13 +51,12 @@ InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL 
 - gpu-vm-1:
   - Continue BEGAN from old run
   - New conditional BEGAN with conditional embedding
-  - BEGAN with diversity set to 0.25
 - gpu-vm-2:
   - InfoGan with BCE and 1e-5 8e-5 8e-5
   - InfoGan with 1e-5 8e-5 8e-5
   - InfoGan with 7e-5 2e-4 2e-4
 - gpu-vm-3:
  - Conditional LSGAN with 1e-5 7e-5
- - LSGAN with 7e-5 2e-4
+ - BEGAN with diversity set to 0.25
 - gpu-vm-5:
  - LSGAN with 7e-5 2e-4 and no noise in D layers
