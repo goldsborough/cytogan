@@ -8,8 +8,8 @@ python3 -m cytogan.train.bbbc021                          \
   --lr-decay-steps 1000                                   \
   --batch-size 16                                         \
   --workspace /data1/peter/runs                           \
-  --checkpoint-freq '30s'                                 \
-  --summary-freq '30s'                                    \
+  --checkpoint-freq '10min'                               \
+  --summary-freq '10min'                                  \
   --latent-samples 256                                    \
   --generative-samples 100                                \
   --gpus 0 1 2 3                                          \
