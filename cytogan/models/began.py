@@ -7,8 +7,7 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
                           Input, Reshape)
 from keras.models import Model
 
-from cytogan.extra.layers import (AddNoise, MixImagesWithVariables,
-                                  RandomNormal, UpSamplingNN)
+from cytogan.extra.layers import AddNoise, RandomNormal, UpSamplingNN
 from cytogan.metrics import losses
 from cytogan.models import gan
 
@@ -26,6 +25,7 @@ Hyper = collections.namedtuple('Hyper', [
     'diversity_factor',
     'proportional_gain',
     'conditional_shape',
+    'denoising',
 ])
 
 
