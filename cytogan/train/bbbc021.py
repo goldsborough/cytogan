@@ -93,7 +93,7 @@ elif options.model == 'began':
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 0
-    continuous_variables = 32
+    continuous_variables = 2
     latent_distribution = distributions.mixture({
         distributions.uniform(-1.0, +1.0):
         continuous_variables,
@@ -113,7 +113,7 @@ elif options.model == 'infogan':
         continuous_lambda=1,
         constrain_continuous=False,
         probability_loss='bce',
-        continuous_loss='bce')
+        continuous_loss='ll')
     Model = infogan.InfoGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))

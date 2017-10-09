@@ -139,11 +139,9 @@ class DCGAN(gan.GAN):
         return G
 
     def _define_discriminator(self, images):
-        # D = images
         D = AddNoise()(images)
         for filters, stride in zip(self.discriminator_filters,
                                    self.discriminator_strides):
-            # D = AddNoise()(D)
             D = Conv2D(
                 filters, (5, 5), strides=(stride, stride), padding='same')(D)
             D = LeakyReLU(alpha=0.2)(D)

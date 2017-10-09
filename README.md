@@ -42,7 +42,8 @@ So far:
 - LSGAN: 61%
 - LSGAN + Whitening: 68%
 - BEGAN: Mode Collapse after 2 epochs (low variety): 55%
-- C-LSGAN + Whitening: 76%? But images look crap?
+- C-LSGAN: 38%?
+-
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL for continuous variables. Also, it seems discriminator wins too early. Will try lower learning rate for discriminator.
 
@@ -60,3 +61,20 @@ InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL 
  - BEGAN with diversity set to 0.25
 - gpu-vm-5:
  - LSGAN with 7e-5 2e-4 and no noise in D layers
+
+Notes:
+- InfoGAN all crap,
+- BEGAN some promising results. Making the diversity factor 0.25 didn't do much,
+- Conditional LSGAN doesn't work. Embedding layer seems to have helped, but not much.
+- BEGANs should train more.
+- Maybe the problem with InfoGANs so far was that I used too many conditional variables.
+
+### Saturday, 10/09/2017
+
+- gpu-vm-1:
+ - Continue BEGANS
+- gpu-vm-2:
+  - InfoGAN with 1e-5 8e-5 8e-5 and 2 conditional variables
+  - InfoGAN with 7e-5 2e-4 2e-4 and 1 conditional variables
+- gpu-vm-5:
+ - Continue LSGANs
