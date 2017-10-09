@@ -14,7 +14,9 @@ class WGAN(dcgan.DCGAN):
     def _define_discriminator_loss(self, _, logits):
         with K.name_scope('D_loss'):
             generated_logits, real_logits = tf.split(logits, 2)
-            loss = K.mean(generated_logits) - K.mean(real_logits)
+
+            with K.name_scope('wasserstein_distance'):
+                loss = K.mean(generated_logits) - K.mean(real_logits)
 
             with K.name_scope('gradient_penalty'):
                 batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
@@ -23,7 +25,10 @@ class WGAN(dcgan.DCGAN):
                 real_images = self.images[-available:]
                 epsilon = tf.random_uniform(shape=K.shape(generated_images))
                 mix = epsilon * real_images + (1 - epsilon) * generated_images
-                gradients = K.gradients(self.discriminator(mix), mix)[0]
+                inputs = [mix]
+                if self.is_conditional:
+                    inputs.append(self.conditional['D'])
+                gradients = K.gradients(self.discriminator(inputs), mix)[0]
                 slopes = K.sqrt(K.sum(K.square(gradients), axis=[1, 2, 3]))
                 gradient_penalty = 10 * K.mean(K.square(slopes - 1), axis=0)
 
