@@ -19,15 +19,26 @@ class WGAN(dcgan.DCGAN):
                 loss = K.mean(generated_logits) - K.mean(real_logits)
 
             with K.name_scope('gradient_penalty'):
+                # Have to be careful, because we may have more fake images than
+                # real, in case we couldn't read a real image from disk (rare).
                 batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
                 available = tf.shape(self.images)[0] - batch_size
                 generated_images = self.images[:available]
                 real_images = self.images[-available:]
+
                 epsilon = tf.random_uniform(shape=K.shape(generated_images))
                 mix = epsilon * real_images + (1 - epsilon) * generated_images
+
                 inputs = [mix]
                 if self.is_conditional:
-                    inputs.append(self.conditional['D'])
+                    real_conditional = self.conditional['D'][-available:]
+                    fake_conditional = self.conditional['D'][:available]
+                    conditional_mix = epsilon * real_conditional + (
+                        1 - epsilon) * fake_conditional
+                    assert conditional_mix.shape[0] == mix.shape[0], (
+                        conditional_mix, mix)
+                    inputs.append(conditional_mix)
+
                 gradients = K.gradients(self.discriminator(inputs), mix)[0]
                 slopes = K.sqrt(K.sum(K.square(gradients), axis=[1, 2, 3]))
                 gradient_penalty = 10 * K.mean(K.square(slopes - 1), axis=0)
