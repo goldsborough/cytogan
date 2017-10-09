@@ -76,5 +76,9 @@ Notes:
 - gpu-vm-2:
   - InfoGAN with 1e-5 8e-5 8e-5 and 2 conditional variables
   - InfoGAN with 7e-5 2e-4 2e-4 and 1 conditional variables
+- gpu-vm-3:
+ - Continue BEGAN with 0.25 diversity
+ - WGAN-GP with 8e-5 8e-5
 - gpu-vm-5:
  - Continue LSGANs
+ - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning

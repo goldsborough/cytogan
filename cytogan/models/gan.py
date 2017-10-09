@@ -64,7 +64,7 @@ class GAN(model.Model):
     def name(self):
         _name = super(GAN, self).name
         if self.is_conditional:
-            return 'Conditional {0}'.format(_name)
+            return 'C-{0}'.format(_name)
         else:
             return _name
 
