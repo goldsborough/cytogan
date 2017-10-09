@@ -31,12 +31,7 @@ class WGAN(dcgan.DCGAN):
 
                 inputs = [mix]
                 if self.is_conditional:
-                    real_conditional = self.conditional['D'][-available:]
-                    fake_conditional = self.conditional['D'][:available]
-                    conditional_mix = epsilon * real_conditional + (
-                        1 - epsilon) * fake_conditional
-                    assert conditional_mix.shape[0] == mix.shape[0], (
-                        conditional_mix, mix)
+                    conditional_mix = self._mix_conditional('D', available)
                     inputs.append(conditional_mix)
 
                 gradients = K.gradients(self.discriminator(inputs), mix)[0]
@@ -52,3 +47,9 @@ class WGAN(dcgan.DCGAN):
     def _define_final_discriminator_layer(self, latent):
         # No activation for WGAN
         return Dense(1, name='D_final')(latent)
+
+    def _mix_conditional(self, scope, split):
+        real_conditional = self.conditional[scope][-split:]
+        fake_conditional = self.conditional[scope][:split]
+        epsilon = tf.random_uniform(shape=K.shape(real_conditional))
+        return epsilon * real_conditional + (1 - epsilon) * fake_conditional
