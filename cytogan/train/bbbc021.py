@@ -21,6 +21,7 @@ parser.add_argument('--latent-compounds', action='store_true')
 parser.add_argument('--latent-moa', action='store_true')
 parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
+parser.add_argument('--skip-evaluation', action='store_true')
 options = common.parse_args(parser)
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
@@ -138,70 +139,73 @@ with common.get_session(options.gpus) as session:
     if not options.skip_training:
         trainer.train(model, cell_data.next_batch)
 
-    log.info('Starting Evaluation')
-    keys, profiles = [], []
-    batch_generator = cell_data.batches_of_size(options.batch_size)
-    try:
-        for batch_keys, images in tqdm(batch_generator, unit=' batches'):
-            profiles.append(model.encode(images))
-            keys += batch_keys
-    except KeyboardInterrupt:
-        pass
+    if not options.skip_evaluation:
+        log.info('Starting Evaluation')
+        keys, profiles = [], []
+        batch_generator = cell_data.batches_of_size(options.batch_size)
+        try:
+            for batch_keys, images in tqdm(batch_generator, unit=' batches'):
+                profiles.append(model.encode(images))
+                keys += batch_keys
+        except KeyboardInterrupt:
+            pass
 
-    profiles = np.concatenate(profiles, axis=0)
-    log.info('Generated %d profiles', len(profiles))
+        profiles = np.concatenate(profiles, axis=0)
+        log.info('Generated %d profiles', len(profiles))
 
-    dataset = cell_data.create_dataset_from_profiles(keys, profiles)
-    log.info('Matching {0:,} profiles to {1} MOAs'.format(
-        len(dataset), len(dataset.moa.unique())))
+        dataset = cell_data.create_dataset_from_profiles(keys, profiles)
+        log.info('Matching {0:,} profiles to {1} MOAs'.format(
+            len(dataset), len(dataset.moa.unique())))
 
-    if options.whiten_profiles:
-        profiling.whiten(dataset)
-        log.info('Whitened data')
+        if options.whiten_profiles:
+            profiling.whiten(dataset)
+            log.info('Whitened data')
 
-    # The DMSO (control) should not participate in the MOA classification.
-    dataset = dataset[dataset['compound'] != 'DMSO']
-    treatment_profiles = profiling.reduce_profiles_across_treatments(dataset)
-    log.info('Reduced dataset from %d to %d profiles for each treatment',
-             len(dataset), len(treatment_profiles))
+        # The DMSO (control) should not participate in the MOA classification.
+        dataset = dataset[dataset['compound'] != 'DMSO']
+        treatment_profiles = profiling.reduce_profiles_across_treatments(
+            dataset)
+        log.info('Reduced dataset from %d to %d profiles for each treatment',
+                 len(dataset), len(treatment_profiles))
 
-    confusion_matrix, accuracy = profiling.score_profiles(treatment_profiles)
-    log.info('Final Accuracy: %.3f', accuracy)
+        confusion_matrix, accuracy = profiling.score_profiles(
+            treatment_profiles)
+        log.info('Final Accuracy: %.3f', accuracy)
 
-    if options.confusion_matrix:
-        visualize.confusion_matrix(
-            confusion_matrix,
-            title='MOA Confusion Matrix',
-            accuracy=accuracy,
-            save_to=options.figure_dir)
+        if options.confusion_matrix:
+            visualize.confusion_matrix(
+                confusion_matrix,
+                title='MOA Confusion Matrix',
+                accuracy=accuracy,
+                save_to=options.figure_dir)
+
+        if options.latent_samples is not None:
+            keys, images = cell_data.next_batch(
+                options.latent_samples, with_keys=True)
+            treatment_names, indices = cell_data.get_treatment_indices(keys)
+            latent_vectors = model.encode(images)
+            visualize.latent_space(
+                latent_vectors,
+                indices,
+                treatment_names,
+                save_to=options.figure_dir,
+                subject='Cells')
+
+        if options.latent_compounds:
+            compound_names, indices = cell_data.get_compound_indices(
+                treatment_profiles)
+            latent_vectors = np.array(list(treatment_profiles['profile']))
+            visualize.latent_space(
+                latent_vectors,
+                indices,
+                compound_names,
+                save_to=options.figure_dir,
+                subject='Compounds')
 
     if options.reconstruction_samples is not None:
         images = cell_data.next_batch(options.reconstruction_samples)
         visualize.reconstructions(
             model, np.stack(images, axis=0), save_to=options.figure_dir)
-
-    if options.latent_samples is not None:
-        keys, images = cell_data.next_batch(
-            options.latent_samples, with_keys=True)
-        treatment_names, indices = cell_data.get_treatment_indices(keys)
-        latent_vectors = model.encode(images)
-        visualize.latent_space(
-            latent_vectors,
-            indices,
-            treatment_names,
-            save_to=options.figure_dir,
-            subject='Cells')
-
-    if options.latent_compounds:
-        compound_names, indices = cell_data.get_compound_indices(
-            treatment_profiles)
-        latent_vectors = np.array(list(treatment_profiles['profile']))
-        visualize.latent_space(
-            latent_vectors,
-            indices,
-            compound_names,
-            save_to=options.figure_dir,
-            subject='Compounds')
 
     if options.latent_moa:
         moa_names, indices = cell_data.get_moa_indices(treatment_profiles)

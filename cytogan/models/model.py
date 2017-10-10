@@ -83,14 +83,16 @@ class Model(abc.ABC):
         self.saver.save(
             self.session, checkpoint_path, global_step=self.global_step)
 
-    def restore(self, checkpoint):
-        if os.path.isdir(checkpoint):
-            checkpoint = tf.train.latest_checkpoint(checkpoint)
-        log.info('Restoring from {0}'.format(checkpoint))
+    def restore(self, checkpoint_path):
+        if os.path.isdir(checkpoint_path):
+            checkpoint = tf.train.latest_checkpoint(checkpoint_path)
+        else:
+            checkpoint = checkpoint_path
         if checkpoint is None:
             raise RuntimeError(
                 'Could not find any valid checkpoints under {0}!'.format(
-                    checkpoint))
+                    checkpoint_path))
+        log.info('Restoring from {0}'.format(checkpoint))
         self.saver.restore(self.session, checkpoint)
 
     def _get_learning_rate_tensor(self, initial_learning_rate, decay_rate,
