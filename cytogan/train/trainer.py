@@ -10,7 +10,12 @@ import tqdm
 from cytogan.extra import logs
 from cytogan.extra.misc import namedtuple
 
-FrameOptions = namedtuple('FrameOptions', ['rate', 'sample', 'directory'])
+FrameOptions = namedtuple('FrameOptions', [
+    'rate',
+    'sample',
+    'directory',
+    'number_of_sets',
+])
 
 Options = namedtuple('TrainerOptions', [
     'summary_directory',
@@ -120,14 +125,18 @@ class Trainer(object):
 
     def _generate_frame(self, model):
         assert model.is_generative, model.name + ' is not generative'
-        frame, = model.generate(*self.frame_options.sample)
+        frames = model.generate(*self.frame_options.sample)
         if not os.path.exists(self.frame_options.directory):
             os.makedirs(self.frame_options.directory)
-        index = len(os.listdir(self.frame_options.directory))
-        filename = '{0}.png'.format(index)
-        path = os.path.join(self.frame_options.directory, filename)
-        frame = (frame.squeeze() * 255).astype(np.uint8)
-        scipy.misc.imsave(path, frame)
+            for i in range(self.frame_options.number_of_sets):
+                os.makedirs(os.path.join(self.frame_options.directory, str(i)))
+        frames = (frames * 255).astype(np.uint8)
+        for i in range(self.frame_options.number_of_sets):
+            directory = os.path.join(self.frame_options.directory, str(i))
+            index = len(os.listdir(directory))
+            filename = '{0}.png'.format(index)
+            path = os.path.join(directory, filename)
+            scipy.misc.imsave(path, frames[i].squeeze())
 
     def __repr__(self):
         return 'Trainer<{0} epochs x {1} batches @ {2} examples>'.format(

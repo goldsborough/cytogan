@@ -70,6 +70,7 @@ def make_parser(name):
         '--checkpoint-freq', type=Frequency, default=Frequency('30s'))
     parser.add_argument('--restore-from', metavar='CHECKPOINT_DIR')
     parser.add_argument('--frames-per-epoch', type=int)
+    parser.add_argument('--frame-sets', type=int, default=4)
     parser.add_argument('-w', '--workspace')
     parser.add_argument('-m', '--model', choices=models.MODELS, required=True)
     parser.add_argument('--dry', action='store_true')
