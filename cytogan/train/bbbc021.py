@@ -215,18 +215,15 @@ with common.get_session(options.gpus) as session:
 
     if options.generative_samples is not None:
         if options.model == 'infogan':
-            categorical = np.eye(options.generative_samples)
-            categorical_zeros = np.zeros([
-                options.generative_samples,
-                discrete_variables - options.generative_samples
-            ])
+            categorical = np.zeros(
+                [options.generative_samples, discrete_variables])
+            categorical[:, 0] = 1
             continuous = np.linspace(-3, +3, options.generative_samples)
+            continuous = continuous.reshape(-1, 1)
             continuous_zeros = np.zeros(
-                [options.generative_samples, continuous_variables - 10])
+                [options.generative_samples, continuous_variables - 1])
             samples = np.concatenate(
-                [categorical, categorical_zeros] +
-                [continuous.reshape(-1, 1)] * 10 + [continuous_zeros],
-                axis=1)
+                [categorical, continuous, continuous_zeros], axis=1)
         elif options.model.endswith('began'):
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
