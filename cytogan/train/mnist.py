@@ -107,11 +107,21 @@ elif options.model == 'infogan':
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
+if options.workspace is not None and options.frames_per_epoch:
+    save_every = number_of_batches // options.frames_per_epoch
+    frame_options = trainer.FrameOptions(
+        rate=common.Frequency(str(save_every)),
+        sample=[np.zeros([1, hyper.noise_size])],
+        directory=options.frames_dir)
+else:
+    frame_options = None
+
 trainer_options = trainer.Options(
     summary_directory=options.summary_dir,
     summary_frequency=options.summary_freq,
     checkpoint_directory=options.checkpoint_dir,
-    checkpoint_frequency=options.checkpoint_freq)
+    checkpoint_frequency=options.checkpoint_freq,
+    frame_options=frame_options)
 
 trainer = trainer.Trainer(options.epochs, number_of_batches,
                           options.batch_size, trainer_options)
@@ -185,8 +195,8 @@ with common.get_session(options.gpus) as session:
                     continuous_2.reshape(-1, 1),
                 ],
                 axis=1)
-            noise = np.random.randn(
-                1, model.noise_size).repeat(options.generative_samples, axis=0)
+            noise = np.random.randn(1, model.noise_size).repeat(
+                options.generative_samples, axis=0)
             samples = [noise, latent]
         elif options.model.endswith('gan'):
             samples = np.random.randn(options.generative_samples,

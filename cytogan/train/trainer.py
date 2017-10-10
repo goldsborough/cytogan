@@ -3,17 +3,21 @@ import os
 import time
 
 import numpy as np
+import scipy.misc
 import tensorflow as tf
 import tqdm
 
 from cytogan.extra import logs
 from cytogan.extra.misc import namedtuple
 
+FrameOptions = namedtuple('FrameOptions', ['rate', 'sample', 'directory'])
+
 Options = namedtuple('TrainerOptions', [
     'summary_directory',
     'summary_frequency',
     'checkpoint_directory',
     'checkpoint_frequency',
+    'frame_options',
 ])
 
 # Supress warnings about wrong compilation of TensorFlow.
@@ -32,12 +36,9 @@ class Trainer(object):
         self.number_of_batches = number_of_batches
         self.batch_size = batch_size
 
-        self.summary_directory = options.summary_directory
-        self.summary_frequency = options.summary_frequency
+        for index, field in enumerate(options._fields):
+            setattr(self, field, options[index])
         self.summary_writer = None
-
-        self.checkpoint_directory = options.checkpoint_directory
-        self.checkpoint_frequency = options.checkpoint_frequency
 
     def train(self, model, batch_generator):
         if self.summary_directory is not None:
@@ -71,6 +72,8 @@ class Trainer(object):
                     current_loss = model.train_on_batch(batch)
                 if self._is_time_to_save_checkpoint(number_of_iterations):
                     model.save(self.checkpoint_directory)
+                if self._is_time_to_generate_frame(number_of_iterations):
+                    self._generate_frame(model)
                 self._update_progressbar(batch_range, model.learning_rate,
                                          current_loss)
                 number_of_iterations += 1
@@ -83,6 +86,11 @@ class Trainer(object):
     def _is_time_to_save_checkpoint(self, number_of_iterations):
         if self.checkpoint_directory is not None:
             return self.checkpoint_frequency.elapsed(number_of_iterations)
+        return False
+
+    def _is_time_to_generate_frame(self, number_of_iterations):
+        if self.frame_options is not None:
+            return self.frame_options.rate.elapsed(number_of_iterations)
         return False
 
     def _get_summary_writer(self, graph):
@@ -101,7 +109,7 @@ class Trainer(object):
             strings = {}
             for key, value in loss.items():
                 assert np.isscalar(value), (key, value)
-                strings[key]= '{0:.8f}'.format(value)
+                strings[key] = '{0:.8f}'.format(value)
             for key, value in learning_rate.items():
                 assert np.isscalar(value), (key, value)
                 strings['lr_{0}'.format(key)] = '{0:.6f}'.format(value)
@@ -110,6 +118,16 @@ class Trainer(object):
             assert np.isscalar(loss), loss
             batch_range.set_postfix(loss=loss)
 
+    def _generate_frame(self, model):
+        assert model.is_generative, model.name + ' is not generative'
+        frame, = model.generate(*self.frame_options.sample)
+        if not os.path.exists(self.frame_options.directory):
+            os.makedirs(self.frame_options.directory)
+        index = len(os.listdir(self.frame_options.directory))
+        filename = '{0}.png'.format(index)
+        path = os.path.join(self.frame_options.directory, filename)
+        frame = (frame.squeeze() * 255).astype(np.uint8)
+        scipy.misc.imsave(path, frame)
 
     def __repr__(self):
         return 'Trainer<{0} epochs x {1} batches @ {2} examples>'.format(
