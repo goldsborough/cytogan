@@ -202,20 +202,32 @@ with common.get_session(options.gpus) as session:
                 save_to=options.figure_dir,
                 subject='Compounds')
 
+        if options.latent_moa:
+            moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
+            latent_vectors = np.array(list(treatment_profiles['profile']))
+            visualize.latent_space(
+                latent_vectors,
+                indices,
+                moa_names,
+                save_to=options.figure_dir,
+                subject='MOA')
+
     if options.reconstruction_samples is not None:
         images = cell_data.next_batch(options.reconstruction_samples)
         visualize.reconstructions(
             model, np.stack(images, axis=0), save_to=options.figure_dir)
 
-    if options.latent_moa:
-        moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
-        latent_vectors = np.array(list(treatment_profiles['profile']))
-        visualize.latent_space(
-            latent_vectors,
-            indices,
-            moa_names,
-            save_to=options.figure_dir,
-            subject='MOA')
+    if options.interpolate_samples is not None:
+        start, end = np.random.randn(2, options.interpolate_samples[0],
+                                     model.noise_size)
+        visualize.interpolation(
+            model,
+            start,
+            end,
+            *options.interpolate_samples,
+            options.interpolation_method,
+            gray=True,
+            save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         if options.model == 'infogan':
