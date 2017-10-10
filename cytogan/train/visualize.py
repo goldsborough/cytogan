@@ -122,7 +122,7 @@ def interpolation(model,
                   conditional=None,
                   gray=False,
                   save_to=None,
-                  title='Z-Space Interpolation'):
+                  title='Latent Interpolation'):
     assert model.is_generative, model.name + ' is not generative'
     assert np.ndim(start) > 0, 'points must not be scalars'
 

@@ -221,8 +221,8 @@ with common.get_session(options.gpus) as session:
         start, end = np.random.randn(2, options.interpolate_samples[0],
                                      model.noise_size)
         if conditional_shape:
-            labels = cell_data.sample_labels(options.generative_samples[0])
-            labels = labels.repeat(options.generative_samples[1], axis=0)
+            labels = cell_data.sample_labels(options.interpolate_samples[0])
+            labels = labels.repeat(options.interpolate_samples[1], axis=0)
             labels = np.array(list(labels))
         else:
             labels = None
