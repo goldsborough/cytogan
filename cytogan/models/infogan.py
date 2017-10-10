@@ -84,14 +84,13 @@ class InfoGAN(dcgan.DCGAN):
                                         self.encoder.outputs[0]),
             G=self._define_generator_loss(*self.gan.outputs))
 
-    def generate(self, latent_prior, rescale=True):
-        images = self.session.run(
-            self.fake_images,
-            feed_dict={
-                self.batch_size: [len(latent_prior)],
-                self.latent_prior: latent_prior,
-                K.learning_phase(): 0,
-            })
+    def generate(self, latent_samples, latent_prior, rescale=True):
+        feed_dict = {K.learning_phase(): 0, self.latent_prior: latent_prior}
+        if isinstance(latent_samples, int):
+            feed_dict[self.batch_size] = [latent_samples]
+        else:
+            feed_dict[self.noise] = latent_samples
+        images = self.session.run(self.fake_images, feed_dict)
 
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2.0 if rescale else images
@@ -101,7 +100,7 @@ class InfoGAN(dcgan.DCGAN):
         real_images = (np.array(real_images) * 2.0) - 1
 
         latent_prior = self.latent_distribution(batch_size)
-        fake_images = self.generate(latent_prior, rescale=False)
+        fake_images = self.generate(batch_size, latent_prior, rescale=False)
 
         d_tensors = self._train_discriminator(fake_images, real_images,
                                               with_summary)

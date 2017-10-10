@@ -250,13 +250,16 @@ with common.get_session(options.gpus) as session:
                 np.zeros(options.generative_samples // 2),
                 np.linspace(-2, +2, options.generative_samples // 2)
             ])
-            samples = np.concatenate(
+            latent = np.concatenate(
                 [
                     categorical,
                     continuous_1.reshape(-1, 1),
                     continuous_2.reshape(-1, 1),
                 ],
                 axis=1)
+            noise = np.random.randn(
+                1, model.noise_size).repeat(options.generative_samples, axis=0)
+            samples = [noise, latent]
         elif options.model.endswith('began'):
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)

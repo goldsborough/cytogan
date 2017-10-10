@@ -98,6 +98,7 @@ class GAN(model.Model):
         if conditionals is not None:
             feed_dict[self.conditional['G']] = conditionals
         images = self.session.run(self.fake_images, feed_dict)
+
         # Go from [-1, +1] scale back to [0, 1]
         return (images + 1) / 2.0 if rescale else images
 
