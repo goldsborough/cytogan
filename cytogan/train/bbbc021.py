@@ -123,10 +123,12 @@ if options.workspace is not None and options.frames_per_epoch:
     save_every = number_of_batches // options.frames_per_epoch
     frame_options = trainer.FrameOptions(
         rate=common.Frequency(str(save_every)),
-        sample=[np.zeros([1, hyper.noise_size])],
-        directory=options.frames_dir)
+        sample=[np.random.randn(options.frame_sets, hyper.noise_size)],
+        directory=options.frames_dir,
+        number_of_sets=options.frame_sets)
 else:
     frame_options = None
+
 
 trainer_options = trainer.Options(
     summary_directory=options.summary_dir,
