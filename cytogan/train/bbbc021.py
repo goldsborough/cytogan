@@ -93,7 +93,7 @@ elif options.model == 'began':
     Model = began.BEGAN
 elif options.model == 'infogan':
     discrete_variables = 0
-    continuous_variables = 1
+    continuous_variables = 2
     latent_distribution = distributions.mixture({
         distributions.uniform(-1.0, +1.0):
         continuous_variables,

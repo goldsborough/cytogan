@@ -12,7 +12,7 @@ python3 -m cytogan.train.bbbc021                          \
   --summary-freq '10min'                                  \
   --latent-samples 100                                    \
   --generative-samples 100                                \
-  --gpus 2 3                                              \
+  --gpus 1 3                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv       \
   --images /data1/peter/segmented                         \
@@ -20,4 +20,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-compounds                                      \
   --latent-moa                                            \
   --confusion-matrix                                      \
+  --normalize-luminance                                   \
   $@
