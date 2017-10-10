@@ -242,12 +242,21 @@ with common.get_session(options.gpus) as session:
                 [options.generative_samples, discrete_variables])
             if discrete_variables > 0:
                 categorical[:, 0] = 1
-            continuous = np.linspace(-3, +3, options.generative_samples)
-            continuous = continuous.reshape(-1, 1)
-            continuous_zeros = np.zeros(
-                [options.generative_samples, continuous_variables - 1])
+            continuous_1 = np.concatenate([
+                np.linspace(-2, +2, options.generative_samples // 2),
+                np.zeros(options.generative_samples // 2)
+            ])
+            continuous_2 = np.concatenate([
+                np.zeros(options.generative_samples // 2),
+                np.linspace(-2, +2, options.generative_samples // 2)
+            ])
             samples = np.concatenate(
-                [categorical, continuous, continuous_zeros], axis=1)
+                [
+                    categorical,
+                    continuous_1.reshape(-1, 1),
+                    continuous_2.reshape(-1, 1),
+                ],
+                axis=1)
         elif options.model.endswith('began'):
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)

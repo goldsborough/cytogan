@@ -88,10 +88,10 @@ Notes:
 ### Tuesday, 10/10/2017
 
 Todo:
-- Investigate and visualize the latent space of a well-trained LSGAN,
-- Interpolate between two points and see smoothness of the images,
-- See if we have control over an InfoGAN via the continuous variables,
-- Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
-- Subtract the latent vectors between two concentrations of the same compound and see if that encodes the difference in concentration, then apply to another compound and see if that goes to the higher concentration.
-- Constrained GAN
-- BIGAN?
+[] Investigate and visualize the latent space of a well-trained LSGAN,
+[x] Interpolate between two points and see smoothness of the images,
+[] See if we have control over an InfoGAN via the continuous variables,
+[] Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
+[] Subtract the latent vectors between two concentrations of the same compound and see if that encodes the difference in concentration, then apply to another compound and see if that goes to the higher concentration.
+[] Constrained GAN
+[] BIGAN?
