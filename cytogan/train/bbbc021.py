@@ -217,7 +217,8 @@ with common.get_session(options.gpus) as session:
         if options.model == 'infogan':
             categorical = np.zeros(
                 [options.generative_samples, discrete_variables])
-            categorical[:, 0] = 1
+            if discrete_variables > 0:
+                categorical[:, 0] = 1
             continuous = np.linspace(-3, +3, options.generative_samples)
             continuous = continuous.reshape(-1, 1)
             continuous_zeros = np.zeros(
