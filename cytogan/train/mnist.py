@@ -146,12 +146,21 @@ with common.get_session(options.gpus) as session:
     if options.interpolate_samples is not None:
         start, end = np.random.randn(2, options.interpolate_samples[0],
                                      model.noise_size)
+        if conditional_shape:
+            labels = np.zeros([options.interpolate_samples[0], 10])
+            for i in range(labels.shape[0]):
+                labels[i, i] = 1
+            labels = labels.repeat(options.interpolate_samples[1], axis=0)
+            labels = np.array(list(labels))
+        else:
+            labels = None
         visualize.interpolation(
             model,
             start,
             end,
             *options.interpolate_samples,
             options.interpolation_method,
+            conditional=labels,
             gray=True,
             save_to=options.figure_dir)
 
