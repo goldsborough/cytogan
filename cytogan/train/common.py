@@ -58,8 +58,9 @@ def make_parser(name):
     parser.add_argument('-r', '--reconstruction-samples', type=int)
     parser.add_argument('-l', '--latent-samples', type=int)
     parser.add_argument('-g', '--generative-samples', type=int)
-    parser.add_argument('-i', '--interpolate-samples', type=int)
-    parser.add_argument('--interpolation-method', default='linear')
+    parser.add_argument('-i', '--interpolate-samples', type=int, nargs=2)
+    parser.add_argument(
+        '--interpolation-method', default='linear', choices=('linear', 'slerp'))
     parser.add_argument('--gpus', type=int, nargs='+')
     parser.add_argument('--show-figures', action='store_true')
     parser.add_argument('--skip-training', action='store_true')

@@ -87,41 +87,70 @@ def latent_space(latent_vectors,
 
 
 def _linear_interpolation(start, end, number_of_samples):
-    start, end = start.reshape(1, -1), end.reshape(1, -1)
-    fractions = np.linspace(0, 1, number_of_samples).reshape(-1, 1)
+    start, end = np.expand_dims(start, -1), np.expand_dims(end, -1)
+    fractions = np.linspace(0, 1, number_of_samples)
     samples = (1 - fractions) * start + fractions * end
     return samples
 
 
+def _slerp_interpolation(start, end, number_of_samples):
+    # https://github.com/soumith/dcgan.torch/issues/14
+    # Also: https://arxiv.org/pdf/1609.04468.pdf
+    fractions = np.linspace(0, 1, number_of_samples)
+    unit_start = start / np.linalg.norm(start)
+    unit_end = end / np.linalg.norm(end)
+    dot_products = np.sum(unit_start * unit_end, axis=1)
+    omega = np.arccos(np.clip(dot_products, -1, 1)).reshape(-1, 1)
+    omega_sine = np.sin(omega)
+
+    start, end = np.expand_dims(start, -1), np.expand_dims(end, -1)
+    if omega_sine.sum() == 0:
+        return (1.0 - fractions) * start + fractions * end
+
+    start_mix = np.sin((1.0 - fractions) * omega) / omega_sine
+    end_mix = np.sin(fractions * omega) / omega_sine
+    return np.expand_dims(start_mix, 1) * start + \
+           np.expand_dims(end_mix, 1) * end
+
+
 def interpolation(model,
-                  start_point,
-                  end_point,
-                  number_of_samples,
+                  start,
+                  end,
+                  number_of_interpolations,
+                  interpolation_length,
                   method,
+                  conditional=None,
                   gray=False,
                   save_to=None,
                   title='Z-Space Interpolation'):
     assert model.is_generative, model.name + ' is not generative'
+    assert np.ndim(start) > 0, 'points must not be scalars'
 
-    assert method in ('linear', )
     if method == 'linear':
-        samples = _linear_interpolation(start_point, end_point,
-                                        number_of_samples)
+        samples = _linear_interpolation(start, end, interpolation_length)
+    elif method == 'slerp':
+        samples = _slerp_interpolation(start, end, interpolation_length)
+
+    k = number_of_interpolations
+    split = [x.squeeze().T for x in np.split(samples, k)]
+    samples = [np.concatenate(split, axis=0)]
+
+    if conditional is not None:
+        samples.append(conditional)
 
     images = model.generate(*samples).reshape(-1, *model.image_shape)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    figure = plot.figure(figsize=(10, 10))
+    figure = plot.figure(figsize=(15, k))
     figure.suptitle(title)
-    figure_rows = int(np.ceil(np.sqrt(len(images))))
-    figure_columns = int(np.ceil(len(images) / figure_rows))
     for index, image in enumerate(images):
-        _plot_image_tile(figure_rows, figure_columns, index, image, gray)
+        _plot_image_tile(k, interpolation_length, index, image, gray)
 
     if save_to is not None:
-        _save_figure(save_to, 'generative-samples.png')
+        filename = '{0}-interpolation.png'.format(method)
+        _save_figure(save_to, filename)
 
 
 def generative_samples(model,

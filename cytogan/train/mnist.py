@@ -144,12 +144,13 @@ with common.get_session(options.gpus) as session:
             latent_vectors, labels, save_to=options.figure_dir)
 
     if options.interpolate_samples is not None:
-        start, end = np.random.randn(2, model.noise_size)
+        start, end = np.random.randn(2, options.interpolate_samples[0],
+                                     model.noise_size)
         visualize.interpolation(
             model,
             start,
             end,
-            options.interpolate_samples,
+            *options.interpolate_samples,
             options.interpolation_method,
             gray=True,
             save_to=options.figure_dir)
