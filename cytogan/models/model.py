@@ -70,6 +70,10 @@ class Model(abc.ABC):
     def graph(self):
         return self.session.graph
 
+    @property
+    def is_generative(self):
+        return hasattr(self, 'generate')
+
     def save(self, checkpoint_directory):
         if not os.path.exists(checkpoint_directory):
             os.makedirs(checkpoint_directory)

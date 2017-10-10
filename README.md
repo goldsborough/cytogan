@@ -45,7 +45,9 @@ So far:
 - C-LSGAN: 38%?
 -
 
-InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL for continuous variables. Also, it seems discriminator wins too early. Will try lower learning rate for discriminator.
+InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
+for continuous variables. Also, it seems discriminator wins too early. Will try
+lower learning rate for discriminator.
 
 ### Saturday, 10/07/2017
 
@@ -69,7 +71,7 @@ Notes:
 - BEGANs should train more.
 - Maybe the problem with InfoGANs so far was that I used too many conditional variables.
 
-### Saturday, 10/09/2017
+### Monday, 10/09/2017
 
 - gpu-vm-1:
  - Continue BEGANS
@@ -82,3 +84,14 @@ Notes:
 - gpu-vm-5:
  - Continue LSGANs
  - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning
+
+### Tuesday, 10/10/2017
+
+Todo:
+- Investigate and visualize the latent space of a well-trained LSGAN,
+- Interpolate between two points and see smoothness of the images,
+- See if we have control over an InfoGAN via the continuous variables,
+- Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
+- Subtract the latent vectors between two concentrations of the same compound and see if that encodes the difference in concentration, then apply to another compound and see if that goes to the higher concentration.
+- Constrained GAN
+- BIGAN?

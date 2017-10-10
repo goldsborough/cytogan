@@ -86,13 +86,52 @@ def latent_space(latent_vectors,
         _save_figure(save_to, 'latent-space{0}.png'.format(subject_suffix))
 
 
+def _linear_interpolation(start, end, number_of_samples):
+    start, end = start.reshape(1, -1), end.reshape(1, -1)
+    fractions = np.linspace(0, 1, number_of_samples).reshape(-1, 1)
+    samples = (1 - fractions) * start + fractions * end
+    return samples
+
+
+def interpolation(model,
+                  start_point,
+                  end_point,
+                  number_of_samples,
+                  method,
+                  gray=False,
+                  save_to=None,
+                  title='Z-Space Interpolation'):
+    assert model.is_generative, model.name + ' is not generative'
+
+    assert method in ('linear', )
+    if method == 'linear':
+        samples = _linear_interpolation(start_point, end_point,
+                                        number_of_samples)
+
+    images = model.generate(*samples).reshape(-1, *model.image_shape)
+
+    if _is_grayscale(images):
+        images = _make_rgb(images)
+
+    figure = plot.figure(figsize=(10, 10))
+    figure.suptitle(title)
+    figure_rows = int(np.ceil(np.sqrt(len(images))))
+    figure_columns = int(np.ceil(len(images) / figure_rows))
+    for index, image in enumerate(images):
+        _plot_image_tile(figure_rows, figure_columns, index, image, gray)
+
+    if save_to is not None:
+        _save_figure(save_to, 'generative-samples.png')
+
+
 def generative_samples(model,
                        samples,
                        gray=False,
                        save_to=None,
                        title='Generated Samples'):
+    assert model.is_generative, model.name + ' is not generative'
+
     samples = samples if isinstance(samples, list) else [samples]
-    assert hasattr(model, 'generate'), model.name + ' is not generative'
     images = model.generate(*samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
