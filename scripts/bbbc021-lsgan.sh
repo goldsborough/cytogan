@@ -21,4 +21,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
+  --frames-per-epoch 100                                  \
   $@
