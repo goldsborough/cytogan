@@ -214,7 +214,9 @@ with common.get_session(options.gpus) as session:
         if options.latent_compounds:
             compound_names, indices = cell_data.get_compound_indices(
                 treatment_profiles)
+            print(compound_names, indices)
             latent_vectors = np.array(list(treatment_profiles['profile']))
+            print(latent_vectors)
             visualize.latent_space(
                 latent_vectors,
                 indices,

@@ -66,12 +66,14 @@ def latent_space(latent_vectors,
                  save_to=None,
                  subject=None):
     assert np.ndim(latent_vectors) == 2
+    log.info('Plotting latent space for %d vectors', len(latent_vectors))
+
     if latent_vectors.shape[1] > 2:
         assert reduction_method in ('tsne', )
         log.info('Reducing dimensionality')
         if reduction_method == 'tsne':
             reduction = sklearn.manifold.TSNE(
-                n_components=2, perplexity=30, verbose=1)
+                n_components=2, perplexity=30, init='pca', verbose=1)
             start = time.time()
             latent_vectors = reduction.fit_transform(latent_vectors)
             log.info('Took %.3fs', time.time() - start)
@@ -81,7 +83,10 @@ def latent_space(latent_vectors,
     subject_title = ' ({0})'.format(subject) if subject else ''
     figure.suptitle('Latent Space{0}'.format(subject_title))
     plot.scatter(
-        latent_vectors[:, 0], latent_vectors[:, 1], c=labels, cmap='plasma')
+        latent_vectors[:, 0],
+        latent_vectors[:, 1],
+        c=labels,
+        cmap=plot.cm.Spectral)
     if labels is not None:
         colorbar = plot.colorbar()
         if label_map is not None:

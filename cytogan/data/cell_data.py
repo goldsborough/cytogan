@@ -248,7 +248,7 @@ class CellData(object):
         return compound_strings, indices
 
     def get_compound_indices(self, dataset):
-        compounds = list(dataset['compound'].unique())
+        compounds = list(sorted(dataset['compound'].unique()))
         indices = dataset['compound'].apply(compounds.index)
         return compounds, indices
 

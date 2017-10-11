@@ -151,6 +151,7 @@ with common.get_session(options.gpus) as session:
         original_images, labels = data.test.next_batch(options.latent_samples)
         original_images = original_images.reshape(-1, 28, 28, 1)
         latent_vectors = model.encode(original_images)
+        labels = np.argmax(labels, axis=1)
         visualize.latent_space(
             latent_vectors, labels, save_to=options.figure_dir)
 
