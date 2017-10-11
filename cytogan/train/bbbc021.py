@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import sklearn.manifold
 import tensorflow as tf
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
-from cytogan.metrics import profiling
-from cytogan.models import ae, conv_ae, model, vae, infogan, dcgan, lsgan, wgan, began
-from cytogan.train import common, trainer, visualize
 from cytogan.extra import distributions, logs, misc
+from cytogan.metrics import profiling
+from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
+                            vae, wgan)
+from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
@@ -129,7 +131,6 @@ if options.workspace is not None and options.frames_per_epoch:
 else:
     frame_options = None
 
-
 trainer_options = trainer.Options(
     summary_directory=options.summary_dir,
     summary_frequency=options.summary_freq,
@@ -223,6 +224,7 @@ with common.get_session(options.gpus) as session:
             latent_vectors,
             indices,
             treatment_names,
+            reduction_method=sklearn.manifold.PCA,
             save_to=options.figure_dir,
             subject='Cells')
 
