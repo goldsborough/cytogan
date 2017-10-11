@@ -295,12 +295,26 @@ with common.get_session(options.gpus) as session:
             samples = np.random.randn(options.generative_samples,
                                       model.noise_size)
 
+        # Fix two labels and sample random noise
         if conditional_shape:
             samples = [samples]
-            labels = cell_data.sample_labels(options.generative_samples)
-            samples.append(np.array(list(labels)))
+            labels = np.array(list(cell_data.sample_labels(2)))
+            labels = labels.repeat(options.generative_samples // 2, axis=0)
+            samples.append(labels)
         visualize.generative_samples(
             model, samples, save_to=options.figure_dir)
+
+        # Fix noise and sample many labels (should look very different?)
+        if conditional_shape:
+            labels = cell_data.sample_labels(options.generative_samples // 2)
+            labels = np.tile(np.array(list(labels)), (2, 1))
+            noise = np.random.randn(2, model.noise_size)
+            noise = np.repeat(noise, options.generative_samples // 2, axis=0)
+            visualize.generative_samples(
+                model,
+                [noise, labels],
+                save_to=options.figure_dir,
+                filename='generative-samples2.png')
 
 if options.show_figures:
     visualize.show()

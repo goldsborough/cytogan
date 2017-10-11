@@ -169,6 +169,7 @@ def generative_samples(model,
                        samples,
                        gray=False,
                        save_to=None,
+                       filename='generative-samples.png',
                        title='Generated Samples'):
     assert model.is_generative, model.name + ' is not generative'
 
@@ -184,7 +185,7 @@ def generative_samples(model,
         _plot_image_tile(figure_rows, figure_columns, index, image, gray)
 
     if save_to is not None:
-        _save_figure(save_to, 'generative-samples.png')
+        _save_figure(save_to, filename)
 
 
 def confusion_matrix(matrix,
