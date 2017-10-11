@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
+import os
 import numpy as np
-import sklearn.manifold
 import tensorflow as tf
 from tqdm import tqdm
 
@@ -24,7 +24,14 @@ parser.add_argument('--latent-moa', action='store_true')
 parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
+parser.add_argument('--save-profiles', action='store_true')
 options = common.parse_args(parser)
+
+if options.save_profiles:
+    options.profiles_dir = os.path.join(options.workspace, 'profiles')
+    if not os.path.exists(options.profiles_dir):
+        os.makedirs(options.profiles_dir)
+
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
 
@@ -172,9 +179,15 @@ with common.get_session(options.gpus) as session:
         log.info('Matching {0:,} profiles to {1} MOAs'.format(
             len(dataset), len(dataset.moa.unique())))
 
+        if options.save_profiles:
+            dataset.to_csv(os.path.join(options.profiles_dir, 'profiles.csv'))
+
         if options.whiten_profiles:
             profiling.whiten(dataset)
             log.info('Whitened data')
+            if options.save_profiles:
+                dataset.to_csv(
+                    os.path.join(options.profiles_dir, 'whitened.csv'))
 
         # The DMSO (control) should not participate in the MOA classification.
         dataset = dataset[dataset['compound'] != 'DMSO']
@@ -182,6 +195,10 @@ with common.get_session(options.gpus) as session:
             dataset)
         log.info('Reduced dataset from %d to %d profiles for each treatment',
                  len(dataset), len(treatment_profiles))
+
+        if options.save_profiles:
+            treatment_profiles.to_csv(
+                os.path.join(options.profiles_dir, 'treatments.csv'))
 
         confusion_matrix, accuracy = profiling.score_profiles(
             treatment_profiles)
@@ -224,7 +241,6 @@ with common.get_session(options.gpus) as session:
             latent_vectors,
             indices,
             treatment_names,
-            reduction_method=sklearn.manifold.PCA,
             save_to=options.figure_dir,
             subject='Cells')
 

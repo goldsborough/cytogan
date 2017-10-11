@@ -1,4 +1,5 @@
 import os
+import time
 
 import matplotlib.pyplot as plot
 import numpy as np
@@ -61,15 +62,21 @@ def reconstructions(model,
 def latent_space(latent_vectors,
                  labels=None,
                  label_map=None,
-                 reduction_method=sklearn.manifold.TSNE,
+                 reduction_method='tsne',
                  save_to=None,
                  subject=None):
     assert np.ndim(latent_vectors) == 2
     if latent_vectors.shape[1] > 2:
+        assert reduction_method in ('tsne', )
         log.info('Reducing dimensionality')
-        reduction = reduction_method(n_components=2)
-        latent_vectors = reduction.fit_transform(latent_vectors)
-        assert latent_vectors.shape[1] == 2
+        if reduction_method == 'tsne':
+            reduction = sklearn.manifold.TSNE(
+                n_components=2, perplexity=30, verbose=1)
+            start = time.time()
+            latent_vectors = reduction.fit_transform(latent_vectors)
+            log.info('Took %.3fs', time.time() - start)
+
+    assert latent_vectors.shape[1] == 2
     figure = plot.figure(figsize=(12, 10))
     subject_title = ' ({0})'.format(subject) if subject else ''
     figure.suptitle('Latent Space{0}'.format(subject_title))

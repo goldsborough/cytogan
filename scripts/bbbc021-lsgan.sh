@@ -4,7 +4,7 @@ python3 -m cytogan.train.bbbc021                          \
   --epochs 100                                            \
   --model lsgan                                           \
   --lr 7e-5 2e-4                                          \
-  --lr-decay 0.999                                        \
+  --lr-decay 0.9999                                       \
   --lr-decay-steps 100                                    \
   --batch-size 64                                         \
   --workspace /data1/peter/runs                           \
@@ -22,4 +22,5 @@ python3 -m cytogan.train.bbbc021                          \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
   --frames-per-epoch 100                                  \
+  --save-profiles                                         \
   $@
