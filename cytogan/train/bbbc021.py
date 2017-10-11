@@ -236,8 +236,8 @@ with common.get_session(options.gpus) as session:
                                      model.noise_size)
         if conditional_shape:
             labels = cell_data.sample_labels(options.interpolate_samples[0])
-            labels = labels.repeat(options.interpolate_samples[1], axis=0)
             labels = np.array(list(labels))
+            labels = labels.repeat(options.interpolate_samples[1], axis=0)
         else:
             labels = None
         visualize.interpolation(
