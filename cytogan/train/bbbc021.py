@@ -193,18 +193,6 @@ with common.get_session(options.gpus) as session:
                 accuracy=accuracy,
                 save_to=options.figure_dir)
 
-        if options.latent_samples is not None:
-            keys, images = cell_data.next_batch(
-                options.latent_samples, with_keys=True)
-            treatment_names, indices = cell_data.get_treatment_indices(keys)
-            latent_vectors = model.encode(images)
-            visualize.latent_space(
-                latent_vectors,
-                indices,
-                treatment_names,
-                save_to=options.figure_dir,
-                subject='Cells')
-
         if options.latent_compounds:
             compound_names, indices = cell_data.get_compound_indices(
                 treatment_profiles)
@@ -225,6 +213,18 @@ with common.get_session(options.gpus) as session:
                 moa_names,
                 save_to=options.figure_dir,
                 subject='MOA')
+
+    if options.latent_samples is not None:
+        keys, images = cell_data.next_batch(
+            options.latent_samples, with_keys=True)
+        treatment_names, indices = cell_data.get_treatment_indices(keys)
+        latent_vectors = model.encode(images)
+        visualize.latent_space(
+            latent_vectors,
+            indices,
+            treatment_names,
+            save_to=options.figure_dir,
+            subject='Cells')
 
     if options.reconstruction_samples is not None:
         images = cell_data.next_batch(options.reconstruction_samples)
