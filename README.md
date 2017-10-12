@@ -76,14 +76,14 @@ Notes:
 - gpu-vm-1:
  - Continue BEGANS
 - gpu-vm-2:
-  - InfoGAN with 1e-5 8e-5 8e-5 and 2 conditional variables
+  - InfoGAN with 1e-5 8e-5 8e-5 and 2 conditional variables [good]
   - InfoGAN with 7e-5 2e-4 2e-4 and 1 conditional variables
 - gpu-vm-3:
- - Continue BEGAN with 0.25 diversity
- - WGAN-GP with 8e-5 8e-5
+ - Continue BEGAN with 0.25 diversity [no noticeable improvement over other BEGAN]
+ - WGAN-GP with 8e-5 8e-5 [good, but not better than LSGAN]
 - gpu-vm-5:
  - Continue LSGANs
- - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning
+ - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning [crap]
 
 ### Tuesday, 10/10/2017
 
@@ -91,7 +91,13 @@ Todo:
 [x] Investigate and visualize the latent space of a well-trained LSGAN,
 [x] Interpolate between two points and see smoothness of the images,
 [x] See if we have control over an InfoGAN via the continuous variables,
-[x] Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
+[ ] Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
 [x] Subtract the latent vectors between two concentrations of the same compound and see if that encodes the difference in concentration, then apply to another compound and see if that goes to the higher concentration.
 [] Constrained GAN
 [] BIGAN?
+
+### Wednesday, 10/11/2017
+
+What I need:
+
+- Well-trained conditional LSGAN with only the concentration
