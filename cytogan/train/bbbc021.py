@@ -25,6 +25,7 @@ parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
+parser.add_argument('--vector-distance', action='store_true')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -244,6 +245,22 @@ with common.get_session(options.gpus) as session:
                 point_sizes=np.array(list(point_sizes)),
                 save_to=options.figure_dir,
                 subject='MOA')
+
+        if options.vector_distance:
+            try:
+                t = treatment_profiles
+                start = t[t['concentration'] == 0.1]
+                end = t[t['concentration'] == 0.3]
+                intersection = set(start['compound']) & set(end['compound'])
+                start = start[start['compound'].isin(intersection)]
+                end = end[end['compound'].isin(intersection)]
+                visualize.vector_distance(
+                    np.array(list(start['profile'])),
+                    np.array(list(end['profile'])),
+                    labels=(0.1, 0.3),
+                    save_to=options.figure_dir)
+            except Exception as e:
+                print(e)
 
     if options.latent_samples is not None:
         keys, images = cell_data.next_batch(

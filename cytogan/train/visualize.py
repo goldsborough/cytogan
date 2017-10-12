@@ -225,7 +225,7 @@ def vector_distance(start,
         title = 'Vector Distance'
         if labels is not None:
             assert len(labels) == 2, labels
-            title += ' between {0:.4f} and {0:.4f}'.format(*labels)
+            title += ' between {0} and {1}'.format(*labels)
     figure.suptitle(title)
 
     if save_to is not None:
