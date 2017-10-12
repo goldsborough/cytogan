@@ -14,7 +14,6 @@ python3 -m cProfile -o dcgan.prof cytogan/train/bbbc021.py \
   --workspace /data1/peter/runs                            \
   --checkpoint-freq '30s'                                  \
   --summary-freq '30s'                                     \
-  --latent-samples 256                                     \
   --generative-samples 50                                  \
   --gpus 2 3                                               \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv    \
