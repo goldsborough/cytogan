@@ -30,15 +30,6 @@ def smooth_labels(labels, low=0.8, high=1.0):
 
 class GAN(model.Model):
     def __init__(self, hyper, learning, session):
-        assert len(hyper.image_shape) == 3
-        # Copy all fields from hyper to self.
-        for index, field in enumerate(hyper._fields):
-            setattr(self, field, hyper[index])
-
-        self.image_shape = list(hyper.image_shape)
-        self.number_of_channels = hyper.image_shape[-1]
-        self.flat_image_shape = np.prod(hyper.image_shape)
-
         self.images = None  # x
         self.conditional = None
         self.conditional_embedding = None
@@ -50,6 +41,15 @@ class GAN(model.Model):
         self.discriminator = None  # D(x)
         self.encoder = None
         self.gan = None  # D(G(z, c))
+
+        assert len(hyper.image_shape) == 3
+        # Copy all fields from hyper to self.
+        for index, field in enumerate(hyper._fields):
+            setattr(self, field, hyper[index])
+
+        self.image_shape = list(hyper.image_shape)
+        self.number_of_channels = hyper.image_shape[-1]
+        self.flat_image_shape = np.prod(hyper.image_shape)
 
         super(GAN, self).__init__(learning, session)
 

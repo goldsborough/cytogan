@@ -76,7 +76,9 @@ class DCGAN(gan.GAN):
                 ('G', 'D'), self.conditional_shape)
             if self.conditional_embedding is not None:
                 self.conditional_embedding_layer = Dense(
-                    self.conditional_embedding, activation='relu')
+                    self.conditional_embedding,
+                    activation='relu',
+                    name='embedding')
 
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')

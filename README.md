@@ -83,7 +83,7 @@ Notes:
  - WGAN-GP with 8e-5 8e-5 [good, but not better than LSGAN]
 - gpu-vm-5:
  - Continue LSGANs
- - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning [crap]
+ - Conditional WGAN-GP with 8e-5 8e-5 and embedded conditioning [mistake]
 
 ### Tuesday, 10/10/2017
 
@@ -101,3 +101,4 @@ Todo:
 What I need:
 
 - Well-trained conditional LSGAN with only the concentration
+- Well-trained conditional WGAN with only the concentration

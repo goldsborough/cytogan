@@ -26,6 +26,7 @@ parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--vector-distance', action='store_true')
+parser.add_argument('--concentration-only-labels', action='store_true')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -57,14 +58,15 @@ cell_data = CellData(
     options.cell_count_file,
     options.pattern,
     options.normalize_luminance,
-    with_labels=options.conditional)
+    options.conditional,
+    options.concentration_only_labels)
 
 image_shape = (96, 96, 3)
 number_of_batches = cell_data.number_of_images // options.batch_size
 if options.conditional:
     # one-hot encode the compound and have a
     # continuous variable for the concentration.
-    conditional_shape = (cell_data.number_of_compounds + 1, )
+    conditional_shape = cell_data.label_shape
     log.info('conditional shape: %d', conditional_shape[0])
 else:
     conditional_shape = None
@@ -82,6 +84,10 @@ elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[128, 64, 32], latent_size=256)
     Model = vae.VAE
 elif options.model in ('dcgan', 'lsgan', 'wgan'):
+    if options.concentration_only_labels:
+        embedding_size = None
+    else:
+        embedding_size = 16
     hyper = dcgan.Hyper(
         image_shape,
         generator_filters=(256, 128, 64, 32),
@@ -92,7 +98,7 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         noise_size=100,
         initial_shape=(12, 12),
         conditional_shape=conditional_shape,
-        conditional_embedding=16)
+        conditional_embedding=embedding_size)
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
