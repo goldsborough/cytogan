@@ -20,5 +20,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
-  --vector-distance \
+  --vector-distance                                       \
   $@

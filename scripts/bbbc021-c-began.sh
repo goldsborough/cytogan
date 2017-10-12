@@ -10,7 +10,7 @@ python3 -m cytogan.train.bbbc021                          \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '10min'                               \
   --summary-freq '10min'                                  \
-  --generative-samples 10                                 \
+  --generative-samples 100                                \
   --gpus 2 3                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv       \
@@ -20,4 +20,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
+  --vector-distance                                       \
   $@
