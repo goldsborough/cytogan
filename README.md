@@ -39,11 +39,12 @@ To set up port forwarding between your local machine and the VM, use these flags
 So far:
 
 - DCGAN: 43%
-- LSGAN: 61%
+- LSGAN: 63%
 - LSGAN + Whitening: 68%
-- BEGAN: Mode Collapse after 2 epochs (low variety): 55%
+- BEGAN: 56%
 - C-LSGAN: 38%?
--
+- WGAN: 45%
+- Conditional WGAN: 14%
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try
@@ -74,7 +75,7 @@ Notes:
 ### Monday, 10/09/2017
 
 - gpu-vm-1:
- - Continue BEGANS
+ - Continue BEGANS [I am a stupid fucking idiot]
 - gpu-vm-2:
   - InfoGAN with 1e-5 8e-5 8e-5 and 2 conditional variables [good]
   - InfoGAN with 7e-5 2e-4 2e-4 and 1 conditional variables
@@ -101,4 +102,9 @@ Todo:
 What I need:
 
 - Well-trained conditional LSGAN with only the concentration
+- Well-trained conditional LSGAN with both
 - Well-trained conditional WGAN with only the concentration
+- Well-trained conditional WGAN with both
+- Well-trained conditional BEGAN with only the concentration
+- Well-trained conditional BEGAN with both
+- Constrained LSGAN
