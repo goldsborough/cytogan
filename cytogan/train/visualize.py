@@ -61,22 +61,20 @@ def reconstructions(model,
 
 def latent_space(latent_vectors,
                  labels=None,
-                 label_map=None,
-                 reduction_method='tsne',
+                 perplexity=30,
+                 point_sizes=None,
                  save_to=None,
                  subject=None):
     assert np.ndim(latent_vectors) == 2
     log.info('Plotting latent space for %d vectors', len(latent_vectors))
 
     if latent_vectors.shape[1] > 2:
-        assert reduction_method in ('tsne', )
         log.info('Reducing dimensionality')
-        if reduction_method == 'tsne':
-            reduction = sklearn.manifold.TSNE(
-                n_components=2, perplexity=30, init='pca', verbose=1)
-            start = time.time()
-            latent_vectors = reduction.fit_transform(latent_vectors)
-            log.info('Took %.3fs', time.time() - start)
+        reduction = sklearn.manifold.TSNE(
+            n_components=2, perplexity=perplexity, init='pca', verbose=1)
+        start = time.time()
+        latent_vectors = reduction.fit_transform(latent_vectors)
+        log.info('Took %.3fs', time.time() - start)
 
     assert latent_vectors.shape[1] == 2
     figure = plot.figure(figsize=(12, 10))
@@ -86,12 +84,8 @@ def latent_space(latent_vectors,
         latent_vectors[:, 0],
         latent_vectors[:, 1],
         c=labels,
+        lw=point_sizes,
         cmap=plot.cm.Spectral)
-    if labels is not None:
-        colorbar = plot.colorbar()
-        if label_map is not None:
-            ticks = {label_map[index] for index in sorted(set(labels))}
-            colorbar.ax.set_yticklabels(ticks)
 
     if save_to is not None:
         subject_suffix = '-{0}'.format(subject.lower()) if subject else ''
@@ -199,6 +193,43 @@ def confusion_matrix(matrix,
     seaborn.heatmap(matrix, annot=True, ax=axis)
     if save_to is not None:
         _save_figure(save_to, 'confusion-matrix.png')
+
+
+def vector_distance(start,
+                    end,
+                    labels=None,
+                    perplexity=15,
+                    title=None,
+                    save_to=None):
+    tsne = sklearn.manifold.TSNE(
+        n_components=2, perplexity=perplexity, init='pca', verbose=1)
+    transformed = tsne.fit_transform(np.concatenate([start, end]))
+    indices = np.tile(np.arange(len(start)), [2])
+
+    figure, axis = plot.subplots(figsize=(5, 5))
+    plot.scatter(
+        transformed[:, 0], transformed[:, 1], c=indices, cmap='plasma')
+    for x, y in zip(*np.split(transformed, 2)):
+        delta = y - x
+        plot.arrow(
+            x[0],
+            x[1],
+            delta[0],
+            delta[1],
+            head_length=5,
+            head_width=3,
+            length_includes_head=True,
+            color='r')
+
+    if title is None:
+        title = 'Vector Distance'
+        if labels is not None:
+            assert len(labels) == 2, labels
+            title += ' between {0:.4f} and {0:.4f}'.format(*labels)
+    figure.suptitle(title)
+
+    if save_to is not None:
+        _save_figure(save_to, 'vector-distance.png')
 
 
 def disable_display():

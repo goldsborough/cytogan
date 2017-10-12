@@ -159,3 +159,5 @@ summaries
 env2/
 summaries2
 *.gif
+*.tar*
+profiles/

@@ -32,6 +32,17 @@ if options.save_profiles:
     if not os.path.exists(options.profiles_dir):
         os.makedirs(options.profiles_dir)
 
+    def save_profiles(profiles, filename):
+        log.info('Storing %s to disk', filename)
+        path = os.path.join(options.profiles_dir, filename)
+        profiles.to_csv(
+            path,
+            header=True,
+            compression='gzip',
+            encoding='ascii',
+            chunksize=100000)
+
+
 log = logs.get_root_logger(options.log_file)
 log.debug('Options:\n%s', options.as_string)
 
@@ -180,14 +191,14 @@ with common.get_session(options.gpus) as session:
             len(dataset), len(dataset.moa.unique())))
 
         if options.save_profiles:
-            dataset.to_csv(os.path.join(options.profiles_dir, 'profiles.csv'))
+            log.info('Storing profiles to disk')
+            save_profiles(dataset, 'profiles.csv')
 
         if options.whiten_profiles:
             profiling.whiten(dataset)
             log.info('Whitened data')
             if options.save_profiles:
-                dataset.to_csv(
-                    os.path.join(options.profiles_dir, 'whitened.csv'))
+                save_profiles(dataset, 'whitened.csv')
 
         # The DMSO (control) should not participate in the MOA classification.
         dataset = dataset[dataset['compound'] != 'DMSO']
@@ -197,8 +208,7 @@ with common.get_session(options.gpus) as session:
                  len(dataset), len(treatment_profiles))
 
         if options.save_profiles:
-            treatment_profiles.to_csv(
-                os.path.join(options.profiles_dir, 'treatments.csv'))
+            save_profiles(treatment_profiles, 'treatments.csv')
 
         confusion_matrix, accuracy = profiling.score_profiles(
             treatment_profiles)
@@ -212,37 +222,37 @@ with common.get_session(options.gpus) as session:
                 save_to=options.figure_dir)
 
         if options.latent_compounds:
-            compound_names, indices = cell_data.get_compound_indices(
-                treatment_profiles)
-            print(compound_names, indices)
-            latent_vectors = np.array(list(treatment_profiles['profile']))
-            print(latent_vectors)
+            _, indices = cell_data.get_compound_indices(treatment_profiles)
+            latent_vectors = treatment_profiles['profile']
+            point_sizes = treatment_profiles.groupby('compound').cumcount()
             visualize.latent_space(
-                latent_vectors,
+                np.array(list(latent_vectors)),
                 indices,
-                compound_names,
+                perplexity=15,
+                point_sizes=np.array(list(point_sizes)),
                 save_to=options.figure_dir,
                 subject='Compounds')
 
         if options.latent_moa:
-            moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
-            latent_vectors = np.array(list(treatment_profiles['profile']))
+            _, indices = cell_data.get_moa_indices(treatment_profiles)
+            latent_vectors = treatment_profiles['profile']
+            point_sizes = treatment_profiles.groupby('compound').cumcount()
             visualize.latent_space(
-                latent_vectors,
+                np.array(list(latent_vectors)),
                 indices,
-                moa_names,
+                perplexity=12,
+                point_sizes=np.array(list(point_sizes)),
                 save_to=options.figure_dir,
                 subject='MOA')
 
     if options.latent_samples is not None:
         keys, images = cell_data.next_batch(
             options.latent_samples, with_keys=True)
-        treatment_names, indices = cell_data.get_treatment_indices(keys)
+        _, indices = cell_data.get_treatment_indices(keys)
         latent_vectors = model.encode(images)
         visualize.latent_space(
             latent_vectors,
             indices,
-            treatment_names,
             save_to=options.figure_dir,
             subject='Cells')
 
@@ -311,8 +321,7 @@ with common.get_session(options.gpus) as session:
             noise = np.random.randn(2, model.noise_size)
             noise = np.repeat(noise, options.generative_samples // 2, axis=0)
             visualize.generative_samples(
-                model,
-                [noise, labels],
+                model, [noise, labels],
                 save_to=options.figure_dir,
                 filename='generative-samples2.png')
 

@@ -22,5 +22,4 @@ python3 -m cytogan.train.bbbc021                          \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
   --frames-per-epoch 100                                  \
-  --save-profiles                                         \
   $@

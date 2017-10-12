@@ -26,7 +26,11 @@ def reduce_profiles_across_treatments(dataset):
     for key, group in dataset.groupby(keys, sort=False, as_index=False):
         mean_profile = group['profile'].mean()
         reduced_profiles.append(key + (mean_profile, ))
-    return pd.DataFrame(reduced_profiles, columns=keys + ('profile', ))
+
+    reduced = pd.DataFrame(reduced_profiles, columns=keys + ('profile', ))
+    reduced.sort_values(['compound', 'concentration'], inplace=True)
+
+    return reduced
 
 
 def get_whitening_transform(X, epsilon, rotate=True):
