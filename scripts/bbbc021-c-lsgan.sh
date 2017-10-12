@@ -3,10 +3,10 @@
 python3 -m cytogan.train.bbbc021                          \
   --epochs 50                                             \
   --model c-lsgan                                         \
-  --lr 1e-5 7e-5                                          \
+  --lr 1e-4 1e-4                                          \
   --lr-decay 0.9995                                       \
-  --lr-decay-steps 100                                    \
-  --batch-size 128                                        \
+  --lr-decay-steps 200                                    \
+  --batch-size 64                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '10min'                               \
   --summary-freq '10min'                                  \
@@ -20,6 +20,6 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
-  --save-profiles                                         \
   --vector-distance                                       \
+  --save-profiles                                         \
   $@

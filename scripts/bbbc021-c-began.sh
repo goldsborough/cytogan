@@ -1,17 +1,17 @@
 #!/bin/bash
 
 python3 -m cytogan.train.bbbc021                          \
-  --epochs 30                                             \
+  --epochs 50                                             \
   --model c-began                                         \
   --lr 1e-5 1e-5                                          \
-  --lr-decay 0.9999                                       \
+  --lr-decay 0.9995                                       \
   --lr-decay-steps 1000                                   \
   --batch-size 16                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '10min'                               \
   --summary-freq '10min'                                  \
   --generative-samples 100                                \
-  --gpus 2 3                                              \
+  --gpus 0 1                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv       \
   --images /data1/peter/segmented                         \
