@@ -6,6 +6,7 @@ import sys
 import time
 
 import keras.backend as K
+import numpy as np
 import tensorflow as tf
 
 from cytogan.extra import logs
@@ -128,6 +129,7 @@ def get_session(gpus):
     K.set_session(session)
     K.manual_variable_initialization(True)
 
+    np.random.seed(42)
     tf.set_random_seed(42)
 
     return session

@@ -108,3 +108,15 @@ What I need:
 - Well-trained conditional BEGAN with only the concentration
 - Well-trained conditional BEGAN with both
 - Constrained LSGAN
+
+Launched:
+
+- gpu-vm-1:
+ - LSGAN with both
+ - LSGAN with only concentration
+- gpu-vm-2:
+  - BEGAN with both
+  - BEGAN with only concentration
+- gpu-vm-3:
+  - WGAN with both [fail, retry with smaller lr]
+  - WGAN with only concentration [fail, retry with smaller lr]

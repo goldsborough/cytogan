@@ -3,7 +3,7 @@
 python3 -m cytogan.train.bbbc021                          \
   --epochs 50                                             \
   --model wgan                                            \
-  --lr 8e-5 8e-5                                          \
+  --lr 7e-5 7e-5                                          \
   --lr-decay 0.9995                                       \
   --lr-decay-steps 100                                    \
   --batch-size 64                                         \
