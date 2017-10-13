@@ -120,3 +120,17 @@ Launched:
 - gpu-vm-3:
   - WGAN with both [fail, retry with smaller lr]
   - WGAN with only concentration [fail, retry with smaller lr]
+
+## Major Findings
+
+- Evaluation of different model architectures
+- Quality of generated images
+- MOA classification problem and results, compared to VAEs
+- Smoothness in latent space
+- MOA and compound clustering in latent space
+- Conditional GAN results w.r.t. clustering, especially with only concentration
+- Vector Algebra?
+- InfoGAN and the latent variable
+- Whitening
+- Cellprofiler features?
+- Training tricks I used

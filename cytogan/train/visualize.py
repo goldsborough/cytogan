@@ -61,35 +61,38 @@ def reconstructions(model,
 
 def latent_space(latent_vectors,
                  labels=None,
-                 perplexity=30,
+                 perplexity=None,
                  point_sizes=None,
                  save_to=None,
                  subject=None):
     assert np.ndim(latent_vectors) == 2
     log.info('Plotting latent space for %d vectors', len(latent_vectors))
 
-    if latent_vectors.shape[1] > 2:
-        log.info('Reducing dimensionality')
+    if perplexity is None:
+        perplexity = [2, 3, 4, 5] + list(range(10, 21)) + [30, 50, 70, 90]
+    if isinstance(perplexity, int):
+        perplexity = [perplexity]
+
+    for p in perplexity:
         reduction = sklearn.manifold.TSNE(
-            n_components=2, perplexity=perplexity, init='pca', verbose=1)
-        start = time.time()
+            n_components=2, perplexity=p, init='pca', verbose=1)
         latent_vectors = reduction.fit_transform(latent_vectors)
-        log.info('Took %.3fs', time.time() - start)
 
-    assert latent_vectors.shape[1] == 2
-    figure = plot.figure(figsize=(12, 10))
-    subject_title = ' ({0})'.format(subject) if subject else ''
-    figure.suptitle('Latent Space{0}'.format(subject_title))
-    plot.scatter(
-        latent_vectors[:, 0],
-        latent_vectors[:, 1],
-        c=labels,
-        lw=point_sizes,
-        cmap=plot.cm.Spectral)
+        figure = plot.figure(figsize=(12, 10))
+        subject_title = ' ({0})'.format(subject) if subject else ''
+        subject_title += ' | P = {0}'.format(p)
+        figure.suptitle('Latent Space{0}'.format(subject_title))
+        plot.scatter(
+            latent_vectors[:, 0],
+            latent_vectors[:, 1],
+            c=labels,
+            lw=point_sizes,
+            cmap=plot.cm.Spectral)
 
-    if save_to is not None:
-        subject_suffix = '-{0}'.format(subject.lower()) if subject else ''
-        _save_figure(save_to, 'latent-space{0}.png'.format(subject_suffix))
+        if save_to is not None:
+            subject_suffix = '-{0}'.format(subject.lower()) if subject else ''
+            subject_suffix += '-{0}'.format(p)
+            _save_figure(save_to, 'latent-space{0}.png'.format(subject_suffix))
 
 
 def _linear_interpolation(start, end, number_of_samples):

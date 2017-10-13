@@ -51,15 +51,10 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-cell_data = CellData(
-    options.metadata,
-    options.labels,
-    options.images,
-    options.cell_count_file,
-    options.pattern,
-    options.normalize_luminance,
-    options.conditional,
-    options.concentration_only_labels)
+cell_data = CellData(options.metadata, options.labels, options.images,
+                     options.cell_count_file, options.pattern,
+                     options.normalize_luminance, options.conditional,
+                     options.concentration_only_labels)
 
 image_shape = (96, 96, 3)
 number_of_batches = cell_data.number_of_images // options.batch_size
@@ -235,10 +230,21 @@ with common.get_session(options.gpus) as session:
             visualize.latent_space(
                 np.array(list(latent_vectors)),
                 indices,
-                perplexity=15,
                 point_sizes=np.array(list(point_sizes)),
                 save_to=options.figure_dir,
                 subject='Compounds')
+
+        if options.latent_concentrations:
+            _, indices = cell_data.get_concentration_indices(
+                treatment_profiles)
+            latent_vectors = treatment_profiles['profile']
+            point_sizes = treatment_profiles.groupby('compound').cumcount()
+            visualize.latent_space(
+                np.array(list(latent_vectors)),
+                indices,
+                point_sizes=np.array(list(point_sizes)),
+                save_to=options.figure_dir,
+                subject='Concentrations')
 
         if options.latent_moa:
             _, indices = cell_data.get_moa_indices(treatment_profiles)
@@ -247,7 +253,6 @@ with common.get_session(options.gpus) as session:
             visualize.latent_space(
                 np.array(list(latent_vectors)),
                 indices,
-                perplexity=12,
                 point_sizes=np.array(list(point_sizes)),
                 save_to=options.figure_dir,
                 subject='MOA')
@@ -268,6 +273,7 @@ with common.get_session(options.gpus) as session:
             except Exception as e:
                 print(e)
 
+    # Kept here, but don't use it, it won't look good
     if options.latent_samples is not None:
         keys, images = cell_data.next_batch(
             options.latent_samples, with_keys=True)

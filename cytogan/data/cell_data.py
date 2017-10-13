@@ -243,7 +243,7 @@ class CellData(object):
         return list(self.metadata.loc[keys]['label'])
 
     def sample_labels(self, amount):
-        return self.metadata['labels'].sample(amount)
+        return self.metadata['label'].sample(amount)
 
     def get_treatment_indices(self, keys):
         filtered = self.metadata.loc[keys][['compound', 'concentration']]
@@ -258,6 +258,11 @@ class CellData(object):
         compounds = list(sorted(dataset['compound'].unique()))
         indices = dataset['compound'].apply(compounds.index)
         return compounds, indices
+
+    def get_concentration_indices(self, dataset):
+        concentration = list(sorted(dataset['concentration'].unique()))
+        indices = dataset['concentration'].apply(concentration.index)
+        return concentration, indices
 
     def get_moa_indices(self, dataset):
         moas = list(dataset['moa'].unique())
