@@ -18,6 +18,7 @@ python3 -m cytogan.train.bbbc021                          \
   --cell-count-file /data1/peter/metadata/cell_counts.csv \
   --latent-compounds                                      \
   --latent-moa                                            \
+  --latent-concentrations                                 \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
   --vector-distance                                       \
