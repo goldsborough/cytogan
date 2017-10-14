@@ -28,6 +28,7 @@ parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
+parser.add_argument('--store-generated-noise', action='store_true')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -334,6 +335,9 @@ with common.get_session(options.gpus) as session:
         else:
             samples = np.random.randn(options.generative_samples,
                                       model.noise_size)
+
+        if options.store_generated_noise:
+            np.savetxt('noise.csv', samples, delimiter=',')
 
         # Fix two labels and sample random noise
         if conditional_shape:

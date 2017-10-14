@@ -134,3 +134,4 @@ Launched:
 - Whitening
 - Cellprofiler features?
 - Training tricks I used
+- Turing Test
