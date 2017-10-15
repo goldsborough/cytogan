@@ -55,13 +55,17 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-cell_data = CellData(options.metadata, options.labels, options.images,
-                     options.cell_count_file, options.pattern,
-                     options.normalize_luminance, options.conditional,
-                     options.concentration_only_labels)
+if not options.skip_evaluation:
+    cell_data = CellData(options.metadata, options.labels, options.images,
+                         options.cell_count_file, options.pattern,
+                         options.normalize_luminance, options.conditional,
+                         options.concentration_only_labels)
 
 image_shape = (96, 96, 3)
-number_of_batches = cell_data.number_of_images // options.batch_size
+if options.skip_training:
+    number_of_batches = 1
+else:
+    number_of_batches = cell_data.number_of_images // options.batch_size
 if options.conditional:
     # one-hot encode the compound and have a
     # continuous variable for the concentration.
@@ -364,6 +368,8 @@ with common.get_session(options.gpus) as session:
 
         if options.noise_file is not None:
             noise = np.loadtxt(options.noise_file, delimiter=',')
+            if np.ndim(noise) == 1:
+                noise = noise.reshape(1, -1)
             images = model.generate(noise)
             directory = os.path.join(options.workspace, 'from-noise')
             if not os.path.exists(directory):
