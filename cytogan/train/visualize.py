@@ -152,7 +152,7 @@ def interpolation(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    figure = plot.figure(figsize=(15, k))
+    figure = plot.figure(figsize=(interpolation_length + 2, k))
     figure.suptitle(title)
     for index, image in enumerate(images):
         _plot_image_tile(k, interpolation_length, index, image, gray)
