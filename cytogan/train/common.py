@@ -129,8 +129,8 @@ def get_session(gpus):
     K.set_session(session)
     K.manual_variable_initialization(True)
 
-    # np.random.seed(42)
-    # tf.set_random_seed(42)
+    np.random.seed(42)
+    tf.set_random_seed(42)
 
     return session
 
