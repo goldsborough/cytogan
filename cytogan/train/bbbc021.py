@@ -3,6 +3,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+import scipy.misc
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
@@ -29,6 +30,7 @@ parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
+parser.add_argument('--noise-file')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -337,7 +339,8 @@ with common.get_session(options.gpus) as session:
                                       model.noise_size)
 
         if options.store_generated_noise:
-            np.savetxt('noise.csv', samples, delimiter=',')
+            path = os.path.join(options.workspace, 'noise.csv')
+            np.savetxt(path, samples, delimiter=',')
 
         # Fix two labels and sample random noise
         if conditional_shape:
@@ -358,6 +361,16 @@ with common.get_session(options.gpus) as session:
                 model, [noise, labels],
                 save_to=options.figure_dir,
                 filename='generative-samples2.png')
+
+        if options.noise_file is not None:
+            noise = np.loadtxt(options.noise_file, delimiter=',')
+            images = model.generate(noise)
+            directory = os.path.join(options.workspace, 'from-noise')
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            for n, image in enumerate(images):
+                path = os.path.join(directory, '{0}.png'.format(n))
+                scipy.misc.imsave(path, image)
 
 if options.show_figures:
     visualize.show()
