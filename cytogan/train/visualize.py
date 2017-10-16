@@ -1,10 +1,10 @@
 import os
-import time
 
 import matplotlib.pyplot as plot
 import numpy as np
 import seaborn
 import sklearn.manifold
+import scipy.misc
 
 from cytogan.extra import logs
 
@@ -128,6 +128,7 @@ def interpolation(model,
                   number_of_interpolations,
                   interpolation_length,
                   method,
+                  store_interpolation_frames=False,
                   conditional=None,
                   gray=False,
                   save_to=None,
@@ -152,8 +153,18 @@ def interpolation(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    figure = plot.figure(figsize=(8, k))
-    # figure.suptitle(title)
+    if store_interpolation_frames:
+        assert save_to is not None
+        for n, series in enumerate(np.split(images, k)):
+            folder = os.path.join(save_to, 'interpolation', str(n))
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            log.info('Storing interpolation frames to %s', folder)
+            for i, image in enumerate(series):
+                path = os.path.join(folder, '{0}.png'.format(i))
+                scipy.misc.imsave(path, image)
+
+    plot.figure(figsize=(8, k))
     for index, image in enumerate(images):
         _plot_image_tile(k, interpolation_length, index, image, gray)
 
