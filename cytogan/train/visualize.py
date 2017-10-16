@@ -33,7 +33,7 @@ def _save_figure(folder, filename):
     if not os.path.exists(folder):
         os.makedirs(folder)
     log.info('Saving %s', path)
-    plot.savefig(path)
+    plot.savefig(path, bbox_inches='tight', pad_inches=0)
 
 
 def reconstructions(model,
@@ -152,10 +152,13 @@ def interpolation(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    figure = plot.figure(figsize=(interpolation_length + 2, k))
-    figure.suptitle(title)
+    figure = plot.figure(figsize=(8, k))
+    # figure.suptitle(title)
     for index, image in enumerate(images):
         _plot_image_tile(k, interpolation_length, index, image, gray)
+
+    plot.subplots_adjust(left=0.1, right=0.9, top=0.6, bottom=0.2)
+    plot.tight_layout()
 
     if save_to is not None:
         filename = '{0}-interpolation.png'.format(method)

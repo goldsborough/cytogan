@@ -48,7 +48,7 @@
 \maketitle
 
 \begin{abstract}
-We explore the application of Generative Adversarial Networks to the domain of morphological profiling of human cultured cells imaged by fluorescence microscopy. When evaluated for their ability to group cell images responding to treatment by chemicals of known classes, we find that adversarially learned representations are superior to autoencoder-based approaches. While currently inferior to classical computer vision and transfer learning, the adversarial framework enables useful and previously impossible interpretability of latent codes.
+We explore the application of Generative Adversarial Networks to the domain of morphological profiling of human cultured cells imaged by fluorescence microscopy. When evaluated for their ability to group cell images responding to treatment by chemicals of known classes, we find that adversarially learned representations are superior to autoencoder-based approaches. While currently inferior to classical computer vision and transfer learning, the adversarial framework enables useful and previously impossible interpretations of features due to their generative capabilities.
 \end{abstract}
 
 \section{Introduction}
@@ -159,67 +159,55 @@ vanilla GAN models.
 
 \section{Interpretable Synthesis of Cells}\label{synthesis}
 
-We begin by examining if GAN's reported ability to synthesize realistic natural
-images transfers to the domain of cell microscopy. Our data prior consists of
-images drawn from the BBBC021 dataset of human breast cancer cells. Each image
-in BBBC021 consists of three \emph{channels} corresponding to DNA, F-Actin and
-B-Tubulin structures. We stack the channels and treat them as RGB images via a
-simple $\text{DNA} \mapsto \text{R}, \text{B-Tubulin} \mapsto \text{G},
-\text{F-Actin} \mapsto \text{B}$ mapping. Images in BBBC021 contain many cells
-and are not segmented. We segment them using CellProfiler, such that $P_{data}$
-consists of segmented, single-cell images. Finally, we normalize the luminance
-of each channel to the range [0 -- 1].
+GANs have been proven to synthesize realistic images both within and beyond the
+biological domain
+\cite{goodfellow2014generative,radford2015unsupervised,osokin2017gans}. We apply
+this framework to single cell images extracted from the BBBC021 dataset.
+Originally, each image consists of three \emph{channels} corresponding to DNA,
+F-Actin and B-Tubulin structures obtained via fluorescence microscopy. We stack
+these channels and treat them as RGB images via a simple $\text{DNA} \mapsto
+\text{Red}, \text{B-Tubulin} \mapsto \text{Green}, \text{F-Actin} \mapsto
+\text{Blue}$ mapping. We obtain ca. 1.3 million single cell images by segmenting
+the raw images using CellProfiler. Finally, we normalize the
+luminance of each channel to the range [0 -- 1].
 
-Figure \ref{fig:generated} shows examples of images generated with LSGAN, WGAN
-and DCGAN architectures alongside real images. The synthetic images,
-particularly those produced by LSGAN, are not only highly detailed and
-realistic, but also consistent with their biological nature. For example, it is
-characteristic that B-Tubulin forms a circular halo cradling the nucleus of a
-cell. This property is maintained clearly in all generated images.
+Current approaches to morphological profiling extract features that are often
+hard or impossible to understand. While CellProfiler features sometimes capture
+easy concepts such as the area of the nucleus, they also features, e.g. Zernike
+moments, that are difficult to interpret. For transfer learning it is nearly
+impossible to visualize the captured concept. GANs present a solution as they
+hold a generative model that enables the visualization of the impact of
+perturbations along a feature of the noise space. Further, a more advanced
+encoding method can tie the feature and noise space such that they are identical
+and the visualization of feature vectors becomes possible.
 
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \tikzset{frame/.style={draw, semithick, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt}}
-
   	\draw (0, 0) node {\includegraphics[width=0.6\textwidth]{generated}};
 
-    \path (-3.3, 0) coordinate [frame] (r);
+    \path (-3.3, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (r);
     \draw (r)+(0, -2.2) node {\textbf{Real}};
 
-    \path (-1.07, 0) coordinate [frame] (l);
+    \path (-1.07, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (l);
     \draw (l)+(0, -2.2) node {\textbf{LSGAN}};
 
-    \path (1.14, 0) coordinate [frame] (w);
+    \path (1.14, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (w);
     \draw (w)+(0, -2.2) node {\textbf{WGAN}};
 
-    \path (3.35, 0) coordinate [frame] (d);
+    \path (3.35, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (d);
     \draw (d)+(0, -2.2) node {\textbf{DCGAN}};
   \end{tikzpicture}
   \caption{Examples of real MCF7 cells from the BBBC021 dataset juxtaposed with synthetic cell images generated with LSGAN, WGAN and DCGAN. The generated images of LSGAN are most realistic and consistent with biological properties of cells.}
   \label{fig:generated}
 \end{figure}
 
-Current approaches to morphological profiling capture representations that are
-often hard to interpret. While certain CellProfiler features such as nucleic
-area are easy to understand, others like Zernike moments are not intuitive. For
-transfer learning it is nearly impossible to visualize the captured concept. In
-contrast, the GAN noise space $P(z)$ has been shown to be highly interpretable
-and reveal rich semantic structure \cite{radford2015unsupervised}. We are able
-to demonstrate this for images of cells. Figure \ref{fig:interpolations}
-exhibits how interpolating between two noise samples $z_1, z_2 \sim P(z)$ leads
-to visually smooth transitions in synthesized cells. Figure \ref{fig:algebra}
-shows that $P(z)$ encodes semantic relationships, enabling algebra on
-interpretable properties of the images. While there is no way to encode images
-into $P(\mathbf{z})$ with the methods presented so far, we believe more advanced
-models that enable this will be highly valuable if they can maintain these rich
-semantic properties.
-
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth, trim={0 0 0 2.5cm}, clip]{interpolation}
   \caption{Interpolating between two points $\mathbf{z_1}, \mathbf{z_2} \sim P(\mathbf{z}))$ results in visually smooth transitions in the corresponding synthesized images. Each row shows the transition from $\mathbf{z_1}$ to $\mathbf{z_2}$ from left to right.}
-  \vspace{-0.1cm}
+  \label{fig:interpolations}
+  \vspace{-0.05cm}
 \end{figure}
 
 \begin{figure}
@@ -229,6 +217,8 @@ semantic properties.
   \caption{Vector algebra in the noise space translates to biologically valuable relationships in generated images. In the first row, subtracting the vector for a cell with small quantities of B-Tubulin (green stain) from one with high amounts yields a vector representation of "high B-Tubulin content". In the second row, the difference between a large and small nucleus encodes the semantic meaning of "larger nucleus", which can be added to vectors of other cell images to grow the size of the nucleus.}
   \label{fig:algebra}
 \end{figure}
+
+We show the generative abilities of our models and the richness of the noise space on three ways: a) Generation of high quality cell images as shown in Figure \ref{fig:generated}. The LSGAN produces the most convincing images. b) The noise space is capable of smooth interpolations between two noise samples $\mathbf{z_1}, \mathbf{z_2} \sim P(\mathbf{z}))$, displayed in Figure \ref{fig:interpolations}. This undermines the fact that the generator learned low-dimensional manifold of the images. c) $P(\mathbf{z}))$ encodes semantic information that enables algebra based on semantically relevant properties of the images. Figure \ref{fig:algebra} presents examples of vector algebra in $P(\mathbf{z})$ with biologically interpretable results. We are able to leverage the linear relationships present in the latent space to influence the size of synthesized nuclei as well as B-Tubulin content.
 
 \section{Representation Learning for Morphological Profiling}\label{moa}
 We test the quality of representations extracted by the discriminator used to generate single cell images learned by testing their ability to cluster treatments of similar function or mechanism-of-action. We obtain treatment profiles by averaging the extracted single cell representations found as intermediate activations of the discriminator. Further, we follow the experimental protocol of \cite{Ljosa2013} and report an average mechanism-of-action classification accuracy of a leave-one-compound-out cross-validation using a one nearest neighbor classifier.
@@ -244,24 +234,26 @@ We test the quality of representations extracted by the discriminator used to ge
   \end{tabular}
   \caption{Accuracy of various methods at the task of predicting the mechanism-of-action of treatments via nearest-neighbor classification in the BBBC021 dataset. CP refers to the results by Singh et al. \cite{Singh2014} using CellProfiler Features. The Deep Transfer methods correspond to Deep Feature Transfer as proposed by Pawlowski et al. \cite{pawlowski2016automating} and refined by Ando et al. \cite{ando2017improving}.}
   \label{moa-results}
+  \vspace{-0.1cm}
 \end{table}
 
 Table \ref{moa-results} compares the accuracy of our approach to classical CellProfiler features and transfer learning. We found that the quality of representations found by unsupervised learning is not yet competitive with other established methods. Nevertheless, we believe that the adversarial approach has significant benefits regarding its interpretability as outlined above. Additionally, this framework is able to adapt to the dataset at hand and extract inherent relations that are not captured by previous methods. We believe that further gains can be made, as the image quality corresponds to classification accuracy. As such the best performing method (LSGAN) also yields the highest image quality, as judged qualitatively by expert biologists and shown in Figure \ref{fig:generated}.
 
 
 \section{Conclusion}
-
-This work investigates the use of GANs for the domain of cell microscopy
-imaging, particularly morphological profiling. First, we demonstrate that GANs
-are able to synthesize biologically realistic images of cells. In addition, we
-explain that GANs induce a rich semantic structure in their noise space,
-providing a powerful basis for interpretability of observed properties. Second,
-we add an encoding component to standard GANs and evaluate the quality of
-learned representations via their mechanism-of-action classification performance
-following \cite{Ljosa2013}. Even though adversarially learned representations
-are currently inferior at this task, we argue that further enhancements to GANs,
-especially biologically meaningful ones, will lead to higher quality latent
-representations.
+This work investigates the use of Generative Adversarial Networks for the domain
+of cell microscopy imaging, particularly morphological profiling. First, we
+demonstrate that GANs are able to synthesize realistic and biologically
+consistent images of cells. In addition, we explain that GANs induce a rich
+semantic structure in their noise space, providing a powerful basis for
+interpretation of observed properties. Second, we test the quality of the
+representations learned via an encoding extension to standard GANs by evaluating
+their mechanism-of-action classification performance following \cite{Ljosa2013}.
+Even though adversarially learned representations are currently inferior at this
+task, we argue that further enhancements to GANs, especially biologically
+meaningful ones, will lead to richer latent representations. We base this claim
+on our observation that better generative models exhibit better classification
+accuracies at this task.
 
 We emphasize that this work covers only a very small fraction of possible
 applications of GANs to the domain of microscopical images. For example, we hope

@@ -301,6 +301,8 @@ with common.get_session(options.gpus) as session:
     if options.interpolate_samples is not None:
         start, end = np.random.randn(2, options.interpolate_samples[0],
                                      model.noise_size)
+        start = start[[7, 9, 13], :]
+        end = end[[7, 9, 13], :]
         if conditional_shape:
             labels = cell_data.sample_labels(options.interpolate_samples[0])
             labels = np.array(list(labels))
@@ -311,7 +313,8 @@ with common.get_session(options.gpus) as session:
             model,
             start,
             end,
-            *options.interpolate_samples,
+            len(start),
+            options.interpolate_samples[1],
             options.interpolation_method,
             conditional=labels,
             gray=True,

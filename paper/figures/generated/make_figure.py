@@ -14,14 +14,20 @@ def load(path):
     return images
 
 real = load('real')
-fake = load('fake')
-assert len(real) == len(fake), (len(real), len(fake))
+lsgan = load('lsgan')
+wgan = load('wgan')
+dcgan = load('dcgan')
 
-figure = plot.figure(figsize=(8, 2))
-for n, i in enumerate(real + fake):
-    axis = plot.subplot(2, len(real), n + 1)
+images = []
+for i in range(2):
+    images += [x[i] for x in (real, lsgan, wgan, dcgan)]
+
+figure = plot.figure(figsize=(5, 2))
+for n, i in enumerate(images):
+    axis = plot.subplot(2, 4, n + 1)
+    axis.axis('off')
     plot.imshow(i)
     axis.get_xaxis().set_visible(False)
     axis.get_yaxis().set_visible(False)
 
-plot.savefig('figure.png')
+plot.savefig('figure.png', bbox_inches='tight', pad_inches=0)
