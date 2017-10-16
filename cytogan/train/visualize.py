@@ -76,15 +76,15 @@ def latent_space(latent_vectors,
     for p in perplexity:
         reduction = sklearn.manifold.TSNE(
             n_components=2, perplexity=p, init='pca', verbose=1)
-        latent_vectors = reduction.fit_transform(latent_vectors)
+        transformed_vectors = reduction.fit_transform(latent_vectors)
 
         figure = plot.figure(figsize=(12, 10))
         subject_title = ' ({0})'.format(subject) if subject else ''
         subject_title += ' | P = {0}'.format(p)
         figure.suptitle('Latent Space{0}'.format(subject_title))
         plot.scatter(
-            latent_vectors[:, 0],
-            latent_vectors[:, 1],
+            transformed_vectors[:, 0],
+            transformed_vectors[:, 1],
             c=labels,
             lw=point_sizes,
             cmap=plot.cm.Spectral)
