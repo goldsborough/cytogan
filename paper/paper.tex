@@ -125,7 +125,7 @@ images, although their applications did not include morphological profiling.
 
 Goodfellow et al. \cite{goodfellow2014generative} introduced GANs as a game of
 two \emph{players}: a \emph{generator} $G$ and a \emph{discriminator} $D$. The
-former receives samples $\mathbf{z}$ drawn from a noise prior $P(\mathbf{z}))$
+former receives samples $\mathbf{z}$ drawn from a noise prior $P(\mathbf{z})$
 which it maps to values $G(z)$ that should resemble elements of some data
 distribution $P_{\text{data}}$. The discriminator must learn to distinguish such
 synthetic samples from real values $\mathbf{x} \sim
@@ -159,16 +159,16 @@ vanilla GAN models.
 
 \section{Interpretable Synthesis of Cells}\label{synthesis}
 
-We begin by examining if GAN's reported ability to synthesize realistic natural
-images transfers to the domain of cell microscopy. Our data prior consists of
-images drawn from the BBBC021 dataset of human breast cancer cells. Each image
-in BBBC021 consists of three \emph{channels} corresponding to DNA, F-Actin and
-B-Tubulin structures. We stack the channels and treat them as RGB images via a
-simple $\text{DNA} \mapsto \text{R}, \text{B-Tubulin} \mapsto \text{G},
-\text{F-Actin} \mapsto \text{B}$ mapping. Images in BBBC021 contain many cells
-and are not segmented. We segment them using CellProfiler, such that $P_{data}$
-consists of segmented, single-cell images. Finally, we normalize the luminance
-of each channel to the range [0 -- 1].
+We examine if GAN models' reported ability to synthesize realistic images
+transfers to the domain of cell microscopy. Our data prior consists of images
+from the BBBC021 dataset of human breast cancer cells. Originally, each image
+consists of three \emph{channels} corresponding to DNA, F-Actin and B-Tubulin,
+cellular components visualized by fluorescence microscopy. We stack these
+channels and treat them as RGB images via a simple $\text{DNA} \mapsto \text{R},
+\text{$\beta$-Tubulin} \mapsto \text{G}, \text{F-Actin} \mapsto \text{B}$
+mapping. We obtain ca. 1.3 million single cell images by segmenting the raw
+images using CellProfiler software. Finally, we normalize the luminance of each
+channel to the range [0 -- 1].
 
 Figure \ref{fig:generated} shows examples of images generated with LSGAN, WGAN
 and DCGAN architectures alongside real images. The synthetic images,
@@ -218,7 +218,7 @@ semantic properties.
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth, trim={0 0 0 2.5cm}, clip]{interpolation}
-  \caption{Interpolating between two points $\mathbf{z_1}, \mathbf{z_2} \sim P(\mathbf{z}))$ results in visually smooth transitions in the corresponding synthesized images. Each row shows the transition from $\mathbf{z_1}$ to $\mathbf{z_2}$ from left to right.}
+  \caption{Interpolating between two points $\mathbf{z_1}, \mathbf{z_2} \sim P(\mathbf{z})$ results in visually smooth transitions in the corresponding synthesized images. Each row shows the transition from $\mathbf{z_1}$ to $\mathbf{z_2}$ from left to right.}
   \vspace{-0.1cm}
 \end{figure}
 
@@ -226,7 +226,7 @@ semantic properties.
   \centering
   \includegraphics[width=0.6\textwidth]{algebra-tubulin}
   \includegraphics[width=0.6\textwidth]{algebra-nucleus}
-  \caption{Vector algebra in the noise space translates to biologically valuable relationships in generated images. In the first row, subtracting the vector for a cell with small quantities of B-Tubulin (green stain) from one with high amounts yields a vector representation of "high B-Tubulin content". In the second row, the difference between a large and small nucleus encodes the semantic meaning of "larger nucleus", which can be added to vectors of other cell images to grow the size of the nucleus.}
+  \caption{Vector algebra in the noise space translates to biologically valuable relationships in generated images. In the first row, subtracting the vector for a cell with small quantities of $\beta$-Tubulin (green stain) from one with high amounts yields a vector representation for "high $\beta$-Tubulin content". In the second row, the difference between a large and small nucleus encodes the semantic meaning of "larger nucleus", which can be added to vectors of other cell images to grow the size of the nucleus.}
   \label{fig:algebra}
 \end{figure}
 
