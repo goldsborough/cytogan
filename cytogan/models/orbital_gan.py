@@ -87,7 +87,7 @@ class OrbitalGAN(lsgan.LSGAN):
         with tf.control_dependencies([update_ema_op]):
             origin_mask = tf.equal(self.angle_labels, self.origin_label)
             origin_vectors = tf.boolean_mask(real_latent, origin_mask)
-            self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=0))
+            self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=1))
 
         self.loss['D'] += self.origin_norm
         # self.loss['O'] = origin_norm
