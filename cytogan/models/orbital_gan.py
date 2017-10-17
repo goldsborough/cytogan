@@ -79,8 +79,8 @@ class OrbitalGAN(lsgan.LSGAN):
             self.angle_means.append(mean)
             self.angle_variances.append(variance)
 
-        ema = tf.train.ExponentialMovingAverage(decay=0.99)
-        update_ema_op = ema.apply(self.angle_means + self.angle_variances)
+        self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
+        update_ema_op = self.ema.apply(self.angle_means + self.angle_variances)
 
         # self.radius_labels = Input(shape=[self.radius_label_shape])
 
@@ -89,7 +89,7 @@ class OrbitalGAN(lsgan.LSGAN):
             origin_vectors = tf.boolean_mask(real_latent, origin_mask)
             self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=1))
 
-        self.loss['D'] += self.origin_norm
+        self.loss['D'] += 0.1 * self.origin_norm
         # self.loss['O'] = origin_norm
 
     def train_on_batch(self, batch, with_summary=False):
@@ -111,4 +111,5 @@ class OrbitalGAN(lsgan.LSGAN):
         with K.name_scope('summary/D'):
             tf.summary.scalar('origin_norm', self.origin_norm)
             for index, variance in enumerate(self.angle_variances):
-                tf.summary.scalar('angle-variance-{0}'.format(index), tf.norm(variance))
+                tf.summary.scalar('angle-variance-{0}'.format(index),
+                                  tf.norm(self.ema.average(variance)))
