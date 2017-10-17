@@ -85,11 +85,15 @@ class OrbitalGAN(lsgan.LSGAN):
         # self.radius_labels = Input(shape=[self.radius_label_shape])
 
         with tf.control_dependencies([update_ema_op]):
-            origin_mask = tf.equal(self.angle_labels, self.origin_label)
-            origin_vectors = real_latent * tf.cast(origin_mask, tf.float32)
-            self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=1))
+            origin_mask = tf.cast(
+                tf.equal(self.angle_labels, self.origin_label), tf.float32)
+            origin_vectors = real_latent * tf.expand_dims(origin_mask, 1)
+            print(origin_vectors)
+            assert len(origin_vectors.shape.as_list()) == 2
+            self.origin_norm = tf.reduce_mean(
+                tf.norm(origin_vectors, axis=1) + 1e-8)
 
-        self.loss['D'] += 1 * self.origin_norm
+        self.loss['D'] += 0.1 * self.origin_norm
         # self.loss['O'] = origin_norm
 
     def train_on_batch(self, batch, with_summary=False):
