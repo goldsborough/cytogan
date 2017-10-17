@@ -3,13 +3,7 @@ import numpy as np
 import tensorflow as tf
 from keras.layers import Input
 
-from cytogan.models import model
-
-
-def _merge_summaries(scope):
-    scope = 'summary/{0}'.format(scope)
-    summaries = tf.get_collection(tf.GraphKeys.SUMMARIES, scope=scope)
-    return tf.summary.merge(summaries) if summaries else None
+from cytogan.models import model, util
 
 
 def get_conditional_inputs(scopes, conditional_shape):
@@ -53,8 +47,8 @@ class GAN(model.Model):
 
         super(GAN, self).__init__(learning, session)
 
-        self.generator_summary = _merge_summaries('G')
-        self.discriminator_summary = _merge_summaries('D')
+        self.generator_summary = util.merge_summaries('G')
+        self.discriminator_summary = util.merge_summaries('D')
         if (self.generator_summary is not None
                 and self.discriminator_summary is not None):
             self.summary = tf.summary.merge(

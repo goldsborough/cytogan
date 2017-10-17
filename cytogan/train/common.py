@@ -66,6 +66,7 @@ def make_parser(name):
     parser.add_argument('--gpus', type=int, nargs='+')
     parser.add_argument('--show-figures', action='store_true')
     parser.add_argument('--skip-training', action='store_true')
+    parser.add_argument('--with-labels', action='store_true')
     parser.add_argument(
         '--summary-freq', type=Frequency, default=Frequency('20'))
     parser.add_argument(
@@ -105,6 +106,7 @@ def parse_args(parser):
     if options.model.startswith('c-'):
         options.model = options.model[2:]
         options.conditional = True
+        options.with_labels = True
     else:
         options.conditional = False
 

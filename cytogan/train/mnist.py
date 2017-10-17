@@ -6,7 +6,7 @@ from tensorflow.examples.tutorials import mnist
 
 from cytogan.extra import distributions, logs, misc
 from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
-                            vae, wgan)
+                            vae, wgan, orbital_gan)
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-mnist')
@@ -30,11 +30,12 @@ else:
 
 def get_batch(n):
     images, labels = data.train.next_batch(n)
-    images = images.reshape((-1, ) + image_shape)
+    batch = [images.reshape((-1, ) + image_shape)]
+    if options.with_labels:
+        batch.append(labels.argmax(axis=1))
     if options.conditional:
-        return (images, labels.reshape(-1, *conditional_shape))
-    else:
-        return images
+        batch.append(labels)
+    return batch[0] if len(batch) == 1 else batch
 
 
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
@@ -104,6 +105,20 @@ elif options.model == 'infogan':
         probability_loss='bce',
         continuous_loss='bce')
     Model = infogan.InfoGAN
+elif options.model == 'ogan':
+    hyper = orbital_gan.Hyper(
+        image_shape,
+        generator_filters=(128, 64, 32, 16),
+        generator_strides=(1, 2, 2, 1),
+        discriminator_filters=(128, 64, 32, 16),
+        discriminator_strides=(1, 2, 2, 2),
+        latent_size=100,
+        noise_size=100,
+        initial_shape=(7, 7),
+        number_of_angles=10,
+        number_of_radii=None,
+        origin_label=0)
+    Model = orbital_gan.OrbitalGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 
@@ -151,7 +166,7 @@ with common.get_session(options.gpus) as session:
         original_images, labels = data.test.next_batch(options.latent_samples)
         original_images = original_images.reshape(-1, 28, 28, 1)
         latent_vectors = model.encode(original_images)
-        labels = np.argmax(labels, axis=1)
+        labels = np.equal(np.argmax(labels, axis=1), 0).astype(np.int32)
         visualize.latent_space(
             latent_vectors, labels, save_to=options.figure_dir)
 
