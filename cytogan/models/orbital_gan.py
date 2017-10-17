@@ -89,7 +89,7 @@ class OrbitalGAN(lsgan.LSGAN):
             origin_vectors = tf.boolean_mask(real_latent, origin_mask)
             self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=1))
 
-        self.loss['D'] += 1 * self.origin_norm
+        self.loss['D'] += 0.1 * self.origin_norm
         # self.loss['O'] = origin_norm
 
     def train_on_batch(self, batch, with_summary=False):
