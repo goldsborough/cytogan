@@ -30,7 +30,7 @@ parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
-parser.add_argument('--load-average-profiles')
+parser.add_argument('--load-collapsed-profiles')
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
@@ -43,7 +43,7 @@ if options.save_profiles:
         os.makedirs(options.profiles_dir)
 
     def save_profiles(profiles, filename):
-        filename += '.gz'
+        filename += '.csv.gz'
         log.info('Storing %s to disk', filename)
         path = os.path.join(options.profiles_dir, filename)
         profiles.to_csv(
@@ -212,7 +212,7 @@ with common.get_session(options.gpus) as session:
 
             if options.save_profiles:
                 log.info('Storing profiles to disk')
-                save_profiles(dataset, 'profiles.csv')
+                save_profiles(dataset, 'profiles')
 
         if options.load_profiles:
             log.info('Loading profiles from %s', options.load_profiles)
@@ -224,7 +224,7 @@ with common.get_session(options.gpus) as session:
             profiling.whiten(dataset)
             log.info('Whitened data')
             if options.save_profiles:
-                save_profiles(dataset, 'whitened.csv')
+                save_profiles(dataset, 'whitened')
 
         if options.load_collapsed_profiles:
             log.info('Loading collapsed profiles')
@@ -244,7 +244,7 @@ with common.get_session(options.gpus) as session:
                 len(dataset), len(treatment_profiles))
 
             if options.save_profiles:
-                save_profiles(treatment_profiles, 'treatments.csv')
+                save_profiles(treatment_profiles, 'treatments')
 
         confusion_matrix, accuracy = profiling.score_profiles(
             treatment_profiles)
