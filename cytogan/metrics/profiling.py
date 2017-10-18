@@ -67,6 +67,20 @@ def whiten(dataset):
     dataset['profile'] = list(whitened_profiles)
 
 
+def log_top_k(compound, distances, test_data, training_data, k=3):
+    top_k = np.argsort(distances, axis=1)[:, :k]
+    concentrations = test_data.concentration
+    moas = test_data.moa
+    for i, (c, m, y) in enumerate(zip(concentrations, moas, top_k)):
+        top_k_moas = training_data['moa'].iloc[y]
+        top_k_strings = []
+        for s, j in zip(top_k_moas, y):
+            top_k_strings.append('{0} ({1:.8f})'.format(s, distances[i, j]))
+        top_k_string = ', '.join(top_k_strings)
+        log.info('Top %d neighbors for %s/%.4f (%s): %s'.format(
+            k, compound, c, m, top_k_string))
+
+
 def get_nearest_neighbors(examples, neighbors):
     assert len(examples) > 0
     assert len(neighbors) > 0
@@ -105,17 +119,7 @@ def score_profiles(dataset):
         distances, nearest = get_nearest_neighbors(test_data['profile'],
                                                    training_data['profile'])
 
-        top_k = np.argsort(distances, axis=1)[:, :5]
-        index = 0
-        for c, m, y in zip(test_data.concentration, test_data.moa, top_k):
-            top_k_moas = training_data['moa'].iloc[y]
-            top_k_strings = []
-            for i, j in zip(top_k_moas, y):
-                distance = distances[index, j]
-                top_k_strings.append('{0} ({1:.4f})'.format(i, distance))
-            print('{0}/{1} ({2}): {3}'.format(holdout_compound, c, m,
-                                              ', '.join(top_k_strings)))
-            index += 1
+        log_top_k(holdout_compound, distances, test_data, training_data)
 
         # Get the MOAs of those nearest neighbors as our predictions.
         predicted_labels = np.array(training_data['moa'].iloc[nearest])

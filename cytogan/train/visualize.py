@@ -64,7 +64,8 @@ def latent_space(latent_vectors,
                  perplexity=None,
                  point_sizes=None,
                  save_to=None,
-                 subject=None):
+                 subject=None,
+                 label_names=None):
     assert np.ndim(latent_vectors) == 2
     log.info('Plotting latent space for %d vectors', len(latent_vectors))
 
@@ -73,6 +74,7 @@ def latent_space(latent_vectors,
     if isinstance(perplexity, int):
         perplexity = [perplexity]
 
+    log.info('Computing TSNEs at perplexity %s', tuple(perplexity))
     for p in perplexity:
         reduction = sklearn.manifold.TSNE(
             n_components=2, perplexity=p, init='pca', verbose=1)
@@ -88,6 +90,10 @@ def latent_space(latent_vectors,
             c=labels,
             lw=point_sizes,
             cmap=plot.cm.Spectral)
+
+        if label_names is not None:
+            colorbar = plot.colorbar()
+            colorbar.ax.set_yticklabels(label_names)
 
         if save_to is not None:
             subject_suffix = '-{0}'.format(subject.lower()) if subject else ''

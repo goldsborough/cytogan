@@ -256,6 +256,7 @@ with common.get_session(options.gpus) as session:
                 np.array(list(latent_vectors)),
                 indices,
                 point_sizes=np.array(list(point_sizes)),
+                perplexity=options.tsne_perplexity,
                 save_to=options.figure_dir,
                 subject='Compounds')
 
@@ -273,7 +274,7 @@ with common.get_session(options.gpus) as session:
                 subject='Concentrations')
 
         if options.latent_moa:
-            _, indices = cell_data.get_moa_indices(treatment_profiles)
+            moa_names, indices = cell_data.get_moa_indices(treatment_profiles)
             latent_vectors = treatment_profiles['profile']
             point_sizes = treatment_profiles.groupby('compound').cumcount()
             visualize.latent_space(
@@ -282,7 +283,8 @@ with common.get_session(options.gpus) as session:
                 point_sizes=np.array(list(point_sizes)),
                 perplexity=options.tsne_perplexity,
                 save_to=options.figure_dir,
-                subject='MOA')
+                subject='MOA',
+                label_names=moa_names)
 
         if options.vector_distance:
             try:
