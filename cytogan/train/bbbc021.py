@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import os
+
 import numpy as np
-import tensorflow as tf
+import pandas as pd
 import scipy.misc
+import tensorflow as tf
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
@@ -27,6 +29,7 @@ parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
+parser.add_argument('--load-profiles')
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
@@ -184,23 +187,34 @@ with common.get_session(options.gpus) as session:
 
     if not options.skip_evaluation:
         log.info('Starting Evaluation')
-        keys, profiles = [], []
-        batch_generator = cell_data.batches_of_size(options.batch_size)
-        try:
-            for batch_keys, images in tqdm(batch_generator, unit=' batches'):
-                profiles.append(model.encode(images))
-                keys += batch_keys
-        except KeyboardInterrupt:
-            pass
 
-        profiles = np.concatenate(profiles, axis=0)
-        log.info('Generated %d profiles', len(profiles))
+        if options.load_profiles is None:
+            keys, profiles = [], []
+            batch_generator = cell_data.batches_of_size(options.batch_size)
+            try:
+                for batch_keys, images in tqdm(
+                        batch_generator, unit=' batches'):
+                    profiles.append(model.encode(images))
+                    keys += batch_keys
+            except KeyboardInterrupt:
+                pass
 
-        dataset = cell_data.create_dataset_from_profiles(keys, profiles)
-        log.info('Matching {0:,} profiles to {1} MOAs'.format(
-            len(dataset), len(dataset.moa.unique())))
+            profiles = np.concatenate(profiles, axis=0)
+            log.info('Generated %d profiles', len(profiles))
 
-        if options.save_profiles:
+            dataset = cell_data.create_dataset_from_profiles(keys, profiles)
+            log.info('Matching {0:,} profiles to {1} MOAs'.format(
+                len(dataset), len(dataset.moa.unique())))
+        else:
+            log.info('Loading profiles from %s', options.load_profiles)
+            dataset = pd.read_csv(
+                options.load_profiles,
+                header=True,
+                compression='gzip',
+                encoding='ascii',
+                chunksize=100000)
+
+        if options.save_profiles and not options.load_profiles:
             log.info('Storing profiles to disk')
             save_profiles(dataset, 'profiles.csv')
 
