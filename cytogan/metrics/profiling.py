@@ -14,7 +14,7 @@ def get_nearest_neighbors(examples, neighbors):
     example_matrix = np.array(list(examples))
     neighbor_matrix = np.array(list(neighbors))
     # Gives us |examples| x |neighbors| matrix.
-    distances = sklearn.metrics.pairwise.cosine_distances(
+    distances = sklearn.metrics.pairwise.euclidean_distances(
         example_matrix, neighbor_matrix)
     # Get the indices of the nearest neighbor for each test sample.
     return np.argmin(distances, axis=1)

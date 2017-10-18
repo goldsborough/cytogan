@@ -72,13 +72,7 @@ class DCGAN(gan.GAN):
 
     def _define_graph(self):
         if self.is_conditional:
-            self.conditional = gan.get_conditional_inputs(
-                ('G', 'D'), self.conditional_shape)
-            if self.conditional_embedding is not None:
-                self.conditional_embedding_layer = Dense(
-                    self.conditional_embedding,
-                    activation='relu',
-                    name='embedding')
+            self._define_conditional_units(self.conditional_shape)
 
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
@@ -150,6 +144,15 @@ class DCGAN(gan.GAN):
         D = Flatten()(D)
 
         return D
+
+    def _define_conditional_units(self, conditional_shape):
+        self.conditional = gan.get_conditional_inputs(
+            ('G', 'D'), conditional_shape)
+        if self.conditional_embedding is not None:
+            self.conditional_embedding_layer = Dense(
+                self.conditional_embedding,
+                activation='relu',
+                name='embedding')
 
     def _define_generator_loss(self, probability):
         with K.name_scope('G_loss'):
