@@ -7,19 +7,6 @@ from cytogan.extra import logs
 
 log = logs.get_logger(__name__)
 
-
-def get_nearest_neighbors(examples, neighbors):
-    assert len(examples) > 0
-    assert len(neighbors) > 0
-    example_matrix = np.array(list(examples))
-    neighbor_matrix = np.array(list(neighbors))
-    # Gives us |examples| x |neighbors| matrix.
-    distances = sklearn.metrics.pairwise.euclidean_distances(
-        example_matrix, neighbor_matrix)
-    # Get the indices of the nearest neighbor for each test sample.
-    return np.argmin(distances, axis=1)
-
-
 def reduce_profiles_across_treatments(dataset):
     keys = ('compound', 'concentration', 'moa')
     reduced_profiles = []
@@ -56,13 +43,18 @@ def whiten(dataset):
     dataset['profile'] = list(whitened_profiles)
 
 
-# Performs leave-one-compound-out cross-validation
-# Result is a dataframe with columns:
-# - image key
-# - compound
-# - concentration
-# - profile vector
-# - MOA
+def get_nearest_neighbors(examples, neighbors):
+    assert len(examples) > 0
+    assert len(neighbors) > 0
+    example_matrix = np.array(list(examples))
+    neighbor_matrix = np.array(list(neighbors))
+    # Gives us |examples| x |neighbors| matrix.
+    distances = sklearn.metrics.pairwise.cosine_distances(
+        example_matrix, neighbor_matrix)
+    # Get the indices of the nearest neighbor for each test sample.
+    return np.argmin(distances, axis=1)
+
+
 def score_profiles(dataset):
     accuracies = []
     labels = dataset['moa'].unique()
@@ -79,9 +71,9 @@ def score_profiles(dataset):
         test_data = dataset[test_mask]
         # All other (compound, concentration) pairs.
         training_data = dataset[~test_mask]
-        if training_data.empty:
-            continue
 
+        log.info('Finding NN of %d treatments among %d other treatments',
+                 len(test_data), len(training_data))
         neighbor_indices = get_nearest_neighbors(test_data['profile'],
                                                  training_data['profile'])
         # Get the MOAs of those nearest neighbors as our predictions.

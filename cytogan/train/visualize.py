@@ -68,9 +68,6 @@ def latent_space(latent_vectors,
     assert np.ndim(latent_vectors) == 2
     log.info('Plotting latent space for %d vectors', len(latent_vectors))
 
-    for v, l in zip(latent_vectors, labels):
-        print('{0} {1}'.format(np.linalg.norm(v), l))
-
     if perplexity is None:
         perplexity = [2, 3, 4, 5] + list(range(10, 21)) + [30, 50, 70, 90]
     if isinstance(perplexity, int):

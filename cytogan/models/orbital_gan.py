@@ -17,6 +17,8 @@ from keras.layers import Input
 
 from cytogan.models import lsgan
 
+tf.logging.set_verbosity(tf.logging.INFO)
+
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
     'generator_filters',
@@ -31,6 +33,15 @@ Hyper = collections.namedtuple('Hyper', [
     'origin_label',
 ])
 
+def tf_print(op, tensors):
+    def print_message(x):
+        print(x)
+        return x
+
+    prints = [tf.py_func(print_message, [tensor], tensor.dtype) for tensor in tensors]
+    with tf.control_dependencies(prints):
+        op = tf.identity(op)
+    return op
 
 class OrbitalGAN(lsgan.LSGAN):
     def __init__(self, hyper, learning, session):
@@ -67,37 +78,38 @@ class OrbitalGAN(lsgan.LSGAN):
 
         batch_size = tf.cast(tf.squeeze(self.batch_size), tf.int32)
 
-        # with tf.control_dependencies([tf.check_numerics(self.latent, 'latent')]):
         real_latent = self.latent[batch_size:]
-
-        real_latent = tf.Print(real_latent, [real_latent])
-
         self.angle_labels = Input(batch_shape=[None], dtype=tf.int32)
 
         self.angle_means, self.angle_variances = [], []
-        for partition in tf.dynamic_partition(
+        angle_partitions = tf.dynamic_partition(
                 real_latent,
                 self.angle_labels,
-                num_partitions=self.number_of_angles):
-            mean, variance = tf.nn.moments(partition, axes=[0])
+                num_partitions=self.number_of_angles)
+        for group in angle_partitions:
+            mean, variance = tf.nn.moments(group, axes=[0])
             self.angle_means.append(mean)
             self.angle_variances.append(variance)
 
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
         update_ema_op = self.ema.apply(self.angle_means + self.angle_variances)
 
+        for mean, vectors in zip(self.angle_means, angle_partitions):
+            moving_mean = self.ema.average(mean)
+
+
+        mean_variance = tf.reduce_mean([self.ema.average(v) for v in self.angle_variances])
+
+        self.loss['D'] += 1 * mean_variance
+
         # self.radius_labels = Input(shape=[self.radius_label_shape])
 
         with tf.control_dependencies([update_ema_op]):
-            # origin_mask = tf.equal(self.angle_labels, self.origin_label)
-            # origin_vectors = tf.boolean_mask(real_latent, origin_mask)
-            origin_mask = tf.cast(
-                tf.equal(self.angle_labels, self.origin_label), tf.float32)
-            origin_mask = tf.Print(origin_mask, [real_latent, origin_mask])
-            origin_vectors = real_latent * tf.expand_dims(origin_mask, 1)
-            self.origin_norm = tf.reduce_mean(tf.norm(origin_vectors, axis=1))
+            origin_mask = tf.equal(self.angle_labels, self.origin_label)
+            origin_vectors = tf.boolean_mask(real_latent, origin_mask)
+            self.origin_norm = tf.norm(tf.reduce_mean(origin_vectors, axis=0))
 
-        self.loss['D'] += 0.000001 * self.origin_norm
+        # self.loss['D'] += 0.01 * self.origin_norm
         # self.loss['O'] = origin_norm
 
     def train_on_batch(self, batch, with_summary=False):
