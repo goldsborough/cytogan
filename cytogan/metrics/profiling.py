@@ -106,13 +106,10 @@ def score_profiles(dataset):
                                                    training_data['profile'])
 
         top_k = np.argsort(distances, axis=1)[:, :5]
-        for x, y in zip(test_data, top_k):
+        for c, m, y in zip(test_data.concentration, test_data.moa, top_k):
             top_k_moas = training_data['moa'].iloc[y]
-            print('{0}/{1} ({2}): {3}'.format(
-                x['compound'],
-                x['concentration'],
-                x['moa'],
-                tuple(top_k_moas), ))
+            print('{0}/{1} ({2}): {3}'.format(holdout_compound, c, m,
+                                              tuple(top_k_moas)))
 
         # Get the MOAs of those nearest neighbors as our predictions.
         predicted_labels = np.array(training_data['moa'].iloc[nearest])
