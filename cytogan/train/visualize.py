@@ -92,7 +92,8 @@ def latent_space(latent_vectors,
             cmap=plot.cm.Spectral)
 
         if label_names is not None:
-            colorbar = plot.colorbar()
+            ticks = list(range(len(label_names)))
+            colorbar = plot.colorbar(ticks=ticks)
             colorbar.ax.set_yticklabels(label_names)
 
         if save_to is not None:
@@ -208,7 +209,7 @@ def confusion_matrix(matrix,
                      title='Confusion Matrix',
                      accuracy=None,
                      save_to=None):
-    figure, axis = plot.subplots(figsize=(14, 10))
+    figure, axis = plot.subplots(figsize=(14, 12))
     if accuracy:
         title += ' ({0:.1f}% Accuracy)'.format(accuracy * 100)
     figure.suptitle(title)

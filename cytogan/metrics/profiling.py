@@ -77,8 +77,8 @@ def log_top_k(compound, distances, test_data, training_data, k=3):
         for s, j in zip(top_k_moas, y):
             top_k_strings.append('{0} ({1:.8f})'.format(s, distances[i, j]))
         top_k_string = ', '.join(top_k_strings)
-        log.info('Top %d neighbors for %s/%.4f (%s): %s'.format(
-            k, compound, c, m, top_k_string))
+        log.info('Top %d neighbors for %s/%.4f (%s): %s', k, compound, c, m,
+                 top_k_string)
 
 
 def get_nearest_neighbors(examples, neighbors):
@@ -129,8 +129,7 @@ def score_profiles(dataset):
         log.info('Accuracy for %s is %.3f', holdout_compound, accuracy)
         accuracies.append(accuracy)
 
-        for actual in actual_labels:
-            for predicted in predicted_labels:
-                confusion_matrix[actual][predicted] += 1
+        for actual, predicted in zip(actual_labels, predicted_labels):
+            confusion_matrix[actual][predicted] += 1
 
     return confusion_matrix, np.mean(accuracies)
