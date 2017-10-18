@@ -99,7 +99,7 @@ def score_profiles(dataset):
         print(test_data)
         log.info(
             'Finding NN for concentrations (%s) among %d other treatments',
-            ','.join(test_data['concentration']), len(training_data))
+            ','.join(map(str, test_data['concentration'])), len(training_data))
         print(training_data)
         print('-' * 100)
         neighbor_indices = get_nearest_neighbors(test_data['profile'],
