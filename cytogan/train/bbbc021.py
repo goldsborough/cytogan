@@ -30,6 +30,7 @@ parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
+parser.add_argument('--load-average-profiles')
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
@@ -189,7 +190,9 @@ with common.get_session(options.gpus) as session:
     if not options.skip_evaluation:
         log.info('Starting Evaluation')
 
-        if options.load_profiles is None:
+        loaded_profiles = (options.load_profiles
+                           or options.load_collapsed_profiles)
+        if not loaded_profiles:
             keys, profiles = [], []
             batch_generator = cell_data.batches_of_size(options.batch_size)
             try:
@@ -206,15 +209,16 @@ with common.get_session(options.gpus) as session:
             dataset = cell_data.create_dataset_from_profiles(keys, profiles)
             log.info('Matching {0:,} profiles to {1} MOAs'.format(
                 len(dataset), len(dataset.moa.unique())))
-        else:
+
+            if options.save_profiles:
+                log.info('Storing profiles to disk')
+                save_profiles(dataset, 'profiles.csv')
+
+        if options.load_profiles:
             log.info('Loading profiles from %s', options.load_profiles)
             dataset = pd.read_csv(
                 options.load_profiles, compression='gzip', encoding='ascii')
             log.info('Found %s profiles', len(dataset))
-
-        if options.save_profiles and not options.load_profiles:
-            log.info('Storing profiles to disk')
-            save_profiles(dataset, 'profiles.csv')
 
         if options.whiten_profiles:
             profiling.whiten(dataset)
@@ -222,15 +226,25 @@ with common.get_session(options.gpus) as session:
             if options.save_profiles:
                 save_profiles(dataset, 'whitened.csv')
 
-        # The DMSO (control) should not participate in the MOA classification.
-        dataset = dataset[dataset['compound'] != 'DMSO']
-        treatment_profiles = profiling.reduce_profiles_across_treatments(
-            dataset)
-        log.info('Reduced dataset from %d to %d profiles for each treatment',
-                 len(dataset), len(treatment_profiles))
+        if options.load_collapsed_profiles:
+            log.info('Loading collapsed profiles')
+            treatment_profiles = pd.read_csv(
+                options.load_collapsed_profiles,
+                compression='gzip',
+                encoding='ascii')
+            log.info('Found %d collapsed profiles', len(treatment_profiles))
+        else:
+            log.info('Collapsing profiles across treatments')
+            # The DMSO (control) should not participate in the MOA classification.
+            dataset = dataset[dataset['compound'] != 'DMSO']
+            treatment_profiles = profiling.reduce_profiles_across_treatments(
+                dataset)
+            log.info(
+                'Reduced dataset from %d to %d profiles for each treatment',
+                len(dataset), len(treatment_profiles))
 
-        if options.save_profiles:
-            save_profiles(treatment_profiles, 'treatments.csv')
+            if options.save_profiles:
+                save_profiles(treatment_profiles, 'treatments.csv')
 
         confusion_matrix, accuracy = profiling.score_profiles(
             treatment_profiles)
