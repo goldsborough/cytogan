@@ -42,6 +42,7 @@ if options.save_profiles:
         os.makedirs(options.profiles_dir)
 
     def save_profiles(profiles, filename):
+        filename += '.gz'
         log.info('Storing %s to disk', filename)
         path = os.path.join(options.profiles_dir, filename)
         profiles.to_csv(
@@ -209,7 +210,6 @@ with common.get_session(options.gpus) as session:
             log.info('Loading profiles from %s', options.load_profiles)
             dataset = pd.read_csv(
                 options.load_profiles,
-                header=True,
                 compression='gzip',
                 encoding='ascii',
                 chunksize=100000)
