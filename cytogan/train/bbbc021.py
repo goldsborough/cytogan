@@ -209,10 +209,8 @@ with common.get_session(options.gpus) as session:
         else:
             log.info('Loading profiles from %s', options.load_profiles)
             dataset = pd.read_csv(
-                options.load_profiles,
-                compression='gzip',
-                encoding='ascii',
-                chunksize=100000)
+                options.load_profiles, compression='gzip', encoding='ascii')
+            log.info('Found %s profiles', len(dataset))
 
         if options.save_profiles and not options.load_profiles:
             log.info('Storing profiles to disk')
