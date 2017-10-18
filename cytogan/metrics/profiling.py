@@ -75,8 +75,9 @@ def get_nearest_neighbors(examples, neighbors):
     # Gives us |examples| x |neighbors| matrix.
     distances = sklearn.metrics.pairwise.cosine_distances(
         example_matrix, neighbor_matrix)
+
     # Get the indices of the nearest neighbor for each test sample.
-    return np.argmin(distances, axis=1)
+    return distances, np.argmin(distances, axis=1)
 
 
 def score_profiles(dataset):
@@ -96,17 +97,25 @@ def score_profiles(dataset):
         # All other (compound, concentration) pairs.
         training_data = dataset[~test_mask]
 
-        print(test_data)
+        concentrations_string = ', '.join(map(str, test_data['concentration']))
         log.info(
-            'Finding NN for concentrations (%s) among %d other treatments',
-            ','.join(map(str, test_data['concentration'])), len(training_data))
-        print(training_data)
-        print('-' * 100)
-        neighbor_indices = get_nearest_neighbors(test_data['profile'],
-                                                 training_data['profile'])
+            'Finding NN for %d concentrations (%s) among %d other treatments',
+            len(test_data), concentrations_string, len(training_data))
+
+        distances, nearest = get_nearest_neighbors(test_data['profile'],
+                                                   training_data['profile'])
+
+        top_k = np.argsort(distances, axis=1)[:, :5]
+        for x, y in zip(test_data, top_k):
+            top_k_moas = training_data['moa'].iloc[y]
+            print('{0}/{1} ({2}): {3}'.format(
+                x['compound'],
+                x['concentration'],
+                x['moa'],
+                tuple(top_k_moas), ))
+
         # Get the MOAs of those nearest neighbors as our predictions.
-        predicted_labels = np.array(
-            training_data['moa'].iloc[neighbor_indices])
+        predicted_labels = np.array(training_data['moa'].iloc[nearest])
         actual_labels = np.array(test_data['moa'])
         assert actual_labels.shape == predicted_labels.shape
         accuracy = np.mean(predicted_labels == actual_labels)
