@@ -96,8 +96,12 @@ def score_profiles(dataset):
         # All other (compound, concentration) pairs.
         training_data = dataset[~test_mask]
 
-        log.info('Finding NN of %d treatments among %d other treatments',
-                 len(test_data), len(training_data))
+        print(test_data)
+        log.info(
+            'Finding NN for concentrations (%s) among %d other treatments',
+            ','.join(test_data['concentration']), len(training_data))
+        print(training_data)
+        print('-' * 100)
         neighbor_indices = get_nearest_neighbors(test_data['profile'],
                                                  training_data['profile'])
         # Get the MOAs of those nearest neighbors as our predictions.
