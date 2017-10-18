@@ -42,16 +42,11 @@ if options.save_profiles:
     if not os.path.exists(options.profiles_dir):
         os.makedirs(options.profiles_dir)
 
-    def save_profiles(profiles, filename):
-        filename += '.csv.gz'
+    def save_profiles(profiles, prefix):
+        filename = '{0}.csv.gz'.format(prefix)
         log.info('Storing %s to disk', filename)
         path = os.path.join(options.profiles_dir, filename)
-        profiles.to_csv(
-            path,
-            header=True,
-            compression='gzip',
-            encoding='ascii',
-            chunksize=100000)
+        profiling.save_profiles(path, profiles)
 
 
 log = logs.get_root_logger(options.log_file)
@@ -215,9 +210,7 @@ with common.get_session(options.gpus) as session:
                 save_profiles(dataset, 'profiles')
 
         if options.load_profiles:
-            log.info('Loading profiles from %s', options.load_profiles)
-            dataset = pd.read_csv(
-                options.load_profiles, compression='gzip', encoding='ascii')
+            dataset = profiling.load_profiles(options.load_profiles)
             log.info('Found %s profiles', len(dataset))
 
         if options.whiten_profiles:
@@ -227,11 +220,8 @@ with common.get_session(options.gpus) as session:
                 save_profiles(dataset, 'whitened')
 
         if options.load_collapsed_profiles:
-            log.info('Loading collapsed profiles')
-            treatment_profiles = pd.read_csv(
-                options.load_collapsed_profiles,
-                compression='gzip',
-                encoding='ascii')
+            treatment_profiles = profiling.load_profiles(
+                options.load_collapsed_profiles)
             log.info('Found %d collapsed profiles', len(treatment_profiles))
         else:
             log.info('Collapsing profiles across treatments')

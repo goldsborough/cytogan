@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pandas as pd
 import scipy.linalg
@@ -6,6 +8,28 @@ import sklearn.metrics.pairwise
 from cytogan.extra import logs
 
 log = logs.get_logger(__name__)
+
+
+def save_profiles(path, profiles):
+    profiles.to_csv(
+        path,
+        header=True,
+        compression='gzip',
+        encoding='ascii',
+        chunksize=100000)
+
+
+def load_profiles(path):
+    log.info('Loading profiles from %s', path)
+    data = pd.read_csv(path, compression='gzip', encoding='ascii')
+    parsed_profiles = []
+    for p in data['profile']:
+        values = re.sub(r'[\[\]\n]', '', p).split()
+        parsed_profiles.append(np.array([float(x) for x in values]))
+    data.profile = parsed_profiles
+
+    return data
+
 
 def reduce_profiles_across_treatments(dataset):
     keys = ('compound', 'concentration', 'moa')
