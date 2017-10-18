@@ -108,8 +108,11 @@ def score_profiles(dataset):
         top_k = np.argsort(distances, axis=1)[:, :5]
         for c, m, y in zip(test_data.concentration, test_data.moa, top_k):
             top_k_moas = training_data['moa'].iloc[y]
+            top_k_strings = []
+            for i, j in zip(top_k_moas, y):
+                top_k_strings.append('{0} ({1:.4f})'.format(i, distances[j]))
             print('{0}/{1} ({2}): {3}'.format(holdout_compound, c, m,
-                                              tuple(top_k_moas)))
+                                              ', '.join(top_k_strings)))
 
         # Get the MOAs of those nearest neighbors as our predictions.
         predicted_labels = np.array(training_data['moa'].iloc[nearest])
@@ -119,6 +122,8 @@ def score_profiles(dataset):
         log.info('Accuracy for %s is %.3f', holdout_compound, accuracy)
         accuracies.append(accuracy)
 
-        confusion_matrix.loc[actual_labels, predicted_labels] += 1
+        for actual in actual_labels:
+            for predicted in predicted_labels:
+                confusion_matrix[actual][predicted] += 1
 
     return confusion_matrix, np.mean(accuracies)

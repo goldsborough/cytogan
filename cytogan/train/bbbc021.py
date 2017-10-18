@@ -31,6 +31,7 @@ parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
 parser.add_argument('--load-collapsed-profiles')
+parser.add_argument('--tsne-perplexity', type=int)
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
@@ -267,6 +268,7 @@ with common.get_session(options.gpus) as session:
                 np.array(list(latent_vectors)),
                 indices,
                 point_sizes=np.array(list(point_sizes)),
+                perplexity=options.tsne_perplexity,
                 save_to=options.figure_dir,
                 subject='Concentrations')
 
@@ -278,6 +280,7 @@ with common.get_session(options.gpus) as session:
                 np.array(list(latent_vectors)),
                 indices,
                 point_sizes=np.array(list(point_sizes)),
+                perplexity=options.tsne_perplexity,
                 save_to=options.figure_dir,
                 subject='MOA')
 
@@ -306,6 +309,7 @@ with common.get_session(options.gpus) as session:
         visualize.latent_space(
             latent_vectors,
             indices,
+            perplexity=options.tsne_perplexity,
             save_to=options.figure_dir,
             subject='Cells')
 
