@@ -70,7 +70,7 @@ def latent_space(latent_vectors,
     log.info('Plotting latent space for %d vectors', len(latent_vectors))
 
     if perplexity is None:
-        perplexity = [2, 3, 4, 5] + list(range(10, 21)) + [30, 50, 70, 90]
+        perplexity = [3, 5] + list(range(10, 21)) + [30, 50, 70, 90]
     if isinstance(perplexity, int):
         perplexity = [perplexity]
 

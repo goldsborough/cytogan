@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 
 
 def merge_summaries(scope):
@@ -30,3 +29,12 @@ def check_range(tensor, low, high, message_prefix=''):
     high = tf.assert_less_equal(tensor, high, message=message_prefix + '<=')
     with tf.control_dependencies([low, high]):
         return tf.identity(tensor)
+
+
+def top_k(tensor, k):
+    top = []
+    for _ in range(k):
+        argmin = tf.cast(tf.argmin(tensor), tf.int32)
+        top.append(tensor[argmin])
+        tensor = tf.concat([tensor[:argmin], tensor[argmin + 1:]], axis=-1)
+    return top

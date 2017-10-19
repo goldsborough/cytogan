@@ -10,12 +10,10 @@
 import collections
 
 import keras.backend as K
-import keras.losses
 import numpy as np
 import tensorflow as tf
 from keras.layers import Input
 
-from cytogan.metrics import losses
 from cytogan.models import lsgan, util
 
 tf.logging.set_verbosity(tf.logging.INFO)
@@ -87,21 +85,31 @@ class OrbitalGAN(lsgan.LSGAN):
 
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
         update_ema_op = self.ema.apply(self.angle_means + self.angle_variances)
+        moving_angle_means = []
+        for mean in self.angle_means:
+            mm = tf.expand_dims(self.ema.average(mean), axis=0)
+            moving_angle_means.append(mm)
+        moving_angle_mean_norms = K.l2_normalize(
+            tf.concat(moving_angle_means, axis=0), axis=1)
 
-        cosine_distances = []
-        for mean, vectors in zip(self.angle_means, angle_partitions):
-            moving_mean = tf.expand_dims(self.ema.average(mean), axis=0)
-            repetitions = tf.concat([tf.shape(vectors)[:1], [1]], axis=0)
-            repeated = tf.tile(moving_mean, tf.cast(repetitions, tf.int32))
-
-            mean_norm = K.l2_normalize(repeated, axis=1)
+        angle_losses = []
+        for mean, vectors in zip(moving_angle_means, angle_partitions):
+            mean_norm = K.l2_normalize(mean, axis=1)
             vector_norm = K.l2_normalize(vectors, axis=1)
             cosine_similarity = K.sum(mean_norm * vector_norm, axis=1)
             cosine_distance = K.mean(1 - cosine_similarity)
-            cosine_distances.append(cosine_distance)
 
-        self.cosine_distance = tf.reduce_mean(cosine_distances)
-        self.loss['D'] += 0.01 * self.cosine_distance
+            mean_cosine_distances = 1 - K.sum(
+                mean_norm * moving_angle_mean_norms, axis=1)
+            closest_means = util.top_k(mean_cosine_distances, k=3)
+            nearness = K.sum(closest_means[1:3])
+
+            angle_losses.append(cosine_distance)
+            # angle_losses.append(cosine_distance - nearness)
+
+        self.angle_loss = tf.reduce_mean(angle_losses)
+        with tf.control_dependencies([update_ema_op]):
+            self.loss['D'] += 0.01 * self.angle_loss
 
         # mean_variance = tf.reduce_mean(
         #     [self.ema.average(v) for v in self.angle_variances])
@@ -110,10 +118,9 @@ class OrbitalGAN(lsgan.LSGAN):
 
         # self.radius_labels = Input(shape=[self.radius_label_shape])
 
-        with tf.control_dependencies([update_ema_op]):
-            origin_mask = tf.equal(self.angle_labels, self.origin_label)
-            origin_vectors = tf.boolean_mask(real_latent, origin_mask)
-            self.origin_norm = tf.norm(tf.reduce_mean(origin_vectors, axis=0))
+        origin_mask = tf.equal(self.angle_labels, self.origin_label)
+        origin_vectors = tf.boolean_mask(real_latent, origin_mask)
+        self.origin_norm = tf.norm(tf.reduce_mean(origin_vectors, axis=0))
 
         # self.loss['D'] += 0.01 * self.origin_norm
         # self.loss['O'] = origin_norm
@@ -136,7 +143,10 @@ class OrbitalGAN(lsgan.LSGAN):
         super(OrbitalGAN, self)._add_summaries()
         with K.name_scope('summary/D'):
             tf.summary.scalar('origin_norm', self.origin_norm)
-            tf.summary.scalar('cosine_distance', self.cosine_distance)
+            tf.summary.scalar('angle_loss', self.angle_loss)
+            for index, mean in enumerate(self.angle_means):
+                tf.summary.scalar('angle-mean-{0}'.format(index),
+                                  tf.norm(self.ema.average(mean)))
             for index, variance in enumerate(self.angle_variances):
                 tf.summary.scalar('angle-variance-{0}'.format(index),
                                   tf.norm(self.ema.average(variance)))
