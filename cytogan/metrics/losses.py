@@ -6,6 +6,26 @@ import keras.losses
 E = 1e-10  # numerical stability
 
 
+def cosine_distance(u, v):
+    if len(u.shape) == 1:
+        u = tf.expand_dims(u, axis=0)
+    if len(v.shape) == 1:
+        v = tf.expand_dims(v, axis=1)
+    else:
+        v = tf.transpose(v)
+
+    u_norm = tf.norm(u, axis=1, keep_dims=True)
+    v_norm = tf.norm(v, axis=0, keep_dims=True)
+    norm = tf.matmul(u_norm, v_norm)
+    dot = tf.matmul(u, v)
+    assert norm.shape.as_list() == dot.shape.as_list(), (norm, dot)
+
+    cosine_similarity = dot / (norm + E)
+    cosine_distance = tf.reduce_mean(1 - cosine_similarity)
+
+    return tf.squeeze(cosine_distance)
+
+
 def l1_distance(x, y):
     with K.name_scope('l1_distance'):
         x = K.flatten(x)
