@@ -41,16 +41,8 @@ class BiGAN(gan.GAN):
         })
 
     def reconstruct(self, images, rescale=True):
-        if rescale:
-            images = (images * 2.0) - 1
-
-        images = self.session.run(self.autoencoder.outputs[0], {
-            K.learning_phase(): 0,
-            self.images_to_encode: images
-        })
-
-        # Go from [-1, +1] scale back to [0, 1]
-        return (images + 1) / 2.0 if rescale else images
+        latent = self.encode(images, rescale)
+        return self.generate(latent, rescale)
 
     def generate(self, latent_samples, rescale=True):
         if isinstance(latent_samples, int):
@@ -84,8 +76,6 @@ class BiGAN(gan.GAN):
 
         self.generator = Model(self.noise, self.fake_images, name='G')
         self.encoder = Model(self.images_to_encode, self.latent, name='E')
-        self.autoencoder = Model(
-            self.images_to_encode, self.generator(self.latent), name='AE')
         self.discriminator = Model([self.images, self.input_code],
                                    self.probability)
         self.generator_gan = Model(
