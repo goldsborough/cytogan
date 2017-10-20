@@ -126,7 +126,7 @@ elif options.model == 'bigan':
         generator_strides=(1, 2, 2, 1),
         encoder_filters=(128, 64, 32, 16),
         encoder_strides=(1, 2, 2, 2),
-        discriminator_filters=[(128, 64, 32, 16), (1024, 256)],
+        discriminator_filters=[(128, 64, 32, 16), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         initial_shape=(7, 7))
