@@ -76,8 +76,8 @@ class BiGAN(gan.GAN):
 
         self.generator = Model(self.noise, self.fake_images, name='G')
         self.encoder = Model(self.images_to_encode, self.latent, name='E')
-        self.discriminator = Model([self.images, self.input_code],
-                                   self.probability)
+        self.discriminator = Model(
+            [self.images, self.input_code], self.probability, name='D')
         self.generator_gan = Model(
             self.noise,
             self.discriminator([self.fake_images, self.noise]),
