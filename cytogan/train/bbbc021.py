@@ -12,7 +12,7 @@ from cytogan.data.cell_data import CellData
 from cytogan.extra import distributions, logs, misc
 from cytogan.metrics import profiling
 from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
-                            vae, wgan)
+                            vae, wgan, bigan)
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-bbbc021')
@@ -147,6 +147,18 @@ elif options.model == 'infogan':
         probability_loss='bce',
         continuous_loss='ll')
     Model = infogan.InfoGAN
+elif options.model == 'bigan':
+    hyper = bigan.Hyper(
+        image_shape,
+        generator_filters=(128, 64, 32, 16),
+        generator_strides=(1, 2, 2, 1),
+        encoder_filters=(128, 64, 32, 16),
+        encoder_strides=(1, 2, 2, 2),
+        discriminator_filters=[(128, 64, 32, 16), (1024, 256)],
+        discriminator_strides=(1, 2, 2, 2),
+        latent_size=100,
+        initial_shape=(7, 7))
+    Model = bigan.BiGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
 

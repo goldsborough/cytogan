@@ -34,13 +34,17 @@ class BiGAN(gan.GAN):
     def encode(self, images, rescale=True):
         if rescale:
             images = (images * 2.0) - 1
-        return self.encoder.predict_on_batch(images)
+
+        return self.session.run(self.latent, {
+            K.learning_phase(): 0,
+            self.images_to_encode: images
+        })
 
     def reconstruct(self, images, rescale=True):
         if rescale:
             images = (images * 2.0) - 1
 
-        images = self.session.run(self.autoencoder.output[0], {
+        images = self.session.run(self.autoencoder.outputs[0], {
             K.learning_phase(): 0,
             self.images_to_encode: images
         })
@@ -68,6 +72,7 @@ class BiGAN(gan.GAN):
             self.images_to_encode = Input(
                 shape=self.image_shape, name='real_images')
             self.latent = self._define_encoder(self.images_to_encode)
+            print(self.latent)
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
@@ -170,11 +175,12 @@ class BiGAN(gan.GAN):
             return losses.binary_crossentropy(labels, probability)
 
     def train_on_batch(self, batch, with_summary=False):
-        real_images = (batch[0] * 2.0) - 1
+        real_images = (batch * 2.0) - 1
 
         noise = self._sample_noise(len(real_images))
         fake_images = self.generate(noise, rescale=False)
-        real_code = self.encode(real_images)
+        real_code = self.encode(real_images, rescale=False)
+        print(fake_images.shape, real_code.shape, noise.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images, noise,
                                               real_code, with_summary)
