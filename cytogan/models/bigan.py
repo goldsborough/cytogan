@@ -7,7 +7,7 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Dropout,
                           Flatten, Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
-from cytogan.extra.layers import AddNoise, BatchNorm, RandomNormal
+from cytogan.extra.layers import AddNoise, BatchNorm
 from cytogan.metrics import losses
 from cytogan.models import gan, util
 
@@ -28,14 +28,25 @@ Hyper = collections.namedtuple('Hyper', [
 
 class BiGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
-        self.generator_summary = util.merge_summaries('E')
+        self.noise_size = hyper.latent_size
         super(BiGAN, self).__init__(hyper, learning, session)
-        self.noise_size = self.latent_size
 
     def encode(self, images, rescale=True):
         if rescale:
             images = (images * 2.0) - 1
         return self.encoder.predict_on_batch(images)
+
+    def reconstruct(self, images, rescale=True):
+        if rescale:
+            images = (images * 2.0) - 1
+
+        images = self.session.run(self.autoencoder.output[0], {
+            K.learning_phase(): 0,
+            self.images_to_encode: images
+        })
+
+        # Go from [-1, +1] scale back to [0, 1]
+        return (images + 1) / 2.0 if rescale else images
 
     def generate(self, latent_samples, rescale=True):
         if isinstance(latent_samples, int):
@@ -59,7 +70,7 @@ class BiGAN(gan.GAN):
             self.latent = self._define_encoder(self.images_to_encode)
 
         with K.name_scope('D'):
-            self.images = Input(shape=self.imagew_shape, name='images')
+            self.images = Input(shape=self.image_shape, name='images')
             self.input_code = Input(
                 shape=[self.latent_size], name='representations')
             self.probability = self._define_discriminator(
@@ -69,6 +80,8 @@ class BiGAN(gan.GAN):
 
         self.generator = Model(self.noise, self.fake_images, name='G')
         self.encoder = Model(self.images_to_encode, self.latent, name='E')
+        self.autoencoder = Model(
+            self.images_to_encode, self.generator(self.latent), name='AE')
         self.discriminator = Model([self.images, self.input_code],
                                    self.probability)
         self.generator_gan = Model(
@@ -106,11 +119,10 @@ class BiGAN(gan.GAN):
 
         return G
 
-    def _define_encoder(self, images, latent):
+    def _define_encoder(self, images):
         E = AddNoise()(images)
 
-        for filters, stride in zip(self.discriminator_filters,
-                                   self.discriminator_strides):
+        for filters, stride in zip(self.encoder_filters, self.encoder_strides):
             E = Conv2D(
                 filters, (5, 5), strides=(stride, stride), padding='same')(E)
             E = BatchNorm()(E)
