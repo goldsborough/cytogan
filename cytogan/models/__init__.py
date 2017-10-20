@@ -8,6 +8,7 @@ MODELS = [
     'wgan',
     'began',
     'ogan',
+    'bigan',
 ]
 for _gan_name in ('dcgan', 'lsgan', 'wgan', 'began'):
     MODELS.append('c-{0}'.format(_gan_name))

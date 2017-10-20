@@ -48,8 +48,6 @@ class OrbitalGAN(lsgan.LSGAN):
             fetches.append(self.discriminator_summary)
 
         angle_labels = labels
-        # angle_labels, radius_labels = tf.split(
-        #     labels, [self.number_of_angles, self.radius_label_size])
 
         feed_dict = {
             self.batch_size: [len(fake_images)],
@@ -105,25 +103,14 @@ class OrbitalGAN(lsgan.LSGAN):
             nearness = K.sum(closest_means[1:3])
 
             angle_losses.append(cosine_distance)
-            # angle_losses.append(cosine_distance - nearness)
 
         self.angle_loss = tf.reduce_mean(angle_losses)
         with tf.control_dependencies([update_ema_op]):
             self.loss['D'] += 0.01 * self.angle_loss
 
-        # mean_variance = tf.reduce_mean(
-        #     [self.ema.average(v) for v in self.angle_variances])
-        #
-        # self.loss['D'] += 1 * mean_variance
-
-        # self.radius_labels = Input(shape=[self.radius_label_shape])
-
         origin_mask = tf.equal(self.angle_labels, self.origin_label)
         origin_vectors = tf.boolean_mask(real_latent, origin_mask)
         self.origin_norm = tf.norm(tf.reduce_mean(origin_vectors, axis=0))
-
-        # self.loss['D'] += 0.01 * self.origin_norm
-        # self.loss['O'] = origin_norm
 
     def train_on_batch(self, batch, with_summary=False):
         real_images, labels = batch
@@ -136,8 +123,8 @@ class OrbitalGAN(lsgan.LSGAN):
         g_tensors = self._train_generator(batch_size, None, with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
-        return self._maybe_with_summary(losses, g_tensors, d_tensors,
-                                        with_summary)
+        tensors = dict(D=d_tensors, G=g_tensors)
+        return self._maybe_with_summary(losses, tensors, with_summary)
 
     def _add_summaries(self):
         super(OrbitalGAN, self)._add_summaries()

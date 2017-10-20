@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 
 def merge_summaries(scope):
@@ -38,3 +39,7 @@ def top_k(tensor, k):
         top.append(tensor[argmin])
         tensor = tf.concat([tensor[:argmin], tensor[argmin + 1:]], axis=-1)
     return top
+
+
+def binary_labels(zeros, ones):
+    return np.concatenate([np.zeros(zeros), np.ones(ones)], axis=0)

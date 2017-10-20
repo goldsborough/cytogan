@@ -108,8 +108,8 @@ class InfoGAN(dcgan.DCGAN):
         g_tensors = self._train_generator(batch_size, with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0], Q=q_loss)
-        return self._maybe_with_summary(losses, g_tensors, d_tensors,
-                                        with_summary)
+        tensors = dict(D=d_tensors, G=g_tensors)
+        return self._maybe_with_summary(losses, tensors, with_summary)
 
     def _train_discriminator(self, fake_images, real_images, with_summary):
         batch_size = len(fake_images)
