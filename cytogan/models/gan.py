@@ -48,7 +48,7 @@ class GAN(model.Model):
         super(GAN, self).__init__(learning, session)
 
         self.summaries = self._get_summary_nodes()
-        self.summary = tf.summary.merge(list(self.summaries.values()))
+        self.combined_summary = tf.summary.merge(list(self.summaries.values()))
 
     @property
     def name(self):
@@ -109,9 +109,6 @@ class GAN(model.Model):
         tensors = dict(D=d_tensors, G=g_tensors)
         return self._maybe_with_summary(losses, tensors, with_summary)
 
-    def _get_summary_nodes(self):
-        return {scope: util.merge_summaries(scope) for scope in 'DG'}
-
     def _get_model_parameters(self, is_conditional):
         generator_inputs = [self.batch_size]
         discriminator_inputs = [self.images]
@@ -154,13 +151,16 @@ class GAN(model.Model):
     def _maybe_with_summary(self, losses, tensors, with_summary):
         if with_summary:
             if all(len(t) > 1 for t in tensors.values()):
-                feed_dict = {self.summaries[k]: tensors[k] for k in tensors}
-                summary = self.session.run(self.summary, feed_dict)
+                feed_dict = {self.summaries[k]: tensors[k][1] for k in tensors}
+                summary = self.session.run(self.combined_summary, feed_dict)
             else:
                 summary = None
             return losses, summary
         else:
             return losses
+
+    def _get_summary_nodes(self):
+        return {scope: util.merge_summaries(scope) for scope in 'DG'}
 
     def _add_summaries(self):
         with K.name_scope('summary/G'):

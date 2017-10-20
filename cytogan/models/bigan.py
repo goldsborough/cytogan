@@ -72,7 +72,6 @@ class BiGAN(gan.GAN):
             self.images_to_encode = Input(
                 shape=self.image_shape, name='real_images')
             self.latent = self._define_encoder(self.images_to_encode)
-            print(self.latent)
 
         with K.name_scope('D'):
             self.images = Input(shape=self.image_shape, name='images')
@@ -180,7 +179,6 @@ class BiGAN(gan.GAN):
         noise = self._sample_noise(len(real_images))
         fake_images = self.generate(noise, rescale=False)
         real_code = self.encode(real_images, rescale=False)
-        print(fake_images.shape, real_code.shape, noise.shape)
 
         d_tensors = self._train_discriminator(fake_images, real_images, noise,
                                               real_code, with_summary)
@@ -202,7 +200,7 @@ class BiGAN(gan.GAN):
 
         fetches = [self.optimizer['D'], self.loss['D']]
         if with_summary:
-            fetches.append(self.discriminator_summary)
+            fetches.append(self.summaries['D'])
 
         outputs = self.session.run(fetches, {
             self.images: images,
@@ -216,7 +214,7 @@ class BiGAN(gan.GAN):
     def _train_generator(self, noise, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
-            fetches.append(self.generator_summary)
+            fetches.append(self.summaries['G'])
 
         outputs = self.session.run(fetches, {
             self.noise: noise,
@@ -228,7 +226,7 @@ class BiGAN(gan.GAN):
     def _train_encoder(self, images, with_summary):
         fetches = [self.optimizer['E'], self.loss['E']]
         if with_summary:
-            fetches.append(self.encoder_summary)
+            fetches.append(self.summaries['E'])
 
         outputs = self.session.run(fetches, {
             self.images_to_encode: images,

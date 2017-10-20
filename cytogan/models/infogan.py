@@ -116,8 +116,8 @@ class InfoGAN(dcgan.DCGAN):
         labels = np.concatenate([np.zeros(batch_size), np.ones(batch_size)])
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.optimizer['D'], self.loss['D']]
-        if with_summary and self.discriminator_summary is not None:
-            fetches.append(self.discriminator_summary)
+        if with_summary and self.summaries['D'] is not None:
+            fetches.append(self.summaries['D'])
 
         result = self.session.run(
             fetches,
@@ -134,8 +134,8 @@ class InfoGAN(dcgan.DCGAN):
     def _train_generator(self, batch_size, with_summary):
         latent_code = self.latent_distribution(batch_size)
         fetches = [self.optimizer['G'], self.loss['G']]
-        if with_summary and self.generator_summary is not None:
-            fetches.append(self.generator_summary)
+        if with_summary and self.summaries['G'] is not None:
+            fetches.append(self.summaries['G'])
 
         results = self.session.run(
             fetches,

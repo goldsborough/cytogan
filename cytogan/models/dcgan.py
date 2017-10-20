@@ -40,8 +40,8 @@ class DCGAN(gan.GAN):
              np.ones(len(real_images))], axis=0)
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.optimizer['D'], self.loss['D']]
-        if with_summary and self.discriminator_summary is not None:
-            fetches.append(self.discriminator_summary)
+        if with_summary and self.summaries['D'] is not None:
+            fetches.append(self.summaries['D'])
 
         feed_dict = {
             self.batch_size: [len(fake_images)],
@@ -61,8 +61,8 @@ class DCGAN(gan.GAN):
 
     def _train_generator(self, batch_size, conditional, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
-        if with_summary and self.generator_summary is not None:
-            fetches.append(self.generator_summary)
+        if with_summary and self.summaries['G'] is not None:
+            fetches.append(self.summaries['G'])
 
         feed_dict = {self.batch_size: [batch_size], K.learning_phase(): 1}
         if self.is_conditional:

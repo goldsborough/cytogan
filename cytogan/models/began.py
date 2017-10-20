@@ -80,7 +80,7 @@ class BEGAN(gan.GAN):
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.update_k, self.optimizer['D'], self.loss['D']]
         if with_summary:
-            fetches.append(self.discriminator_summary)
+            fetches.append(self.summaries['D'])
 
         feed_dict = {self.batch_size: [len(fake_images)], self.images: images}
         if self.is_conditional:
@@ -96,7 +96,7 @@ class BEGAN(gan.GAN):
     def _train_generator(self, batch_size, conditional, with_summary):
         fetches = [self.optimizer['G'], self.loss['G']]
         if with_summary:
-            fetches.append(self.generator_summary)
+            fetches.append(self.summaries['G'])
 
         feed_dict = {self.batch_size: [batch_size]}
         if self.is_conditional:

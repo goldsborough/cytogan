@@ -44,8 +44,8 @@ class OrbitalGAN(lsgan.LSGAN):
              np.ones(len(real_images))], axis=0)
         images = np.concatenate([fake_images, real_images], axis=0)
         fetches = [self.optimizer['D'], self.loss['D']]
-        if with_summary and self.discriminator_summary is not None:
-            fetches.append(self.discriminator_summary)
+        if with_summary and self.summaries['D'] is not None:
+            fetches.append(self.summaries['D'])
 
         angle_labels = labels
 
