@@ -48,7 +48,7 @@ class GAN(model.Model):
         super(GAN, self).__init__(learning, session)
 
         self.summaries = self._get_summary_nodes()
-        self.summary = tf.summary.merge(self.summaries)
+        self.summary = tf.summary.merge(list(self.summaries.values()))
 
     @property
     def name(self):
