@@ -47,12 +47,8 @@ class GAN(model.Model):
 
         super(GAN, self).__init__(learning, session)
 
-        self.generator_summary = util.merge_summaries('G')
-        self.discriminator_summary = util.merge_summaries('D')
-        if (self.generator_summary is not None
-                and self.discriminator_summary is not None):
-            self.summary = tf.summary.merge(
-                [self.generator_summary, self.discriminator_summary])
+        self.summaries = self._get_summary_nodes()
+        self.summary = tf.summary.merge(self.summaries)
 
     @property
     def name(self):
@@ -77,8 +73,10 @@ class GAN(model.Model):
             learning_rates[key] = lr
         return learning_rates
 
-    def encode(self, batch):
+    def encode(self, batch, rescale=True):
         images, conditionals = self._expand_batch(batch)
+        if rescale:
+            images = (images * 2.0) - 1
         if conditionals is None:
             return self.encoder.predict_on_batch(images)
         return self.encoder.predict_on_batch([images, conditionals])
@@ -108,16 +106,11 @@ class GAN(model.Model):
                                           with_summary)
 
         losses = dict(D=d_tensors[0], G=g_tensors[0])
-        return self._maybe_with_summary(losses, g_tensors, d_tensors,
-                                        with_summary)
+        tensors = dict(D=d_tensors, G=g_tensors)
+        return self._maybe_with_summary(losses, tensors, with_summary)
 
-    def _get_combined_summary(self, generator_summary, discriminator_summary):
-        return self.session.run(
-            self.summary,
-            feed_dict={
-                self.generator_summary: generator_summary,
-                self.discriminator_summary: discriminator_summary,
-            })
+    def _get_summary_nodes(self):
+        return {scope: util.merge_summaries(scope) for scope in 'DG'}
 
     def _get_model_parameters(self, is_conditional):
         generator_inputs = [self.batch_size]
@@ -158,15 +151,11 @@ class GAN(model.Model):
                         var_list=self.generator.trainable_weights,
                         global_step=self.global_step)
 
-    def _maybe_with_summary(self, losses, g_tensors, d_tensors, with_summary):
+    def _maybe_with_summary(self, losses, tensors, with_summary):
         if with_summary:
-            if len(g_tensors) == len(d_tensors) > 1:
-                summary = self._get_combined_summary(g_tensors[1],
-                                                     d_tensors[1])
-            elif len(g_tensors) > 1:
-                summary = g_tensors[1]
-            elif len(d_tensors) > 1:
-                summary = d_tensors[1]
+            if all(len(t) > 1 for t in tensors.values()):
+                feed_dict = {self.summaries[k]: tensors[k] for k in tensors}
+                summary = self.session.run(self.summary, feed_dict)
             else:
                 summary = None
             return losses, summary

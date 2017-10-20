@@ -7,9 +7,9 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
                           Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
-from cytogan.extra.layers import (AddNoise, BatchNorm, RandomNormal)
-from cytogan.models import gan
+from cytogan.extra.layers import AddNoise, BatchNorm, RandomNormal
 from cytogan.metrics import losses
+from cytogan.models import gan
 
 Hyper = collections.namedtuple('Hyper', [
     'image_shape',
