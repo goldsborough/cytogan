@@ -141,6 +141,7 @@ class BiGAN(gan.GAN):
 
         for units in self.discriminator_filters[1]:
             D = Dense(units)(D)
+            D = BatchNorm()(D)
             D = LeakyReLU(alpha=0.2)(D)
             D = Dropout(0.5)(D)
 
