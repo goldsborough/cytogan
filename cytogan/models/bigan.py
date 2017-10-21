@@ -164,7 +164,7 @@ class BiGAN(gan.GAN):
             return losses.binary_crossentropy(labels, probability)
 
     def train_on_batch(self, batch, with_summary=False):
-        real_images = (batch * 2.0) - 1
+        real_images = (np.array(batch) * 2.0) - 1
 
         noise = self._sample_noise(len(real_images))
         fake_images = self.generate(noise, rescale=False)

@@ -43,7 +43,7 @@ So far:
 - LSGAN + Whitening: 76%
 - BEGAN: 56%
 - C-BEGAN (both): 66%
-- C-BEGAN (concentration only): 58%
+- C-BEGAN (concentration only): 68%
 - C-LSGAN: 55%
 - C-LSGAN (embedding): 53%
 - C-LSGAN (no embedding): 48%
