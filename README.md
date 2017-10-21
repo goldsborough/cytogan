@@ -145,3 +145,8 @@ Launched:
 
 - cluster:
   - C-BEGAN with no embedding layer for concentration only
+- gpu-vm-1:
+  - BiGAN with 1e-4
+  - BiGAN with 5e-5
+- gpu-vm-3:
+  - New vanilla DCGAN
