@@ -152,7 +152,7 @@ Launched:
   - BiGAN with 7e-5
   - WGAN with 7e-5 2e-4
 - gpu-vm-3:
-  - New vanilla DCGAN
+  - New vanilla DCGAN [failed, try with lower lr]
   - BiGAN with 7e-5
 - gpu-vm-5:
   - InfoGAN with 1e-5 7e-5 7e-5

@@ -77,7 +77,7 @@ def latent_space(latent_vectors,
     log.info('Computing TSNEs at perplexity %s', tuple(perplexity))
     for p in perplexity:
         reduction = sklearn.manifold.TSNE(
-            n_components=2, perplexity=p, init='pca', verbose=1)
+            n_components=2, perplexity=p, init='pca', verbose=0)
         transformed_vectors = reduction.fit_transform(latent_vectors)
 
         figure = plot.figure(figsize=(12, 10))
