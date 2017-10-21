@@ -33,7 +33,7 @@ def _save_figure(folder, filename):
     if not os.path.exists(folder):
         os.makedirs(folder)
     log.info('Saving %s', path)
-    plot.savefig(path)
+    plot.savefig(path, transparent=True)
 
 
 def reconstructions(model,
