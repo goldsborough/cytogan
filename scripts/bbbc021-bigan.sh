@@ -11,7 +11,7 @@ python3 -m cytogan.train.bbbc021                          \
   --checkpoint-freq '10min'                               \
   --summary-freq '10min'                                  \
   --generative-samples 196                                \
-  --gpus 0 1                                              \
+  --gpus 1 2                                              \
   --metadata /data1/peter/metadata/BBBC021_v1_image.csv   \
   --labels /data1/peter/metadata/BBBC021_v1_moa.csv       \
   --images /data1/peter/segmented                         \

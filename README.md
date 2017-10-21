@@ -42,11 +42,14 @@ So far:
 - LSGAN: 68%
 - LSGAN + Whitening: 76%
 - BEGAN: 56%
-- C-BEGAN: 63%
-- C-LSGAN: 55?
-- WGAN: 48%
-- Conditional WGAN (concentration only): 48%
-- Conditional WGAN (both): 51%
+- C-BEGAN (both): 66%
+- C-BEGAN (concentration only): 58%
+- C-LSGAN: 55%
+- C-LSGAN (embedding): 53%
+- C-LSGAN (no embedding): 48%
+- WGAN: 56%
+- C-WGAN (concentration only): 48%
+- C-WGAN (both): 51%
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try
@@ -117,8 +120,8 @@ Launched:
  - LSGAN with both
  - LSGAN with only concentration
 - gpu-vm-2:
-  - BEGAN with both
-  - BEGAN with only concentration
+  - C-BEGAN with both
+  - C-BEGAN with only concentration
 - gpu-vm-3:
   - WGAN with both [fail, retry with smaller lr]
   - WGAN with only concentration [fail, retry with smaller lr]
