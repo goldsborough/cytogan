@@ -79,6 +79,10 @@ else:
 learning = model.Learning(options.lr, options.lr_decay, options.lr_decay_steps
                           or number_of_batches)
 
+embedding_size = None
+if not (options.concentration_only_labels or options.no_latent_embedding):
+    embedding_size = 16
+
 if options.model == 'ae':
     hyper = ae.Hyper(image_shape, latent_size=32)
     Model = ae.AE
@@ -89,9 +93,6 @@ elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[128, 64, 32], latent_size=256)
     Model = vae.VAE
 elif options.model in ('dcgan', 'lsgan', 'wgan'):
-    embedding_size = None
-    if not (options.concentration_only_labels or options.no_latent_embedding):
-        embedding_size = 16
     hyper = dcgan.Hyper(
         image_shape,
         generator_filters=(256, 128, 64, 32),
@@ -120,7 +121,7 @@ elif options.model == 'began':
         diversity_factor=0.75,
         proportional_gain=1e-3,
         conditional_shape=conditional_shape,
-        conditional_embedding=16,
+        conditional_embedding=embedding_size,
         denoising=True)
     Model = began.BEGAN
 elif options.model == 'infogan':

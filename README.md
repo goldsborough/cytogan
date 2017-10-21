@@ -140,3 +140,8 @@ Launched:
 - Cellprofiler features?
 - Training tricks I used
 - Turing Test
+
+### Friday, 20/10/2017
+
+- cluster:
+  - C-BEGAN with no embedding layer for concentration only
