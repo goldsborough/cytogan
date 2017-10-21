@@ -157,7 +157,7 @@ elif options.model == 'bigan':
         discriminator_filters=[(256, 128, 64, 32), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
-        initial_shape=(7, 7))
+        initial_shape=(12, 12))
     Model = bigan.BiGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
