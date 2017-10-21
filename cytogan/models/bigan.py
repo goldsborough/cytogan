@@ -258,3 +258,16 @@ class BiGAN(gan.GAN):
         with K.name_scope('summary/E'):
             tf.summary.histogram('latent', self.latent)
             tf.summary.scalar('loss', self.loss['E'])
+
+    def __repr__(self):
+        lines = [self.name]
+        try:
+            # >= Keras 2.0.6
+            self.generator.summary(print_fn=lines.append)
+            self.encoder.summary(print_fn=lines.append)
+            self.discriminator.summary(print_fn=lines.append)
+        except TypeError:
+            lines = [layer.name for layer in self.generator.layers]
+            lines = [layer.name for layer in self.encoder.layers]
+            lines = [layer.name for layer in self.discriminator.layers]
+        return '\n'.join(map(str, lines))
