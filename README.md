@@ -148,5 +148,9 @@ Launched:
 - gpu-vm-1:
   - BiGAN with 1e-4
   - BiGAN with 5e-5
+- gpu-vm-2:
+  - BiGAN with 7e-5
+  - WGAN with 7e-5 2e-4
 - gpu-vm-3:
   - New vanilla DCGAN
+  - BiGAN with 7e-5
