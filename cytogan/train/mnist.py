@@ -5,8 +5,8 @@ import tensorflow as tf
 from tensorflow.examples.tutorials import mnist
 
 from cytogan.extra import distributions, logs, misc
-from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
-                            vae, wgan, orbital_gan, bigan)
+from cytogan.models import (ae, began, bigan, conv_ae, dcgan, infogan, lsgan,
+                            model, orbital_gan, vae, wgan)
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-mnist')

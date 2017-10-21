@@ -154,3 +154,5 @@ Launched:
 - gpu-vm-3:
   - New vanilla DCGAN
   - BiGAN with 7e-5
+- gpu-vm-5:
+  - InfoGAN with 1e-5 7e-5 7e-5

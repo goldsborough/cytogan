@@ -3,7 +3,6 @@
 import os
 
 import numpy as np
-import pandas as pd
 import scipy.misc
 import tensorflow as tf
 from tqdm import tqdm
@@ -11,8 +10,8 @@ from tqdm import tqdm
 from cytogan.data.cell_data import CellData
 from cytogan.extra import distributions, logs, misc
 from cytogan.metrics import profiling
-from cytogan.models import (ae, began, conv_ae, dcgan, infogan, lsgan, model,
-                            vae, wgan, bigan)
+from cytogan.models import (ae, began, bigan, conv_ae, dcgan, infogan, lsgan,
+                            model, vae, wgan)
 from cytogan.train import common, trainer, visualize
 
 parser = common.make_parser('cytogan-bbbc021')
