@@ -26,6 +26,7 @@ parser.add_argument('--latent-compounds', action='store_true')
 parser.add_argument('--latent-concentrations', action='store_true')
 parser.add_argument('--latent-moa', action='store_true')
 parser.add_argument('--normalize-luminance', action='store_true')
+parser.add_argument('--no-latent-embedding', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
@@ -88,9 +89,8 @@ elif options.model == 'vae':
     hyper = vae.Hyper(image_shape, filter_sizes=[128, 64, 32], latent_size=256)
     Model = vae.VAE
 elif options.model in ('dcgan', 'lsgan', 'wgan'):
-    if options.concentration_only_labels:
-        embedding_size = None
-    else:
+    embedding_size = None
+    if not (options.concentration_only_labels or options.no_latent_embedding):
         embedding_size = 16
     hyper = dcgan.Hyper(
         image_shape,
@@ -152,12 +152,12 @@ elif options.model == 'bigan':
         image_shape,
         generator_filters=(256, 128, 64, 32),
         generator_strides=(1, 2, 2, 1),
-        encoder_filters=(32, 64, 128, 256),  #(256, 128, 64, 32),
+        encoder_filters=(256, 128, 64, 32),
         encoder_strides=(1, 2, 2, 2),
-        discriminator_filters=[(32, 64, 128, 256), (1024, 1024, 256)],
+        discriminator_filters=[(256, 128, 64, 32), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
-        initial_shape=(12, 12))
+        initial_shape=(7, 7))
     Model = bigan.BiGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))

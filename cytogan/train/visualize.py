@@ -225,7 +225,7 @@ def vector_distance(start,
                     title=None,
                     save_to=None):
     tsne = sklearn.manifold.TSNE(
-        n_components=2, perplexity=perplexity, init='pca', verbose=1)
+        n_components=2, perplexity=perplexity, init='pca')
     transformed = tsne.fit_transform(np.concatenate([start, end]))
     indices = np.tile(np.arange(len(start)), [2])
 

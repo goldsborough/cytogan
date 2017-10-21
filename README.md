@@ -40,11 +40,13 @@ So far:
 
 - DCGAN: 43%
 - LSGAN: 68%
-- LSGAN + Whitening: 68%
+- LSGAN + Whitening: 76%
 - BEGAN: 56%
-- C-LSGAN: 38%?
-- WGAN: 45%
-- Conditional WGAN: 14%
+- C-BEGAN: 63%
+- C-LSGAN: 55?
+- WGAN: 48%
+- Conditional WGAN (concentration only): 48%
+- Conditional WGAN (both): 51%
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try
@@ -94,8 +96,8 @@ Todo:
 [x] See if we have control over an InfoGAN via the continuous variables,
 [ ] Use only the concentration as condition variable and see if there is a noticeable difference in generated images and latent space,
 [x] Subtract the latent vectors between two concentrations of the same compound and see if that encodes the difference in concentration, then apply to another compound and see if that goes to the higher concentration.
-[] Constrained GAN
-[] BIGAN?
+[x] Constrained GAN
+[x] BIGAN?
 
 ### Wednesday, 10/11/2017
 
