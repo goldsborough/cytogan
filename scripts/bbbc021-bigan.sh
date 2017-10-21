@@ -6,7 +6,7 @@ python3 -m cytogan.train.bbbc021                          \
   --lr 7e-5 7e-5 7e-5                                     \
   --lr-decay 0.9999                                       \
   --lr-decay-steps 100                                    \
-  --batch-size 64                                         \
+  --batch-size 32                                         \
   --workspace /data1/peter/runs                           \
   --checkpoint-freq '10min'                               \
   --summary-freq '10min'                                  \
