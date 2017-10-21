@@ -122,11 +122,11 @@ elif options.model == 'ogan':
 elif options.model == 'bigan':
     hyper = bigan.Hyper(
         image_shape,
-        generator_filters=(128, 64, 32, 16),
+        generator_filters=(256, 128, 64, 32),
         generator_strides=(1, 2, 2, 1),
-        encoder_filters=(128, 64, 32, 16),
+        encoder_filters=(256, 128, 64, 32),
         encoder_strides=(1, 2, 2, 2),
-        discriminator_filters=[(128, 64, 32, 16), (1024, 256)],
+        discriminator_filters=[(256, 128, 64, 32), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         initial_shape=(7, 7))
@@ -180,7 +180,10 @@ with common.get_session(options.gpus) as session:
         latent_vectors = model.encode(original_images)
         labels = np.argmax(labels, axis=1)
         visualize.latent_space(
-            latent_vectors, labels, save_to=options.figure_dir)
+            latent_vectors,
+            labels,
+            save_to=options.figure_dir,
+            label_names=list(map(str, range(10))))
 
     if options.interpolate_samples is not None:
         start, end = np.random.randn(2, options.interpolate_samples[0],
