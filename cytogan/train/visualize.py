@@ -290,7 +290,7 @@ def single_factors(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    plot.figure(figsize=(8, len(factor_indices)))
+    plot.figure(figsize=(12, len(factor_indices)))
     for index, image in enumerate(images):
         _plot_image_tile(
             len(factor_indices), interpolation_length, index, image, gray)
@@ -305,4 +305,5 @@ def disable_display():
 
 
 def show():
+    log.info('Displaying figures')
     plot.show()
