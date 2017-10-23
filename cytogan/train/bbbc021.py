@@ -358,7 +358,7 @@ with common.get_session(options.gpus) as session:
             model,
             start,
             end,
-            options.interpolate_samples[0],
+            options.interpolate_single_factors[0],
             options.interpolate_single_factors[1],
             options.interpolation_method,
             save_to=options.figure_dir)
