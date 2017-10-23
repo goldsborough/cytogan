@@ -60,6 +60,7 @@ def make_parser(name):
     parser.add_argument('-l', '--latent-samples', type=int)
     parser.add_argument('-g', '--generative-samples', type=int)
     parser.add_argument('-i', '--interpolate-samples', type=int, nargs=2)
+    parser.add_argument('--interpolate-single-factors', type=int, nargs=2)
     parser.add_argument('--store-interpolation-frames', action='store_true')
     parser.add_argument(
         '--interpolation-method', default='linear', choices=('linear', 'slerp'))

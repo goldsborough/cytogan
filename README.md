@@ -50,6 +50,8 @@ So far:
 - WGAN: 56%
 - C-WGAN (concentration only): 48%
 - C-WGAN (both): 51%
+- BiGAN: 70%
+- BiGAN + Whitening: 72%
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try

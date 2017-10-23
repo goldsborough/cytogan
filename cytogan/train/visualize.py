@@ -255,6 +255,51 @@ def vector_distance(start,
         _save_figure(save_to, 'vector-distance.png')
 
 
+def single_factors(model,
+                   start,
+                   end,
+                   factor_indices,
+                   interpolation_length,
+                   method,
+                   gray=False,
+                   save_to=None,
+                   title='Single Factor Interpolation'):
+    assert model.is_generative, model.name + ' is not generative'
+    assert np.ndim(start) > 0, 'points must not be scalars'
+
+    if isinstance(factor_indices, int):
+        factor_indices = np.arange(factor_indices)
+
+    if method == 'linear':
+        interpolation = _linear_interpolation(start, end, interpolation_length)
+    elif method == 'slerp':
+        interpolation = _slerp_interpolation(start, end, interpolation_length)
+
+    # Begin with only the start vector, tiled into three dimensions.
+    repeats = (1, interpolation_length, len(factor_indices))
+    base = np.tile(start.reshape(-1, 1, 1), repeats)
+
+    # Insert the single rows of variation, one depth = one factor
+    depths = np.arange(len(factor_indices))
+    base[factor_indices, :, depths] = interpolation[factor_indices]
+
+    # Flatten out into a list of samples
+    samples = base.T.reshape(-1, len(base))
+    images = model.generate(samples).reshape(-1, *model.image_shape)
+
+    if _is_grayscale(images):
+        images = _make_rgb(images)
+
+    plot.figure(figsize=(8, len(factor_indices)))
+    for index, image in enumerate(images):
+        _plot_image_tile(
+            len(factor_indices), interpolation_length, index, image, gray)
+
+    if save_to is not None:
+        filename = '{0}-single-factors.png'.format(method)
+        _save_figure(save_to, filename)
+
+
 def disable_display():
     plot.switch_backend('Agg')
 

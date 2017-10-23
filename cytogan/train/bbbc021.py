@@ -350,7 +350,17 @@ with common.get_session(options.gpus) as session:
             options.interpolation_method,
             options.store_interpolation_frames,
             conditional=labels,
-            gray=True,
+            save_to=options.figure_dir)
+
+    if options.interpolate_single_factors is not None:
+        start, end = np.random.randn(2, model.noise_size)
+        visualize.single_factors(
+            model,
+            start,
+            end,
+            options.interpolate_samples[0],
+            options.interpolate_single_factors[1],
+            options.interpolation_method,
             save_to=options.figure_dir)
 
     if options.generative_samples is not None:
