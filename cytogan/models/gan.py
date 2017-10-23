@@ -76,7 +76,7 @@ class GAN(model.Model):
     def encode(self, batch, rescale=True):
         images, conditionals = self._expand_batch(batch)
         if rescale:
-            images = (images * 2.0) - 1
+            images = (np.array(images) * 2.0) - 1
         if conditionals is None:
             return self.encoder.predict_on_batch(images)
         return self.encoder.predict_on_batch([images, conditionals])

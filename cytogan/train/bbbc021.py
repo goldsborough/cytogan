@@ -150,11 +150,11 @@ elif options.model == 'infogan':
 elif options.model == 'bigan':
     hyper = bigan.Hyper(
         image_shape,
-        generator_filters=(256, 128, 64, 32),
+        generator_filters=(128, 64, 32, 16),
         generator_strides=(1, 2, 2, 2),
-        encoder_filters=(256, 128, 64, 32),
+        encoder_filters=(128, 64, 32, 16),
         encoder_strides=(1, 2, 2, 2),
-        discriminator_filters=[(256, 128, 64, 32), (1024, 256)],
+        discriminator_filters=[(128, 64, 32, 16), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
         initial_shape=(12, 12))

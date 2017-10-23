@@ -38,7 +38,7 @@ To set up port forwarding between your local machine and the VM, use these flags
 
 So far:
 
-- DCGAN: 43%
+- DCGAN: 51%
 - LSGAN: 68%
 - LSGAN + Whitening: 76%
 - BEGAN: 68%

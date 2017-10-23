@@ -33,7 +33,7 @@ class BiGAN(gan.GAN):
 
     def encode(self, images, rescale=True):
         if rescale:
-            images = (images * 2.0) - 1
+            images = (np.array(images) * 2.0) - 1
 
         return self.session.run(self.latent, {
             K.learning_phase(): 0,

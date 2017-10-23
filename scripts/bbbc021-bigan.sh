@@ -21,4 +21,5 @@ python3 -m cytogan.train.bbbc021                          \
   --latent-moa                                            \
   --confusion-matrix                                      \
   --normalize-luminance                                   \
+  --save-profiles \
   $@
