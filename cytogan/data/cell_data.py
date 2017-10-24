@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-from cytogan.data.image_loader import AsyncImageLoader
+from cytogan.data.image_loader import ImageLoader, AsyncImageLoader
 from cytogan.extra import logs
 
 log = logs.get_logger(__name__)
@@ -154,6 +154,7 @@ class CellData(object):
                      len(self.moa)))
 
         self.images = AsyncImageLoader(self.image_root)
+        self.sync_images = ImageLoader(self.image_root)
         self.normalize_luminance = normalize_luminance
         self.batch_index = 0
         self.batches_with_labels = with_labels
@@ -218,8 +219,12 @@ class CellData(object):
             else:
                 yield keys, images
 
-    def get_images(self, keys):
-        _, images = self.images[keys]
+    def get_images(self, keys, in_order=False):
+        if in_order:
+            fetched_keys, images = self.sync_images[keys]
+            assert fetched_keys == keys
+        else:
+            _, images = self.images[keys]
         if self.normalize_luminance:
             return _normalize_luminance(images)
         else:

@@ -317,7 +317,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
                     labels=(0.1, 0.3),
                     save_to=options.figure_dir)
             except Exception as e:
-                print(e)
+                log.error('%s', e)
 
     # Kept here, but don't use it, it won't look good
     if options.latent_samples is not None:
@@ -380,10 +380,10 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.image_algebra is not None:
         keys = pd.read_csv(options.image_algebra)
-        images = cell_data.get_images(keys.values.flatten())
-        assert len(images) > 0
-        images = np.array(images).reshape(-1, 3, *images[0].shape)
-        lhs, rhs, base = np.split(images, 3, axis=1)
+        keys = list(keys.values.flatten())
+        images = cell_data.get_images(keys, in_order=True)
+        assert len(images) == len(keys)
+        lhs, rhs, base = images[::3], images[1::3], images[2::3]
         result, moas = profiling.algebra(model, lhs, rhs, base,
                                          treatment_profiles)
         visualize.image_algebra(
