@@ -336,6 +336,7 @@ def image_algebra(model,
                   base,
                   result,
                   labels=None,
+                  vectors=None,
                   gray=False,
                   save_to=None,
                   title='Image Algebra'):
@@ -348,12 +349,27 @@ def image_algebra(model,
     if labels is None:
         labels = [None] * number_of_equations
 
-    plot.figure(figsize=(7, number_of_equations + 1))
+    plot.figure(figsize=(7, number_of_equations + 2))
     for n, equation in enumerate(zip(lhs, rhs, base, result, labels)):
         subplot_equation(number_of_equations, n, *equation, gray)
 
     if save_to is not None:
         _save_figure(save_to, 'image-algebra.png')
+
+    if vectors is not None:
+        vector_labels = np.repeat([0, 1, 2, 3], number_of_equations)
+        transformed = sklearn.manifold.TSNE(
+            n_components=2, perplexity=2, init='pca').fit_transform(vectors)
+        plot.figure(figsize=(5, 5))
+        plot.scatter(
+            transformed[:, 0],
+            transformed[:, 1],
+            c=vector_labels,
+            cmap='plasma')
+        colorbar = plot.colorbar(ticks=[0, 1, 2, 3])
+        colorbar.ax.set_yticklabels(['lhs', 'rhs', 'base', 'result'])
+        if save_to is not None:
+            _save_figure(save_to, 'image-algebra-vectors.png')
 
 
 def disable_display():

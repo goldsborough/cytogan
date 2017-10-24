@@ -384,10 +384,17 @@ with common.get_session(options.gpus, options.random_seed) as session:
         images = cell_data.get_images(keys, in_order=True)
         assert len(images) == len(keys)
         lhs, rhs, base = images[::3], images[1::3], images[2::3]
-        result, moas = profiling.algebra(model, lhs, rhs, base,
-                                         treatment_profiles)
+        vectors, result, moas = profiling.algebra(model, lhs, rhs, base,
+                                                  treatment_profiles)
         visualize.image_algebra(
-            model, lhs, rhs, base, result, moas, save_to=options.figure_dir)
+            model,
+            lhs,
+            rhs,
+            base,
+            result,
+            labels=moas,
+            vectors=vectors,
+            save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         number_of_rows = None
