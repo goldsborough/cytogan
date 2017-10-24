@@ -293,8 +293,8 @@ def single_factors(model,
     # Insert the single rows of variation, one depth = one factor
     depths = np.arange(len(factor_indices))
     base[factor_indices, :, depths] = interpolation[factor_indices]
-    assert (base[factor_indices, -1, depths] == interpolation[factor_indices,
-                                                              -1]).all()
+    np.testing.assert_allclose(base[factor_indices, -1, depths],
+                               interpolation[factor_indices, -1])
 
     # Flatten out into a list of samples
     samples = base.T.reshape(-1, len(base))
