@@ -113,9 +113,15 @@ def _slerp_interpolation(start, end, number_of_samples):
     # https://github.com/soumith/dcgan.torch/issues/14
     # Also: https://arxiv.org/pdf/1609.04468.pdf
     fractions = np.linspace(0, 1, number_of_samples)
-    unit_start = start / np.linalg.norm(start)
-    unit_end = end / np.linalg.norm(end)
-    dot_products = np.sum(unit_start * unit_end, axis=1)
+
+    unit_start = start / np.linalg.norm(start, axis=-1).reshape(-1, 1)
+    unit_end = end / np.linalg.norm(end, axis=-1).reshape(-1, 1)
+
+    np.testing.assert_allclose(np.linalg.norm(unit_start, axis=-1), 1.0)
+    np.testing.assert_allclose(np.linalg.norm(unit_end, axis=-1), 1.0)
+
+    dot_products = np.sum(unit_start * unit_end, axis=-1)
+
     omega = np.arccos(np.clip(dot_products, -1, 1)).reshape(-1, 1)
     omega_sine = np.sin(omega)
 
@@ -125,8 +131,9 @@ def _slerp_interpolation(start, end, number_of_samples):
 
     start_mix = np.sin((1.0 - fractions) * omega) / omega_sine
     end_mix = np.sin(fractions * omega) / omega_sine
-    return np.expand_dims(start_mix, 1) * start + \
-           np.expand_dims(end_mix, 1) * end
+    left = np.expand_dims(start_mix, 1) * start
+    right = np.expand_dims(end_mix, 1) * end
+    return left + right
 
 
 def interpolation(model,
@@ -274,6 +281,10 @@ def single_factors(model,
         interpolation = _linear_interpolation(start, end, interpolation_length)
     elif method == 'slerp':
         interpolation = _slerp_interpolation(start, end, interpolation_length)
+        interpolation = interpolation.squeeze(axis=0)
+
+    assert np.ndim(interpolation) == 2, interpolation.shape
+    assert interpolation.shape[0] == len(start), interpolation.shape
 
     # Begin with only the start vector, tiled into three dimensions.
     repeats = (1, interpolation_length, len(factor_indices))
