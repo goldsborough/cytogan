@@ -3,6 +3,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import scipy.misc
 import tensorflow as tf
 from tqdm import tqdm
@@ -37,6 +38,7 @@ parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--noise-file')
+parser.add_argument('--image-algebra')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -355,7 +357,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.interpolate_single_factors is not None:
         if options.interpolate_factors_from_images:
-            images = cell_data.next_batch(2)
+            image_pool = cell_data.next_batch(100)
+            indices = np.random.randint(0, 100, 2)
+            images = np.array(image_pool)[indices]
             start, end = model.encode(images)
         else:
             start, end = np.random.randn(2, model.noise_size)
@@ -367,6 +371,12 @@ with common.get_session(options.gpus, options.random_seed) as session:
             options.interpolate_single_factors[1],
             options.interpolation_method,
             save_to=options.figure_dir)
+
+    if options.image_algebra is not None:
+        keys = pd.read_csv(options.image_algebra)
+        _, images = cell_data.images[keys.values.flatten()]
+        images = np.array(images).reshape(-1, 3, *images[0].shape)
+        visualize.image_algebra(model, images, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         if options.model == 'infogan':

@@ -316,6 +316,41 @@ def single_factors(model,
         _save_figure(save_to, filename)
 
 
+def subplot_equation(number_of_rows, row_index, lhs, rhs, base, result, gray):
+    for n, image in enumerate([lhs, rhs, base, result]):
+        index = (row_index * 4) + n
+        _plot_image_tile(number_of_rows, 4, index, image.squeeze(), gray)
+
+
+def image_algebra(model,
+                  images,
+                  gray=False,
+                  save_to=None,
+                  title='Image Algebra'):
+    assert model.is_generative, model.name + ' is not generative'
+
+    lhs, rhs, base = np.split(images, 3, axis=1)
+    images = np.concatenate([lhs, rhs, base], axis=0)
+    vectors = model.encode(images.squeeze())
+
+    lhs, rhs, base = np.split(vectors, 3, axis=0)
+    target_vectors = base + (lhs - rhs)
+    result_images = model.generate(target_vectors)
+
+    if _is_grayscale(result_images):
+        result_images = _make_rgb(result_images)
+
+    lhs, rhs, base = np.split(images.squeeze(), 3, axis=0)
+    number_of_equations = len(result_images)
+
+    plot.figure(figsize=(5, 10))
+    for n, equation in enumerate(zip(lhs, rhs, base, result_images)):
+        subplot_equation(number_of_equations, n, *equation, gray)
+
+    if save_to is not None:
+        _save_figure(save_to, 'image-algebra.png')
+
+
 def disable_display():
     plot.switch_backend('Agg')
 
