@@ -32,6 +32,7 @@ Hyper = collections.namedtuple('Hyper', [
 def sample_variables(number_of_samples,
                      discrete_variables,
                      continuous_variables,
+                     interpolation_range,
                      discrete_index=0):
     categorical = np.zeros([number_of_samples, discrete_variables])
     if discrete_variables > 0:
@@ -41,7 +42,8 @@ def sample_variables(number_of_samples,
     per_variable = number_of_samples // continuous_variables
     for i in range(continuous_variables):
         column = np.zeros(number_of_samples)
-        interpolation = np.linspace(-2, +2, per_variable)
+        interpolation = np.linspace(-interpolation_range, +interpolation_range,
+                                    per_variable)
         column[i * per_variable:(i + 1) * per_variable] = interpolation
         continuous.append(column.reshape(-1, 1))
 

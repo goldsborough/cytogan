@@ -39,6 +39,7 @@ parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--noise-file')
 parser.add_argument('--image-algebra')
+parser.add_argument('--interpolation-range', type=float, default=2.0)
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -386,9 +387,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
     if options.generative_samples is not None:
         number_of_rows = None
         if options.model == 'infogan':
-            latent = infogan.sample_variables(options.generative_samples,
-                                              discrete_variables,
-                                              continuous_variables)
+            latent = infogan.sample_variables(
+                options.generative_samples, discrete_variables,
+                continuous_variables, options.interpolation_range)
             noise = np.random.randn(1, model.noise_size).repeat(
                 options.generative_samples, axis=0)
             samples = [noise, latent]
