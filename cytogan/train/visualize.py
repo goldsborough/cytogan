@@ -202,11 +202,11 @@ def generative_samples(model,
     images = model.generate(*samples).reshape(-1, *model.image_shape)
     if _is_grayscale(images):
         images = _make_rgb(images)
-    figure = plot.figure(figsize=(10, 10))
-    figure.suptitle(title)
     if number_of_rows is None:
         number_of_rows = int(np.ceil(np.sqrt(len(images))))
     number_of_columns = int(np.ceil(len(images) / number_of_rows))
+    figure = plot.figure(figsize=(10, min(10, number_of_rows)))
+    figure.suptitle(title)
     for index, image in enumerate(images):
         _plot_image_tile(number_of_rows, number_of_columns, index, image, gray)
 
