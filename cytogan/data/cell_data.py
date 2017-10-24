@@ -218,6 +218,13 @@ class CellData(object):
             else:
                 yield keys, images
 
+    def get_images(self, keys):
+        _, images = self.images[keys]
+        if self.normalize_luminance:
+            return _normalize_luminance(images)
+        else:
+            return images
+
     def create_dataset_from_profiles(self, keys, profiles):
         # First filter out metadata for irrelevant keys.
         relevant_metadata = self.metadata.loc[keys]

@@ -374,7 +374,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.image_algebra is not None:
         keys = pd.read_csv(options.image_algebra)
-        _, images = cell_data.images[keys.values.flatten()]
+        images = cell_data.get_images(keys.values.flatten())
         images = np.array(images).reshape(-1, 3, *images[0].shape)
         visualize.image_algebra(model, images, save_to=options.figure_dir)
 
