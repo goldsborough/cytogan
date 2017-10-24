@@ -32,13 +32,14 @@ parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--load-cell-data', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
-parser.add_argument('--load-collapsed-profiles')
+parser.add_argument('--load-treatment-profiles')
 parser.add_argument('--tsne-perplexity', type=int)
 parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--noise-file')
 parser.add_argument('--image-algebra')
+parser.add_argument('--image-algebra-with-moa', action='store_true')
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 options = common.parse_args(parser)
 
@@ -203,7 +204,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
         log.info('Starting Evaluation')
 
         loaded_profiles = (options.load_profiles
-                           or options.load_collapsed_profiles)
+                           or options.load_treatment_profiles)
         if not loaded_profiles:
             keys, profiles = [], []
             batch_generator = cell_data.batches_of_size(options.batch_size)
@@ -236,10 +237,10 @@ with common.get_session(options.gpus, options.random_seed) as session:
             if options.save_profiles:
                 save_profiles(dataset, 'whitened')
 
-        if options.load_collapsed_profiles:
+        if options.load_treatment_profiles:
             treatment_profiles = profiling.load_profiles(
-                options.load_collapsed_profiles)
-            log.info('Found %d collapsed profiles', len(treatment_profiles))
+                options.load_treatment_profiles)
+            log.info('Found %d treatment profiles', len(treatment_profiles))
         else:
             log.info('Collapsing profiles across treatments')
             # The DMSO (control) should not participate in the MOA classification.
@@ -382,7 +383,11 @@ with common.get_session(options.gpus, options.random_seed) as session:
         images = cell_data.get_images(keys.values.flatten())
         assert len(images) > 0
         images = np.array(images).reshape(-1, 3, *images[0].shape)
-        visualize.image_algebra(model, images, save_to=options.figure_dir)
+        lhs, rhs, base = np.split(images, 3, axis=1)
+        result, moas = profiling.algebra(model, lhs, rhs, base,
+                                         treatment_profiles)
+        visualize.image_algebra(
+            model, lhs, rhs, base, result, moas, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         number_of_rows = None
@@ -434,12 +439,14 @@ with common.get_session(options.gpus, options.random_seed) as session:
             if np.ndim(noise) == 1:
                 noise = noise.reshape(1, -1)
             images = model.generate(noise)
-            directory = os.path.join(options.workspace, 'from-noise')
+            directory = os.path.join(options.workspace, options.figure_dir,
+                                     'from-noise')
             if not os.path.exists(directory):
                 os.makedirs(directory)
             for n, image in enumerate(images):
                 path = os.path.join(directory, '{0}.png'.format(n))
                 scipy.misc.imsave(path, image)
+                log.info('Saved image generated from noise: %s', path)
 
 if options.show_figures:
     visualize.show()

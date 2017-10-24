@@ -18,6 +18,7 @@ def _plot_image_tile(number_of_rows, number_of_columns, index, image, gray):
     plot.imshow(image, cmap=('gray' if gray else None))
     axis.get_xaxis().set_visible(False)
     axis.get_yaxis().set_visible(False)
+    return axis
 
 
 def _make_rgb(images):
@@ -318,35 +319,37 @@ def single_factors(model,
         _save_figure(save_to, filename)
 
 
-def subplot_equation(number_of_rows, row_index, lhs, rhs, base, result, gray):
+def subplot_equation(number_of_rows, row_index, lhs, rhs, base, result, label,
+                     gray):
     for n, image in enumerate([lhs, rhs, base, result]):
         index = (row_index * 4) + n
-        _plot_image_tile(number_of_rows, 4, index, image.squeeze(), gray)
+        axis = _plot_image_tile(number_of_rows, 4, index, image.squeeze(),
+                                gray)
+
+    if label is not None:
+        axis.text(1.2, 0.5, label, transform=axis.transAxes)
 
 
 def image_algebra(model,
-                  images,
+                  lhs,
+                  rhs,
+                  base,
+                  result,
+                  labels=None,
                   gray=False,
                   save_to=None,
                   title='Image Algebra'):
     assert model.is_generative, model.name + ' is not generative'
 
-    lhs, rhs, base = np.split(images, 3, axis=1)
-    images = np.concatenate([lhs, rhs, base], axis=0)
-    vectors = model.encode(images.squeeze())
+    if _is_grayscale(result):
+        result = _make_rgb(result)
 
-    lhs, rhs, base = np.split(vectors, 3, axis=0)
-    target_vectors = base + (lhs - rhs)
-    result_images = model.generate(target_vectors)
-
-    if _is_grayscale(result_images):
-        result_images = _make_rgb(result_images)
-
-    lhs, rhs, base = np.split(images.squeeze(), 3, axis=0)
-    number_of_equations = len(result_images)
+    number_of_equations = len(result)
+    if labels is None:
+        labels = [None] * number_of_equations
 
     plot.figure(figsize=(5, 10))
-    for n, equation in enumerate(zip(lhs, rhs, base, result_images)):
+    for n, equation in enumerate(zip(lhs, rhs, base, result, labels)):
         subplot_equation(number_of_equations, n, *equation, gray)
 
     if save_to is not None:
