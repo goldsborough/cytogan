@@ -82,6 +82,7 @@ def make_parser(name):
     parser.add_argument('-w', '--workspace')
     parser.add_argument('-m', '--model', choices=models.MODELS, required=True)
     parser.add_argument('--dry', action='store_true')
+    parser.add_argument('--random-seed', type=int, default=42)
 
     return parser
 
@@ -125,7 +126,7 @@ def parse_args(parser):
     return options
 
 
-def get_session(gpus):
+def get_session(gpus, random_seed=42):
     log.info('Using GPUs: %s', gpus)
     if gpus is None:
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -137,8 +138,9 @@ def get_session(gpus):
     K.set_session(session)
     K.manual_variable_initialization(True)
 
-    np.random.seed(16)
-    tf.set_random_seed(42)
+    np.random.seed(random_seed)
+    tf.set_random_seed(random_seed)
+    log.info('Set random seed to %d', random_seed)
 
     return session
 

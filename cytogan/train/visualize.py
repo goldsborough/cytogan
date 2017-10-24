@@ -287,15 +287,18 @@ def single_factors(model,
 
     # Flatten out into a list of samples
     samples = base.T.reshape(-1, len(base))
+    # Include the full interpolation in the first row
+    samples = np.concatenate([interpolation.T, samples], axis=0)
     images = model.generate(samples).reshape(-1, *model.image_shape)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    plot.figure(figsize=(18, len(factor_indices)))
+    number_of_rows = len(factor_indices) + 1
+    plot.figure(figsize=(18, number_of_rows))
     for index, image in enumerate(images):
-        _plot_image_tile(
-            len(factor_indices), interpolation_length, index, image, gray)
+        _plot_image_tile(number_of_rows, interpolation_length, index, image,
+                         gray)
 
     if save_to is not None:
         filename = '{0}-single-factors.png'.format(method)

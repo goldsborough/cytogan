@@ -186,7 +186,7 @@ trainer = trainer.Trainer(options.epochs, number_of_batches,
 if learning.decay:
     common.log_learning_rate_decay(options, learning, number_of_batches)
 
-with common.get_session(options.gpus) as session:
+with common.get_session(options.gpus, options.random_seed) as session:
     model = Model(hyper, learning, session)
     log.info('\n%s', model)
     if options.restore_from is None:
