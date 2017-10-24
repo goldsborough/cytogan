@@ -363,11 +363,13 @@ with common.get_session(options.gpus, options.random_seed) as session:
             start, end = model.encode(images)
         else:
             start, end = np.random.randn(2, model.noise_size)
+        factors = np.random.randint(
+            hyper.latent_size, size=options.interpolate_single_factors[0])
         visualize.single_factors(
             model,
             start,
             end,
-            options.interpolate_single_factors[0],
+            factors,
             options.interpolate_single_factors[1],
             options.interpolation_method,
             save_to=options.figure_dir)
@@ -375,6 +377,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
     if options.image_algebra is not None:
         keys = pd.read_csv(options.image_algebra)
         images = cell_data.get_images(keys.values.flatten())
+        assert len(images) > 0
         images = np.array(images).reshape(-1, 3, *images[0].shape)
         visualize.image_algebra(model, images, save_to=options.figure_dir)
 
