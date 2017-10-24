@@ -282,6 +282,8 @@ def single_factors(model,
     # Insert the single rows of variation, one depth = one factor
     depths = np.arange(len(factor_indices))
     base[factor_indices, :, depths] = interpolation[factor_indices]
+    assert (base[factor_indices, -1, depths] == interpolation[factor_indices,
+                                                              -1]).all()
 
     # Flatten out into a list of samples
     samples = base.T.reshape(-1, len(base))
@@ -290,7 +292,7 @@ def single_factors(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    plot.figure(figsize=(12, len(factor_indices)))
+    plot.figure(figsize=(18, len(factor_indices)))
     for index, image in enumerate(images):
         _plot_image_tile(
             len(factor_indices), interpolation_length, index, image, gray)

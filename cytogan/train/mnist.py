@@ -207,7 +207,11 @@ with common.get_session(options.gpus) as session:
             save_to=options.figure_dir)
 
     if options.interpolate_single_factors is not None:
-        start, end = np.random.randn(2, model.noise_size)
+        if options.interpolate_factors_from_images:
+            images, _ = data.test.next_batch(2)
+            start, end = model.encode(images.reshape(-1, 28, 28, 1))
+        else:
+            start, end = np.random.randn(2, model.noise_size)
         visualize.single_factors(
             model,
             start,

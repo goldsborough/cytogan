@@ -353,7 +353,11 @@ with common.get_session(options.gpus) as session:
             save_to=options.figure_dir)
 
     if options.interpolate_single_factors is not None:
-        start, end = np.random.randn(2, model.noise_size)
+        if options.interpolate_factors_from_images:
+            images = cell_data.next_batch(2)
+            start, end = model.encode(images)
+        else:
+            start, end = np.random.randn(2, model.noise_size)
         visualize.single_factors(
             model,
             start,
