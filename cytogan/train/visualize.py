@@ -193,6 +193,7 @@ def generative_samples(model,
                        samples,
                        gray=False,
                        save_to=None,
+                       number_of_rows=None,
                        filename='generative-samples.png',
                        title='Generated Samples'):
     assert model.is_generative, model.name + ' is not generative'
@@ -203,10 +204,11 @@ def generative_samples(model,
         images = _make_rgb(images)
     figure = plot.figure(figsize=(10, 10))
     figure.suptitle(title)
-    figure_rows = int(np.ceil(np.sqrt(len(images))))
-    figure_columns = int(np.ceil(len(images) / figure_rows))
+    if number_of_rows is None:
+        number_of_rows = int(np.ceil(np.sqrt(len(images))))
+    number_of_columns = int(np.ceil(len(images) / number_of_rows))
     for index, image in enumerate(images):
-        _plot_image_tile(figure_rows, figure_columns, index, image, gray)
+        _plot_image_tile(number_of_rows, number_of_columns, index, image, gray)
 
     if save_to is not None:
         _save_figure(save_to, filename)

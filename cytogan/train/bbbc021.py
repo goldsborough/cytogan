@@ -384,23 +384,15 @@ with common.get_session(options.gpus, options.random_seed) as session:
         visualize.image_algebra(model, images, save_to=options.figure_dir)
 
     if options.generative_samples is not None:
+        number_of_rows = None
         if options.model == 'infogan':
-            categorical = np.zeros(
-                [options.generative_samples, discrete_variables])
-            if discrete_variables > 0:
-                categorical[:, 0] = 1
-            continuous = []
-            split = options.generative_samples // continuous_variables
-            for _ in range(continuous_variables):
-                values = np.concatenate([
-                    np.linspace(-2, +2, split),
-                    np.zeros(options.generative_samples - split)
-                ])
-                continuous.append(values.reshape(-1, 1))
-            latent = np.concatenate([categorical] + continuous, axis=1)
+            latent = infogan.sample_variables(options.generative_samples,
+                                              discrete_variables,
+                                              continuous_variables)
             noise = np.random.randn(1, model.noise_size).repeat(
                 options.generative_samples, axis=0)
             samples = [noise, latent]
+            number_of_rows = continuous_variables
         elif options.model.endswith('began'):
             samples = np.random.randn(options.generative_samples,
                                       model.latent_size)
@@ -418,8 +410,12 @@ with common.get_session(options.gpus, options.random_seed) as session:
             labels = np.array(list(cell_data.sample_labels(2)))
             labels = labels.repeat(options.generative_samples // 2, axis=0)
             samples.append(labels)
+
         visualize.generative_samples(
-            model, samples, save_to=options.figure_dir)
+            model,
+            samples,
+            save_to=options.figure_dir,
+            number_of_rows=number_of_rows)
 
         # Fix noise and sample many labels (should look very different?)
         if conditional_shape:

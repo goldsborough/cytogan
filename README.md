@@ -52,6 +52,7 @@ So far:
 - C-WGAN (both): 51%
 - BiGAN: 70%
 - BiGAN + Whitening: 72%
+- InfoGAN: 
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try
