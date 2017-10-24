@@ -363,8 +363,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
             start, end = model.encode(images)
         else:
             start, end = np.random.randn(2, model.noise_size)
-        factors = np.random.randint(
-            hyper.latent_size, size=options.interpolate_single_factors[0])
+        factors = np.random.choice(np.arange(hyper.latent_size),
+            options.interpolate_single_factors[0], replace=False)
         visualize.single_factors(
             model,
             start,
