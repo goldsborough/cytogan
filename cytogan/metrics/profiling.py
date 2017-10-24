@@ -39,8 +39,8 @@ def algebra(model, lhs, rhs, base, treatment_profiles):
     vectors = base + (lhs - rhs)
     images = model.generate(vectors)
 
-    nearest_neighbors = get_nearest_neighbors(vectors,
-                                              treatment_profiles['profile'])
+    _, nearest_neighbors = get_nearest_neighbors(vectors,
+                                                 treatment_profiles['profile'])
     moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
 
     for n, m in enumerate(moas):
