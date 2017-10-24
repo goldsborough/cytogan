@@ -331,7 +331,11 @@ with common.get_session(options.gpus, options.random_seed) as session:
             subject='Cells')
 
     if options.reconstruction_samples is not None:
-        images = cell_data.next_batch(options.reconstruction_samples)
+        image_pool = cell_data.next_batch(options.reconstruction_samples * 10)
+        indices = np.random.randint(0,
+                                    len(image_pool),
+                                    options.reconstruction_samples)
+        images = np.array(image_pool)[indices]
         visualize.reconstructions(
             model, np.stack(images, axis=0), save_to=options.figure_dir)
 
