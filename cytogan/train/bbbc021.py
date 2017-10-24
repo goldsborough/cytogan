@@ -28,6 +28,7 @@ parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--no-latent-embedding', action='store_true')
 parser.add_argument('--whiten-profiles', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
+parser.add_argument('--load-cell-data', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
 parser.add_argument('--load-collapsed-profiles')
@@ -56,7 +57,7 @@ log.debug('Options:\n%s', options.as_string)
 if not options.show_figures:
     visualize.disable_display()
 
-if not options.skip_evaluation:
+if not options.skip_evaluation or options.load_cell_data:
     cell_data = CellData(options.metadata, options.labels, options.images,
                          options.cell_count_file, options.pattern,
                          options.normalize_luminance, options.conditional,
