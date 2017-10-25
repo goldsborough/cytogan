@@ -386,18 +386,17 @@ with common.get_session(options.gpus, options.random_seed) as session:
                                    options.image_algebra_sample_size)
             images = cell_data.get_images(keys, in_order=True)
             assert len(images) == len(keys)
-            lhs, rhs, base = np.split(images, 3, axis=0)
-            vectors, result, labels = experiment.calculate(
-                model, lhs, rhs, base)
+            lhs, rhs, base = np.split(np.array(images), 3, axis=0)
+            vectors, result = experiment.calculate(model, lhs, rhs, base)
             labels = experiment.evaluate(vectors, treatment_profiles)
             visualize.image_algebra(
                 model,
-                lhs,
-                rhs,
-                base,
-                result,
-                labels=labels,
-                vectors=vectors,
+                lhs[:options.image_algebra_display_size],
+                rhs[:options.image_algebra_display_size],
+                base[:options.image_algebra_display_size],
+                result[:options.image_algebra_display_size],
+                labels=labels[:options.image_algebra_display_size],
+                vectors=vectors[:options.image_algebra_display_size],
                 save_to=options.figure_dir)
 
     if options.generative_samples is not None:

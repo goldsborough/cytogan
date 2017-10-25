@@ -88,6 +88,16 @@ class MoaCanceling(Experiment):
         log.info('Top 3 MOAs for MOA canceling experiment (correct: %s): %s',
                  target_moa, top_k_string)
 
+        lhs = target_moa[:len(result_vectors)]
+        rhs = base = ['DMSO'] * len(lhs)
+        assert len(lhs) == len(rhs) == len(base) == len(moas), (len(lhs),
+                                                                len(rhs),
+                                                                len(base),
+                                                                len(moas))
+        labels = np.concatenate([lhs, rhs, base, moas], axis=1)
+
+        return labels
+
 
 class ConcentrationDistance(Experiment):
     def __init__(self):
@@ -110,7 +120,7 @@ class ConcentrationDistance(Experiment):
 
         lhs, rhs, base = self.constrain_size(lhs, rhs, base, maximum_amount)
 
-        return np.concatenate([lhs.index, rhs.index, base.index], axis=0)
+        return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
     def evaluate(self, result_vectors, treatment_profiles):
         pass

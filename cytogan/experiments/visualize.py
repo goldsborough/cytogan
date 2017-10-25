@@ -13,12 +13,18 @@ log = logs.get_logger(__name__)
 plot.style.use('ggplot')
 
 
-def _plot_image_tile(number_of_rows, number_of_columns, index, image, gray):
+def _plot_image_tile(number_of_rows,
+                     number_of_columns,
+                     index,
+                     image,
+                     gray,
+                     label=None):
     axis = plot.subplot(number_of_rows, number_of_columns, index + 1)
     plot.imshow(image, cmap=('gray' if gray else None))
     axis.get_xaxis().set_visible(False)
     axis.get_yaxis().set_visible(False)
-    return axis
+    if label is not None:
+        axis.text(0.05, -0.2, label, transform=axis.transAxes)
 
 
 def _make_rgb(images):
@@ -319,15 +325,12 @@ def single_factors(model,
         _save_figure(save_to, filename)
 
 
-def subplot_equation(number_of_rows, row_index, lhs, rhs, base, result, label,
+def subplot_equation(number_of_rows, row_index, lhs, rhs, base, result, labels,
                      gray):
     for n, image in enumerate([lhs, rhs, base, result]):
         index = (row_index * 4) + n
-        axis = _plot_image_tile(number_of_rows, 4, index, image.squeeze(),
-                                gray)
-
-    if label is not None:
-        axis.text(0.05, -0.2, label, transform=axis.transAxes)
+        _plot_image_tile(number_of_rows, 4, index,
+                         image.squeeze(), gray, labels[n])
 
 
 def image_algebra(model,
@@ -347,7 +350,7 @@ def image_algebra(model,
 
     number_of_equations = len(result)
     if labels is None:
-        labels = [None] * number_of_equations
+        labels = [[None] * 4] * number_of_equations
 
     plot.figure(figsize=(7, 7))
     for n, equation in enumerate(zip(lhs, rhs, base, result, labels)):
