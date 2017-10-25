@@ -3,17 +3,17 @@
 import os
 
 import numpy as np
-import pandas as pd
 import scipy.misc
 import tensorflow as tf
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
+from cytogan.experiments import visualize, algebra
 from cytogan.extra import distributions, logs, misc
 from cytogan.metrics import profiling
 from cytogan.models import (ae, began, bigan, conv_ae, dcgan, infogan, lsgan,
                             model, vae, wgan)
-from cytogan.train import common, trainer, visualize
+from cytogan.train import common, trainer
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
@@ -38,8 +38,9 @@ parser.add_argument('--vector-distance', action='store_true')
 parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--noise-file')
-parser.add_argument('--image-algebra')
-parser.add_argument('--image-algebra-with-moa', action='store_true')
+parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
+parser.add_argument('--image-algebra-sample-size', type=int, default=100)
+parser.add_argument('--image-algebra-display-size', type=int, default=5)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 options = common.parse_args(parser)
 
@@ -378,23 +379,26 @@ with common.get_session(options.gpus, options.random_seed) as session:
             options.interpolation_method,
             save_to=options.figure_dir)
 
-    if options.image_algebra is not None:
-        keys = pd.read_csv(options.image_algebra)
-        keys = list(keys.values.flatten())
-        images = cell_data.get_images(keys, in_order=True)
-        assert len(images) == len(keys)
-        lhs, rhs, base = images[::3], images[1::3], images[2::3]
-        vectors, result, moas = profiling.algebra(model, lhs, rhs, base,
-                                                  treatment_profiles)
-        visualize.image_algebra(
-            model,
-            lhs,
-            rhs,
-            base,
-            result,
-            labels=moas,
-            vectors=vectors,
-            save_to=options.figure_dir)
+    if options.image_algebra:
+        for experiment_name in options.image_algebra:
+            experiment = algebra.get_experiment(experiment_name)
+            keys = experiment.keys(cell_data,
+                                   options.image_algebra_sample_size)
+            images = cell_data.get_images(keys, in_order=True)
+            assert len(images) == len(keys)
+            lhs, rhs, base = np.split(images, 3, axis=0)
+            vectors, result, labels = experiment.calculate(
+                model, lhs, rhs, base)
+            labels = experiment.evaluate(vectors, treatment_profiles)
+            visualize.image_algebra(
+                model,
+                lhs,
+                rhs,
+                base,
+                result,
+                labels=labels,
+                vectors=vectors,
+                save_to=options.figure_dir)
 
     if options.generative_samples is not None:
         number_of_rows = None

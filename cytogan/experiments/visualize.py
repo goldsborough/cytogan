@@ -349,7 +349,7 @@ def image_algebra(model,
     if labels is None:
         labels = [None] * number_of_equations
 
-    plot.figure(figsize=(7, number_of_equations + 2))
+    plot.figure(figsize=(7, 7))
     for n, equation in enumerate(zip(lhs, rhs, base, result, labels)):
         subplot_equation(number_of_equations, n, *equation, gray)
 

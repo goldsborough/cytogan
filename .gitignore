@@ -390,3 +390,4 @@ TSWLatexianTemp*
 
 # End of https://www.gitignore.io/api/latex
 *.csv
+*.gz

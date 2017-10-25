@@ -31,26 +31,6 @@ def load_profiles(path):
     return data
 
 
-def algebra(model, lhs, rhs, base, treatment_profiles):
-    images = np.concatenate([lhs, rhs, base], axis=0)
-    vectors = model.encode(images.squeeze())
-
-    lhs, rhs, base = np.split(vectors, 3, axis=0)
-    result = base + (lhs - rhs)
-    images = model.generate(result)
-
-    _, nearest_neighbors = get_nearest_neighbors(result,
-                                                 treatment_profiles['profile'])
-    moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
-
-    for n, m in enumerate(moas):
-        log.info('Predicted MOA for image equation result %d: %s', n, m)
-
-    vectors = np.concatenate([lhs, rhs, base, result])
-
-    return vectors, images, moas
-
-
 def reduce_profiles_across_treatments(dataset):
     keys = ('compound', 'concentration', 'moa')
     reduced_profiles = []

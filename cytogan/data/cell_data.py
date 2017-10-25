@@ -280,3 +280,6 @@ class CellData(object):
         moas = list(dataset['moa'].unique())
         indices = dataset['moa'].apply(moas.index)
         return moas, indices
+
+    def parse_algebra_spec(self, spec):
+        pass
