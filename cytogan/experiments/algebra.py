@@ -69,7 +69,8 @@ class MoaCanceling(Experiment):
             result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
 
-        target_moa = treatment_profiles[self.compound]['moa']
+        predicate = treatment_profiles['compound'] == self.compound
+        target_moa = treatment_profiles[predicate].iloc[0]['moa']
         print(target_moa)
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
