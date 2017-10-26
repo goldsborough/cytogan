@@ -394,6 +394,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
                 model, lhs, rhs, base)
             print(vectors.shape)
             print(result_images.shape)
+            np.savetxt('vectors.csv', vectors, delimiter=',')
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
             labels = experiment.evaluate(result_vectors, treatment_profiles)
@@ -404,7 +405,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
                 base[:options.image_algebra_display_size],
                 result_images[:options.image_algebra_display_size],
                 labels=labels[:options.image_algebra_display_size],
-                vectors=vectors[:options.image_algebra_display_size],
+                vectors=vectors,
                 save_to=options.figure_dir)
 
     if options.generative_samples is not None:
