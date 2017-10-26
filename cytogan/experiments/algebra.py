@@ -7,6 +7,7 @@ from cytogan.metrics import profiling
 
 log = logs.get_logger(__name__)
 
+
 class Experiment(abc.ABC):
     @abc.abstractmethod
     def keys(self, cell_data, amount):
@@ -17,13 +18,22 @@ class Experiment(abc.ABC):
         pass
 
     def calculate(self, model, lhs, rhs, base):
+        assert len(lhs) == len(rhs) == len(base) == self.size, (len(lhs),
+                                                                len(rhs),
+                                                                len(base))
         images = np.concatenate([lhs, rhs, base], axis=0)
         vectors = model.encode(images.squeeze())
 
         lhs, rhs, base = np.split(vectors, 3, axis=0)
+        print(lhs.shape, rhs.shape, base.shape)
         result = (lhs - rhs) + base
+        print(result.shape)
         images = model.generate(result)
+        assert result.shape == (self.size, model.latent_size), result.shape
+        assert len(result) == len(images) == len(lhs) == self.size, (
+            len(result), len(images))
         vectors = np.concatenate([lhs, rhs, base, result], axis=0)
+        print(vectors.shape)
 
         return vectors, images
 
@@ -42,7 +52,7 @@ class Experiment(abc.ABC):
         log.info('Using %d (lhs, rhs, base) pairs for %s experiment',
                  len(lhs), self.name)
 
-        return lhs, rhs, base
+        return lhs, rhs, base, maximum_amount
 
 
 class MoaCanceling(Experiment):
@@ -50,6 +60,7 @@ class MoaCanceling(Experiment):
         self.name = 'MOA canceling'
         self.compound = 'emetine'
         self.concentration = 1.0
+        self.size = None
 
     def keys(self, cell_data, maximum_amount):
         com = cell_data.metadata['compound'] == self.compound
@@ -61,15 +72,18 @@ class MoaCanceling(Experiment):
         rhs = dmso[:len(dmso) // 2]
         base = dmso[len(dmso) // 2:]
 
-        lhs, rhs, base = self.constrain_size(lhs, rhs, base, maximum_amount)
+        constrained = self.constrain_size(lhs, rhs, base, maximum_amount)
+        lhs, rhs, base, self.size = constrained
 
         return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
     def evaluate(self, result_vectors, treatment_profiles):
+        assert len(result_vectors) == self.size
         np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
+        assert len(moas) == self.size, len(moas)
 
         com = treatment_profiles['compound'] == self.compound
         con = treatment_profiles['concentration'] == self.concentration
