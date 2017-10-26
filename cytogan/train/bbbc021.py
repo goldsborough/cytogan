@@ -387,14 +387,16 @@ with common.get_session(options.gpus, options.random_seed) as session:
             images = cell_data.get_images(keys, in_order=True)
             assert len(images) == len(keys)
             lhs, rhs, base = np.split(np.array(images), 3, axis=0)
-            vectors, result = experiment.calculate(model, lhs, rhs, base)
+            vectors, result_images = experiment.calculate(
+                model, lhs, rhs, base)
+            assert len(vectors) == len(result_images)
             labels = experiment.evaluate(vectors, treatment_profiles)
             visualize.image_algebra(
                 model,
                 lhs[:options.image_algebra_display_size],
                 rhs[:options.image_algebra_display_size],
                 base[:options.image_algebra_display_size],
-                result[:options.image_algebra_display_size],
+                result_images[:options.image_algebra_display_size],
                 labels=labels[:options.image_algebra_display_size],
                 vectors=vectors[:options.image_algebra_display_size],
                 save_to=options.figure_dir)

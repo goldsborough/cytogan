@@ -24,7 +24,7 @@ def _plot_image_tile(number_of_rows,
     axis.get_xaxis().set_visible(False)
     axis.get_yaxis().set_visible(False)
     if label is not None:
-        axis.text(0.05, -0.2, label, transform=axis.transAxes)
+        axis.text(0.05, -0.1, label, transform=axis.transAxes)
 
 
 def _make_rgb(images):
@@ -360,7 +360,8 @@ def image_algebra(model,
         _save_figure(save_to, 'image-algebra.png')
 
     if vectors is not None:
-        vector_labels = np.repeat([0, 1, 2, 3], number_of_equations)
+        vector_labels = np.repeat([1, 2, 3, 4], number_of_equations)
+        print(vector_labels)
         transformed = sklearn.manifold.TSNE(
             n_components=2, perplexity=2, init='pca').fit_transform(vectors)
         plot.figure(figsize=(5, 5))

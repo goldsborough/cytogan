@@ -22,11 +22,10 @@ class Experiment(abc.ABC):
         vectors = model.encode(images.squeeze())
 
         lhs, rhs, base = np.split(vectors, 3, axis=0)
-        result = base + (lhs - rhs)
+        result = (lhs - rhs) + base
         images = model.generate(result)
-        vectors = np.concatenate([lhs, rhs, base, result])
 
-        return vectors, images
+        return result, images
 
     def constrain_size(self, lhs, rhs, base, maximum_amount):
         log.info('Have %d lhs, %d rhs, %d base samples available for %s',
@@ -50,11 +49,14 @@ class MoaCanceling(Experiment):
     def __init__(self):
         self.name = 'MOA canceling'
         self.compound = 'emetine'
+        self.concentration = 1.0
 
     def keys(self, cell_data, maximum_amount):
         print(cell_data.metadata.head())
         com = cell_data.metadata['compound'] == self.compound
-        lhs = cell_data.metadata[com]
+        con = cell_data.metadata['concentration'] == self.concentration
+        lhs = cell_data.metadata[com & con]
+        print(lhs)
         assert len(lhs) > 0
 
         dmso = cell_data.metadata[cell_data.metadata['compound'] == 'DMSO']
@@ -70,10 +72,9 @@ class MoaCanceling(Experiment):
             result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
 
-        print(treatment_profiles.head())
-        predicate = treatment_profiles['compound'] == self.compound
-        target_moa = treatment_profiles[predicate].iloc[0]['moa']
-        print(target_moa)
+        com = treatment_profiles['compound'] == self.compound
+        con = treatment_profiles['concentration'] == self.concentration
+        target_moa = treatment_profiles[com & con].iloc[0]['moa']
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
 
@@ -83,7 +84,6 @@ class MoaCanceling(Experiment):
         counts = list(count_map.items())
         counts.sort(key=lambda p: p[1], reverse=True)
         top_k_indices, top_k_counts = list(zip(*counts[:3]))
-        print(top_k_indices, top_k_counts)
         top_k_moas = treatment_profiles['moa'].iloc[list(top_k_indices)]
 
         top_k_pairs = ((m, str(c)) for m, c in zip(top_k_moas, top_k_counts))
