@@ -1,5 +1,9 @@
 import numpy as np
 
+from cytogan.extra import logs
+
+log = logs.get_logger(__name__)
+
 
 def points_for_treatment(dataset, compound, concentration, sample_size=None):
     com = dataset['compound'] == compound
@@ -8,11 +12,15 @@ def points_for_treatment(dataset, compound, concentration, sample_size=None):
 
     if sample_size:
         treatment = treatment.sample(sample_size)
+        log.info('Sampling %d treatments from %d at random', sample_size,
+                 len(treatment))
 
     treatment_vector = treatment['profile'].mean(axis=0)
 
     dmso = dataset[dataset['compound'] == 'DMSO']
     dmso_vector = dmso['profile'].mean(axis=0)
+
+    print(treatment_vector, dmso_vector)
 
     return dmso_vector, treatment_vector
 
