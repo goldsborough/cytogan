@@ -383,6 +383,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
             save_to=options.figure_dir)
 
     if options.interpolate_treatment is not None:
+        assert options.interpolate_samples is not None, (
+            'Interpolation length not specified!')
         dmso, treatment = interpolation.points_for_treatment(
             cell_data,
             compound=options.interpolate_treatment[0],
@@ -392,7 +394,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             model,
             dmso,
             treatment,
-            options.interpolate_samples[1],
+            options.interpolate_samples[0],
             options.interpolation_method,
             options.store_interpolation_frames,
             save_to=options.figure_dir)
