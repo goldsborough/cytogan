@@ -43,9 +43,12 @@ class Experiment(abc.ABC):
 
         if maximum_amount:
             maximum_amount = min(len(lhs), len(rhs), len(base), maximum_amount)
-            lhs = np.random.choice(lhs, maximum_amount, replace=False)
-            rhs = np.random.choice(rhs, maximum_amount, replace=False)
-            base = np.random.choice(base, maximum_amount, replace=False)
+            np.random.shuffle(lhs)
+            np.random.shuffle(rhs)
+            np.random.shuffle(base)
+            lhs = lhs[:maximum_amount]
+            rhs = rhs[:maximum_amount]
+            base = base[:maximum_amount]
 
         assert len(lhs) == len(rhs) == len(base), (len(lhs), len(rhs),
                                                    len(base))
