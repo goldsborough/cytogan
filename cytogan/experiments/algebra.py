@@ -132,9 +132,9 @@ class ConcentrationDistance(Experiment):
         super(ConcentrationDistance, self).__init__(number_of_experiments)
         self.name = 'Concentration Distance'
         self.start_compound = 'emetine'
-        self.target_concentration = 1.0
         self.start_concentration = 0.1
         self.target_compound = 'ALLN'
+        self.target_concentration = 1.0
         self.lhs_treatment = '{0}/{1}'.format(self.start_compound,
                                               self.target_concentration)
         self.rhs_treatment = '{0}/{1}'.format(self.start_compound,
@@ -187,8 +187,9 @@ class ConcentrationDistance(Experiment):
         top_k_pairs = ((m, str(c)) for m, c in zip(top_k, top_k_counts))
         top_k_string = ', '.join('{0} ({1})'.format(*i) for i in top_k_pairs)
 
-        log.info('Top treatments for %s experiment (correct: %s): %s',
-                 self.name, self.target_treatment, top_k_string)
+        log.info('Top treatments for %s experiment (correct: %s/%s): %s',
+                 self.name, self.target_compound, self.target_concentration,
+                 top_k_string)
 
         lhs = np.expand_dims([self.lhs_treatment] * len(result), axis=1)
         rhs = np.expand_dims([self.rhs_treatment] * len(result), axis=1)
