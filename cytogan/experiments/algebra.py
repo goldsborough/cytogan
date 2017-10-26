@@ -53,8 +53,6 @@ class Experiment(abc.ABC):
         log.info('Using %d (lhs, rhs, base) pairs for %d %s experiments',
                  len(lhs), number_of_experiments, self.name)
 
-        lhs, rhs, base = np.split(lhs, 3, axis=0)
-
         return lhs, rhs, base, maximum_amount
 
 
