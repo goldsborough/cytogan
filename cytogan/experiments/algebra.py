@@ -1,6 +1,7 @@
 import abc
 
 import numpy as np
+import pandas as pd
 
 from cytogan.extra import logs
 from cytogan.metrics import profiling
@@ -26,7 +27,7 @@ class Experiment(abc.ABC):
         self.number_of_experiments = number_of_experiments
 
     @abc.abstractmethod
-    def keys(self, cell_data, amount):
+    def keys(self, dataset, amount):
         pass
 
     @abc.abstractmethod
@@ -68,20 +69,20 @@ class Experiment(abc.ABC):
         return lhs, rhs, base, maximum_amount
 
 
-class MoaCanceling(Experiment):
+class MOACanceling(Experiment):
     def __init__(self, number_of_experiments):
-        super(MoaCanceling, self).__init__(number_of_experiments)
+        super(MOACanceling, self).__init__(number_of_experiments)
         self.name = 'MOA canceling'
         self.compound = 'emetine'
         self.concentration = 1.0
 
-    def keys(self, cell_data, maximum_amount):
-        com = cell_data.metadata['compound'] == self.compound
-        con = cell_data.metadata['concentration'] == self.concentration
-        lhs = cell_data.metadata[com & con]
+    def keys(self, dataset, maximum_amount):
+        com = dataset['compound'] == self.compound
+        con = dataset['concentration'] == self.concentration
+        lhs = dataset[com & con]
         assert len(lhs) > 0
 
-        dmso = cell_data.metadata[cell_data.metadata['compound'] == 'DMSO']
+        dmso = dataset[dataset['compound'] == 'DMSO']
         rhs = dmso[:len(dmso) // 2]
         base = dmso[len(dmso) // 2:]
 
@@ -137,24 +138,25 @@ class ConcentrationDistance(Experiment):
         self.base_treatment = '{0}/{1}'.format(self.target_compound,
                                                self.start_concentration)
 
-    def keys(self, cell_data, maximum_amount):
-        com = cell_data.metadata['compound'] == self.start_compound
-        con = cell_data.metadata['concentration'] == self.target_concentration
-        lhs = cell_data.metadata[com & con]
+    def keys(self, dataset, maximum_amount):
+        com = dataset['compound'] == self.start_compound
+        con = dataset['concentration'] == self.target_concentration
+        lhs = dataset[com & con]
         assert len(lhs) > 0
 
-        con = cell_data.metadata['concentration'] == self.start_concentration
-        rhs = cell_data.metadata[com & con]
+        con = dataset['concentration'] == self.start_concentration
+        rhs = dataset[com & con]
         assert len(rhs) > 0
 
-        com = cell_data.metadata['compound'] == self.target_compound
-        con = cell_data.metadata['concentration'] == self.start_concentration
-        base = cell_data.metadata[com & con]
-        assert len(rhs) > 0
+        com = dataset['compound'] == self.target_compound
+        con = dataset['concentration'] == self.start_concentration
+        base = dataset[com & con]
+        assert len(base) > 0
 
         constrained = self.constrain_size(lhs, rhs, base, maximum_amount)
         lhs, rhs, base, self.size = constrained
 
+        print(lhs.index)
         return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
     def evaluate(self, result_vectors, treatment_profiles):
@@ -194,8 +196,62 @@ class ConcentrationDistance(Experiment):
         return labels
 
 
+class OppositeMOA(Experiment):
+    def __init__(self, number_of_experiments):
+        super(OppositeMOA, self).__init__(number_of_experiments)
+        self.name = 'Concentration Distance'
+        self.moa_a = 'Protein synthesis'
+        self.moa_b = 'Protein degradation'
+        self.mean_dmso_profile = None
+
+    def keys(self, dataset, maximum_amount):
+        lhs = dataset[dataset['moa'] == self.moa_a]
+        assert len(lhs) > 0
+
+        rhs = dataset[dataset['moa'] == 'DMSO']
+        self.mean_dmso_profile = rhs['profile'].mean(axis=0)
+        assert len(rhs) > 0
+
+        base = dataset[dataset['moa'] == self.moa_b]
+        assert len(base) > 0
+
+        constrained = self.constrain_size(lhs, rhs, base, maximum_amount)
+        lhs, rhs, base, self.size = constrained
+
+        return list(np.concatenate([lhs.index, rhs.index, base.index]))
+
+    def evaluate(self, result_vectors, treatment_profiles):
+        assert len(result_vectors) == self.size
+
+        groups = np.split(result_vectors, self.number_of_experiments, axis=0)
+        mean_result_vectors = np.array([g.mean(axis=0) for g in groups])
+
+        dmso = pd.DataFrame(
+            columns=treatment_profiles.columns,
+            data=[['DMSO', 0.0, 'DMSO', self.mean_dmso_profile]])
+        print(dmso)
+        treatment_profiles = treatment_profiles.append(dmso, ignore_index=True)
+        print(treatment_profiles)
+
+        _, nearest_neighbors = profiling.get_nearest_neighbors(
+            mean_result_vectors, treatment_profiles['profile'])
+
+        result = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
+        accuracy = np.mean(result == 'DMSO')
+        log.info('Accuracy for %s experiment: %.3f', self.name, accuracy)
+
+        lhs = np.expand_dims([self.moa_a] * len(result), axis=1)
+        rhs = np.expand_dims(['DMSO'] * len(result), axis=1)
+        base = np.expand_dims([self.moa_b] * len(result), axis=1)
+        result = np.expand_dims(result, axis=1)
+        labels = np.concatenate([lhs, rhs, base, result], axis=1)
+
+        return labels
+
+
 EXPERIMENT_MAP = {
-    'moa-canceling': MoaCanceling,
+    'moa-canceling': MOACanceling,
+    'opposite-moa': OppositeMOA,
     'concentration-distance': ConcentrationDistance,
 }
 EXPERIMENTS = list(EXPERIMENT_MAP.keys())

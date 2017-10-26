@@ -19,9 +19,9 @@ def save_profiles(path, profiles):
         chunksize=100000)
 
 
-def load_profiles(path):
+def load_profiles(path, index=None):
     log.info('Loading profiles from %s', path)
-    data = pd.read_csv(path, compression='gzip', encoding='ascii')
+    data = pd.read_csv(path, index_col=index)
     parsed_profiles = []
     for p in data['profile']:
         values = re.sub(r'[\[\]\n]', '', p).split()

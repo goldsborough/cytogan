@@ -44,6 +44,7 @@ So far:
 - BEGAN: 68%
 - C-BEGAN (both): 66%
 - C-BEGAN (concentration only but with embedding (mistake)): 68%
+- C-BEGAN (concentration only): 71%
 - C-LSGAN: 55%
 - C-LSGAN (both, embedding): 53%
 - C-LSGAN (both, no embedding): 48%
@@ -52,7 +53,7 @@ So far:
 - C-WGAN (both): 51%
 - BiGAN: 70%
 - BiGAN + Whitening: 72%
-- InfoGAN: 
+- InfoGAN:
 
 InfoGan still crap. Collapses immediately. Will try sigmoid + BCE instead of LL
 for continuous variables. Also, it seems discriminator wins too early. Will try

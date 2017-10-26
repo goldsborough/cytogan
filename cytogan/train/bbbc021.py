@@ -8,7 +8,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from cytogan.data.cell_data import CellData
-from cytogan.experiments import visualize, algebra
+from cytogan.experiments import visualize, algebra, interpolation
 from cytogan.extra import distributions, logs, misc
 from cytogan.metrics import profiling
 from cytogan.models import (ae, began, bigan, conv_ae, dcgan, infogan, lsgan,
@@ -17,32 +17,34 @@ from cytogan.train import common, trainer
 
 parser = common.make_parser('cytogan-bbbc021')
 parser.add_argument('--cell-count-file')
-parser.add_argument('--metadata', required=True)
-parser.add_argument('--labels', required=True)
-parser.add_argument('--images', required=True)
-parser.add_argument('-p', '--pattern', action='append')
+parser.add_argument('--concentration-only-labels', action='store_true')
 parser.add_argument('--confusion-matrix', action='store_true')
+parser.add_argument('--image-algebra-display-size', type=int, default=5)
+parser.add_argument('--image-algebra-equations', type=int, default=3)
+parser.add_argument('--image-algebra-sample-size', type=int, default=100)
+parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
+parser.add_argument('--images', required=True)
+parser.add_argument('--interpolate-treatment', nargs=2)
+parser.add_argument('--interpolate-treatment-sample-size', type=int)
+parser.add_argument('--interpolation-range', type=float, default=2.0)
+parser.add_argument('--labels', required=True)
 parser.add_argument('--latent-compounds', action='store_true')
 parser.add_argument('--latent-concentrations', action='store_true')
 parser.add_argument('--latent-moa', action='store_true')
-parser.add_argument('--normalize-luminance', action='store_true')
-parser.add_argument('--no-latent-embedding', action='store_true')
-parser.add_argument('--whiten-profiles', action='store_true')
-parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--load-cell-data', action='store_true')
-parser.add_argument('--save-profiles', action='store_true')
 parser.add_argument('--load-profiles')
 parser.add_argument('--load-treatment-profiles')
+parser.add_argument('--metadata', required=True)
+parser.add_argument('--no-latent-embedding', action='store_true')
+parser.add_argument('--noise-file')
+parser.add_argument('--normalize-luminance', action='store_true')
+parser.add_argument('--save-profiles', action='store_true')
+parser.add_argument('--skip-evaluation', action='store_true')
+parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--tsne-perplexity', type=int)
 parser.add_argument('--vector-distance', action='store_true')
-parser.add_argument('--concentration-only-labels', action='store_true')
-parser.add_argument('--store-generated-noise', action='store_true')
-parser.add_argument('--noise-file')
-parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
-parser.add_argument('--image-algebra-sample-size', type=int, default=100)
-parser.add_argument('--image-algebra-equations', type=int, default=3)
-parser.add_argument('--image-algebra-display-size', type=int, default=5)
-parser.add_argument('--interpolation-range', type=float, default=2.0)
+parser.add_argument('--whiten-profiles', action='store_true')
+parser.add_argument('-p', '--pattern', action='append')
 options = common.parse_args(parser)
 
 if options.save_profiles:
@@ -203,7 +205,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
         trainer.train(model, cell_data.next_batch)
 
     if options.load_profiles:
-        dataset = profiling.load_profiles(options.load_profiles)
+        dataset = profiling.load_profiles(options.load_profiles, index=0)
         log.info('Found %s profiles', len(dataset))
 
     if options.load_treatment_profiles:
@@ -247,9 +249,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
         if not options.load_treatment_profiles:
             log.info('Collapsing profiles across treatments')
             # The DMSO (control) should not participate in the MOA classification.
-            dataset = dataset[dataset['compound'] != 'DMSO']
             treatment_profiles = profiling.reduce_profiles_across_treatments(
-                dataset)
+                dataset[dataset['compound'] != 'DMSO'])
             log.info(
                 'Reduced dataset from %d to %d profiles for each treatment',
                 len(dataset), len(treatment_profiles))
@@ -357,10 +358,10 @@ with common.get_session(options.gpus, options.random_seed) as session:
             model,
             start,
             end,
-            len(start),
             options.interpolate_samples[1],
             options.interpolation_method,
             options.store_interpolation_frames,
+            number_of_interpolations=len(start),
             conditional=labels,
             save_to=options.figure_dir)
 
@@ -381,19 +382,31 @@ with common.get_session(options.gpus, options.random_seed) as session:
             options.interpolation_method,
             save_to=options.figure_dir)
 
+    if options.interpolate_treatment is not None:
+        dmso, treatment = interpolation.points_for_treatment(
+            cell_data,
+            compound=options.interpolate_treatment[0],
+            concentration=options.interpolate_treatment[1],
+            sample_size=options.interpolate_treatment_sample_size)
+        visualize.interpolation(
+            model,
+            dmso,
+            treatment,
+            options.interpolate_samples[1],
+            options.interpolation_method,
+            options.store_interpolation_frames,
+            save_to=options.figure_dir)
+
     if options.image_algebra:
         for experiment_name in options.image_algebra:
             experiment = algebra.get_experiment(
                 experiment_name, options.image_algebra_equations)
-            keys = experiment.keys(cell_data,
-                                   options.image_algebra_sample_size)
+            keys = experiment.keys(dataset, options.image_algebra_sample_size)
             images = cell_data.get_images(keys, in_order=True)
             assert len(images) == len(keys)
             lhs, rhs, base = np.split(np.array(images), 3, axis=0)
             vectors, result_images = experiment.calculate(
                 model, lhs, rhs, base)
-            print(vectors.shape)
-            print(result_images.shape)
             np.savetxt('vectors.csv', vectors, delimiter=',')
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
