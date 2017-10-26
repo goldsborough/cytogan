@@ -9,7 +9,9 @@ def points_for_treatment(treatment_profiles, compound, concentration):
     dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
     dmso = np.array(list(dmso['profile']))
 
-    return dmso, treatment
+    print(dmso, treatment)
+
+    return dmso.squeeze(), treatment.squeeze()
 
 
 def points_from_images(model, cell_data, pool_size=100):
