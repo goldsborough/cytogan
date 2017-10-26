@@ -9,7 +9,7 @@ def points_for_treatment(treatment_profiles, compound, concentration):
     assert np.ndim(treatment) > 0, treatment.shape
 
     dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
-    dmso = np.arra(dmso['profile'].values)
+    dmso = np.array(dmso['profile'].values)
 
     return dmso, treatment
 
