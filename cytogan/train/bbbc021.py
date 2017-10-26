@@ -389,8 +389,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
             lhs, rhs, base = np.split(np.array(images), 3, axis=0)
             vectors, result_images = experiment.calculate(
                 model, lhs, rhs, base)
-            assert len(vectors) == len(result_images)
-            labels = experiment.evaluate(vectors, treatment_profiles)
+            result_vectors = np.split(vectors, 4, axis=0)[3]
+            assert len(result_vectors) == len(result_images)
+            labels = experiment.evaluate(result_vectors, treatment_profiles)
             visualize.image_algebra(
                 model,
                 lhs[:options.image_algebra_display_size],

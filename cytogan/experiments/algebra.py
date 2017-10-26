@@ -24,8 +24,9 @@ class Experiment(abc.ABC):
         lhs, rhs, base = np.split(vectors, 3, axis=0)
         result = (lhs - rhs) + base
         images = model.generate(result)
+        vectors = np.concatenate([lhs, rhs, base, result], axis=0)
 
-        return result, images
+        return vectors, images
 
     def constrain_size(self, lhs, rhs, base, maximum_amount):
         log.info('Have %d lhs, %d rhs, %d base samples available for %s',
@@ -52,11 +53,9 @@ class MoaCanceling(Experiment):
         self.concentration = 1.0
 
     def keys(self, cell_data, maximum_amount):
-        print(cell_data.metadata.head())
         com = cell_data.metadata['compound'] == self.compound
         con = cell_data.metadata['concentration'] == self.concentration
         lhs = cell_data.metadata[com & con]
-        print(lhs)
         assert len(lhs) > 0
 
         dmso = cell_data.metadata[cell_data.metadata['compound'] == 'DMSO']
@@ -68,6 +67,7 @@ class MoaCanceling(Experiment):
         return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
     def evaluate(self, result_vectors, treatment_profiles):
+        np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
@@ -75,6 +75,9 @@ class MoaCanceling(Experiment):
         com = treatment_profiles['compound'] == self.compound
         con = treatment_profiles['concentration'] == self.concentration
         target_moa = treatment_profiles[com & con].iloc[0]['moa']
+        log.info('Target MOA for MOA canceling experiment is: %s', target_moa)
+
+        print(moas)
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
 
@@ -95,10 +98,6 @@ class MoaCanceling(Experiment):
         lhs = np.expand_dims([target_moa] * len(moas), axis=1)
         rhs = base = np.expand_dims(['DMSO'] * len(lhs), axis=1)
         moas = np.expand_dims(moas, axis=1)
-        assert len(lhs) == len(rhs) == len(base) == len(moas), (len(lhs),
-                                                                len(rhs),
-                                                                len(base),
-                                                                len(moas))
         labels = np.concatenate([lhs, rhs, base, moas], axis=1)
 
         return labels
