@@ -7,7 +7,6 @@ from cytogan.metrics import profiling
 
 log = logs.get_logger(__name__)
 
-
 class Experiment(abc.ABC):
     @abc.abstractmethod
     def keys(self, cell_data, amount):
@@ -34,9 +33,9 @@ class Experiment(abc.ABC):
 
         if maximum_amount:
             maximum_amount = min(len(lhs), len(rhs), len(base), maximum_amount)
-            lhs = lhs[:maximum_amount]
-            rhs = rhs[:maximum_amount]
-            base = base[:maximum_amount]
+            lhs = np.random.choice(lhs, maximum_amount, replace=False)
+            rhs = np.random.choice(rhs, maximum_amount, replace=False)
+            base = np.random.choice(base, maximum_amount, replace=False)
 
         assert len(lhs) == len(rhs) == len(base), (len(lhs), len(rhs),
                                                    len(base))
