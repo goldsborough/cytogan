@@ -5,9 +5,10 @@ def points_for_treatment(treatment_profiles, compound, concentration):
     com = treatment_profiles['compound'] == compound
     con = treatment_profiles['concentration'] == float(concentration)
     print(treatment_profiles[com & con]['profile'])
-    treatment = np.array(treatment_profiles[com & con]['profile'].values)
+    treatment = np.array(list(treatment_profiles[com & con]['profile']))
+    print(treatment)
     print(treatment.shape)
-    assert len(treatment) > 0, treatment
+    assert len(treatment) > 1, treatment
     assert np.ndim(treatment) > 0, treatment.shape
 
     dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
