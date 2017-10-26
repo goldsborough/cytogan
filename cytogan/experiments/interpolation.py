@@ -4,12 +4,13 @@ import numpy as np
 def points_for_treatment(treatment_profiles, compound, concentration):
     com = treatment_profiles['compound'] == compound
     con = treatment_profiles['concentration'] == float(concentration)
-    treatment_vector = treatment_profiles[com & con]['profile'].mean(axis=0)
+    treatment = treatment_profiles[com & con]['profile']
+    print(treatment.shape)
+    assert np.ndim(treatment) > 0, treatment.shape
 
     dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
-    dmso_vector = dmso['profile'].mean(axis=0)
 
-    return dmso_vector, treatment_vector
+    return dmso['profile'], treatment
 
 
 def points_from_images(model, cell_data, pool_size=100):

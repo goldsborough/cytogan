@@ -226,11 +226,6 @@ class OppositeMOA(Experiment):
         groups = np.split(result_vectors, self.number_of_experiments, axis=0)
         mean_result_vectors = np.array([g.mean(axis=0) for g in groups])
 
-        dmso = pd.DataFrame(
-            columns=treatment_profiles.columns,
-            data=[['DMSO', 0.0, 'DMSO', self.mean_dmso_profile]])
-        treatment_profiles = treatment_profiles.append(dmso, ignore_index=True)
-
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             mean_result_vectors, treatment_profiles['profile'])
 
