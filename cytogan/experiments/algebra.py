@@ -194,7 +194,7 @@ class ConcentrationDistance(Experiment):
         lhs = np.expand_dims([self.lhs_treatment] * len(result), axis=1)
         rhs = np.expand_dims([self.rhs_treatment] * len(result), axis=1)
         base = np.expand_dims([self.base_treatment] * len(result), axis=1)
-        result = ['{0}/{1}'.format(com, con) for com, con in result.values]
+        result = [['{0}/{1}'.format(com, con)] for com, con in result.values]
         labels = np.concatenate([lhs, rhs, base, result], axis=1)
 
         return labels
