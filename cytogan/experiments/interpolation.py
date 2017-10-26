@@ -4,13 +4,14 @@ import numpy as np
 def points_for_treatment(treatment_profiles, compound, concentration):
     com = treatment_profiles['compound'] == compound
     con = treatment_profiles['concentration'] == float(concentration)
-    treatment = treatment_profiles[com & con]['profile']
+    treatment = np.array(treatment_profiles[com & con]['profile'].values)
     print(treatment.shape)
     assert np.ndim(treatment) > 0, treatment.shape
 
     dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
+    dmso = np.arra(dmso['profile'].values)
 
-    return dmso['profile'], treatment
+    return dmso, treatment
 
 
 def points_from_images(model, cell_data, pool_size=100):
