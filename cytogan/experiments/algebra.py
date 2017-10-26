@@ -37,21 +37,22 @@ class Experiment(abc.ABC):
 
         return vectors, images
 
-    def constrain_size(self, lhs, rhs, base, maximum_amount):
+    def constrain_size(self, lhs, rhs, base, number_of_experiments,
+                       maximum_amount):
         log.info('Have %d lhs, %d rhs, %d base samples available for %s',
                  len(lhs), len(rhs), len(base), self.name)
 
-        if maximum_amount:
-            maximum_amount = min(len(lhs), len(rhs), len(base), maximum_amount)
-            lhs = lhs.sample(maximum_amount)
-            rhs = rhs.sample(maximum_amount)
-            base = base.sample(maximum_amount)
-            print(lhs.head(), rhs.head(), base.head())
-
+        total_amount = number_of_experiments * maximum_amount
+        maximum_amount = min(len(lhs), len(rhs), len(base), total_amount)
+        lhs = lhs.sample(maximum_amount)
+        rhs = rhs.sample(maximum_amount)
+        base = base.sample(maximum_amount)
         assert len(lhs) == len(rhs) == len(base), (len(lhs), len(rhs),
                                                    len(base))
-        log.info('Using %d (lhs, rhs, base) pairs for %s experiment',
-                 len(lhs), self.name)
+        log.info('Using %d (lhs, rhs, base) pairs for %d %s experiments',
+                 len(lhs), number_of_experiments, self.name)
+
+        lhs, rhs, base = np.split(lhs, 3, axis=0)
 
         return lhs, rhs, base, maximum_amount
 
@@ -63,7 +64,7 @@ class MoaCanceling(Experiment):
         self.concentration = 1.0
         self.size = None
 
-    def keys(self, cell_data, maximum_amount):
+    def keys(self, cell_data, number_of_experiments, maximum_amount):
         com = cell_data.metadata['compound'] == self.compound
         con = cell_data.metadata['concentration'] == self.concentration
         lhs = cell_data.metadata[com & con]
@@ -73,26 +74,28 @@ class MoaCanceling(Experiment):
         rhs = dmso[:len(dmso) // 2]
         base = dmso[len(dmso) // 2:]
 
-        constrained = self.constrain_size(lhs, rhs, base, maximum_amount)
+        constrained = self.constrain_size(
+            lhs, rhs, base, number_of_experiments, maximum_amount)
         lhs, rhs, base, self.size = constrained
 
         return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
-    def evaluate(self, result_vectors, treatment_profiles):
+    def evaluate(self, result_vectors, treatment_profiles,
+                 number_of_equations):
         assert len(result_vectors) == self.size
-        mean_result_vector = result_vectors.mean(axis=0)
+        groups = np.split(result_vectors, number_of_equations, axis=0)
+        mean_result_vectors = np.array([g.mean(axis=0) for g in groups])
         np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
-            [mean_result_vector], treatment_profiles['profile'])
+            mean_result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
-        assert len(moas) == self.size, len(moas)
+        print(moas)
 
         com = treatment_profiles['compound'] == self.compound
         con = treatment_profiles['concentration'] == self.concentration
         target_moa = treatment_profiles[com & con].iloc[0]['moa']
         log.info('Target MOA for MOA canceling experiment is: %s', target_moa)
 
-        print(moas)
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
 

@@ -40,6 +40,7 @@ parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--noise-file')
 parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--image-algebra-sample-size', type=int, default=100)
+parser.add_argument('--image-algebra-equations', type=int, default=3)
 parser.add_argument('--image-algebra-display-size', type=int, default=5)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 options = common.parse_args(parser)
@@ -382,7 +383,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
     if options.image_algebra:
         for experiment_name in options.image_algebra:
             experiment = algebra.get_experiment(experiment_name)
-            keys = experiment.keys(cell_data,
+            keys = experiment.keys(cell_data, options.image_algebra_equations,
                                    options.image_algebra_sample_size)
             images = cell_data.get_images(keys, in_order=True)
             assert len(images) == len(keys)
@@ -391,7 +392,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
                 model, lhs, rhs, base)
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
-            labels = experiment.evaluate(result_vectors, treatment_profiles)
+            labels = experiment.evaluate(result_vectors, treatment_profiles,
+                                         number_of_equations)
             visualize.image_algebra(
                 model,
                 lhs[:options.image_algebra_display_size],
