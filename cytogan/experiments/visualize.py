@@ -153,6 +153,7 @@ def interpolation(model,
                   conditional=None,
                   gray=False,
                   save_to=None,
+                  file_prefix='',
                   title='Latent Interpolation'):
     assert model.is_generative, model.name + ' is not generative'
     assert np.ndim(start) > 0, 'points must not be scalars'
@@ -192,7 +193,7 @@ def interpolation(model,
     plot.subplots_adjust(left=0.1, right=0.9, top=0.6, bottom=0.2)
 
     if save_to is not None:
-        filename = '{0}-interpolation.png'.format(method)
+        filename = '{0}{1}-interpolation.png'.format(file_prefix, method)
         _save_figure(save_to, filename)
 
 

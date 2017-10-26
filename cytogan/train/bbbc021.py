@@ -392,6 +392,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             options.interpolate_treatment_length,
             options.interpolation_method,
             options.store_interpolation_frames,
+            file_prefix='treatment-',
             save_to=options.figure_dir)
 
     if options.image_algebra:
