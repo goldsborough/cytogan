@@ -52,6 +52,7 @@ class MoaCanceling(Experiment):
         self.compound = 'emetine'
 
     def keys(self, cell_data, maximum_amount):
+        print(cell_data.metadata.head())
         com = cell_data.metadata['compound'] == self.compound
         lhs = cell_data.metadata[com]
         assert len(lhs) > 0
@@ -69,7 +70,9 @@ class MoaCanceling(Experiment):
             result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
 
-        target_moa = treatment_profiles.loc[self.compound].iloc[0]['moa']
+        print(treatment_profiles.head())
+        predicate = treatment_profiles['compound'] == self.compound
+        target_moa = treatment_profiles[predicate].iloc[0]['moa']
         print(target_moa)
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
@@ -80,16 +83,18 @@ class MoaCanceling(Experiment):
         counts = list(count_map.items())
         counts.sort(key=lambda p: p[1], reverse=True)
         top_k_indices, top_k_counts = list(zip(*counts[:3]))
-        top_k_moas = treatment_profiles['moa'].iloc[top_k_indices]
+        print(top_k_indices, top_k_counts)
+        top_k_moas = treatment_profiles['moa'].iloc[list(top_k_indices)]
 
         top_k_pairs = ((m, str(c)) for m, c in zip(top_k_moas, top_k_counts))
-        top_k_string = ', '.join(' '.join(i) for i in top_k_pairs)
+        top_k_string = ', '.join('{} ({})'.format(*i) for i in top_k_pairs)
 
         log.info('Top 3 MOAs for MOA canceling experiment (correct: %s): %s',
                  target_moa, top_k_string)
 
-        lhs = target_moa[:len(result_vectors)]
-        rhs = base = ['DMSO'] * len(lhs)
+        lhs = np.expand_dims([target_moa] * len(moas), axis=1)
+        rhs = base = np.expand_dims(['DMSO'] * len(lhs), axis=1)
+        moas = np.expand_dims(moas, axis=1)
         assert len(lhs) == len(rhs) == len(base) == len(moas), (len(lhs),
                                                                 len(rhs),
                                                                 len(base),

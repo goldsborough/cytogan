@@ -242,8 +242,6 @@ with common.get_session(options.gpus, options.random_seed) as session:
             treatment_profiles = profiling.load_profiles(
                 options.load_treatment_profiles)
             log.info('Found %d treatment profiles', len(treatment_profiles))
-            treatment_profiles.set_index(
-                ['compound', 'concentration'], inplace=True)
         else:
             log.info('Collapsing profiles across treatments')
             # The DMSO (control) should not participate in the MOA classification.
