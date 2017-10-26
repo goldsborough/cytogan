@@ -344,11 +344,14 @@ def image_algebra(model,
                   save_to=None,
                   title='Image Algebra'):
     assert model.is_generative, model.name + ' is not generative'
+    assert len(lhs) == len(rhs) == len(base) == len(result)
+    print(lhs.shape, rhs.shape, base.shape, result.shape)
 
     if _is_grayscale(result):
         result = _make_rgb(result)
 
     number_of_equations = len(result)
+    print(number_of_equations)
     if labels is None:
         labels = [[None] * 4] * number_of_equations
 
@@ -361,6 +364,7 @@ def image_algebra(model,
 
     if vectors is not None:
         vector_labels = np.repeat([1, 2, 3, 4], number_of_equations)
+        assert len(vector_labels) == len(vectors)
         transformed = sklearn.manifold.TSNE(
             n_components=2, perplexity=2, init='pca').fit_transform(vectors)
         print(vector_labels, transformed)

@@ -392,6 +392,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
             lhs, rhs, base = np.split(np.array(images), 3, axis=0)
             vectors, result_images = experiment.calculate(
                 model, lhs, rhs, base)
+            print(vectors.shape)
+            print(result_images.shape)
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
             labels = experiment.evaluate(result_vectors, treatment_profiles)
