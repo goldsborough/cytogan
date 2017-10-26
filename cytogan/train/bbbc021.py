@@ -383,8 +383,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.image_algebra:
         for experiment_name in options.image_algebra:
-            experiment = algebra.get_experiment(experiment_name)
-            keys = experiment.keys(cell_data, options.image_algebra_equations,
+            experiment = algebra.get_experiment(
+                experiment_name, options.image_algebra_equations)
+            keys = experiment.keys(cell_data,
                                    options.image_algebra_sample_size)
             images = cell_data.get_images(keys, in_order=True)
             assert len(images) == len(keys)
@@ -393,8 +394,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
                 model, lhs, rhs, base)
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
-            labels = experiment.evaluate(result_vectors, treatment_profiles,
-                                         number_of_equations)
+            labels = experiment.evaluate(result_vectors, treatment_profiles)
             visualize.image_algebra(
                 model,
                 lhs[:options.image_algebra_display_size],
