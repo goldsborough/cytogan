@@ -351,7 +351,6 @@ def image_algebra(model,
         result = _make_rgb(result)
 
     number_of_equations = len(result)
-    print(number_of_equations)
     if labels is None:
         labels = [[None] * 4] * number_of_equations
 
@@ -367,8 +366,7 @@ def image_algebra(model,
         assert len(vector_labels) == len(vectors), (len(vector_labels),
                                                     len(vectors))
         transformed = sklearn.manifold.TSNE(
-            n_components=2, perplexity=2, init='pca').fit_transform(vectors)
-        print(vector_labels, transformed)
+            init='pca', perplexity=30, verbose=1).fit_transform(vectors)
         plot.figure(figsize=(5, 5))
         plot.scatter(
             transformed[:, 0],

@@ -12,7 +12,6 @@ def select_top_k(treatment_profiles, nearest_neighbors, columns):
     count_map = {n: 0 for n in nearest_neighbors}
     for neighbor in nearest_neighbors:
         count_map[neighbor] += 1
-    print(count_map)
     counts = list(count_map.items())
     counts.sort(key=lambda p: p[1], reverse=True)
     top_k_indices, top_k_counts = list(zip(*counts[:3]))
@@ -43,15 +42,12 @@ class Experiment(abc.ABC):
         vectors = model.encode(images.squeeze())
 
         lhs, rhs, base = np.split(vectors, 3, axis=0)
-        print(lhs.shape, rhs.shape, base.shape)
         result = (lhs - rhs) + base
-        print(result.shape)
         images = model.generate(result)
         assert result.shape == (self.size, model.latent_size), result.shape
         assert len(result) == len(images) == len(lhs) == self.size, (
             len(result), len(images))
         vectors = np.concatenate([lhs, rhs, base, result], axis=0)
-        print(vectors.shape)
 
         return vectors, images
 
@@ -101,7 +97,6 @@ class MoaCanceling(Experiment):
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             mean_result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
-        print(moas)
 
         com = treatment_profiles['compound'] == self.compound
         con = treatment_profiles['concentration'] == self.concentration
@@ -171,7 +166,6 @@ class ConcentrationDistance(Experiment):
 
         result = treatment_profiles[['compound',
                                      'concentration']].iloc[nearest_neighbors]
-        print(result)
 
         com = result['compound'] == self.target_compound
         con = result['concentration'] == self.target_concentration
