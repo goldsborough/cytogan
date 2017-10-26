@@ -26,6 +26,7 @@ parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--images', required=True)
 parser.add_argument('--interpolate-treatment', nargs=2)
 parser.add_argument('--interpolate-treatment-length', type=int, default=16)
+parser.add_argument('--interpolate-treatment-sample-size', type=int)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 parser.add_argument('--labels', required=True)
 parser.add_argument('--latent-compounds', action='store_true')
@@ -361,7 +362,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             end,
             options.interpolate_samples[1],
             options.interpolation_method,
-            options.store_interpolation_frames,
+            options.save_interpolation_frames,
             number_of_interpolations=len(start),
             conditional=labels,
             save_to=options.figure_dir)
@@ -382,16 +383,17 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.interpolate_treatment is not None:
         dmso, treatment = interpolation.points_for_treatment(
-            treatment_profiles,
+            dataset,
             compound=options.interpolate_treatment[0],
-            concentration=options.interpolate_treatment[1])
+            concentration=options.interpolate_treatment[1],
+            sample_size=options.interpolate_treatment_sample_size)
         visualize.interpolation(
             model,
             dmso,
             treatment,
             options.interpolate_treatment_length,
             options.interpolation_method,
-            options.store_interpolation_frames,
+            options.save_interpolation_frames,
             file_prefix='treatment-',
             save_to=options.figure_dir)
 

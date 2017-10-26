@@ -64,7 +64,7 @@ def make_parser(name):
     parser.add_argument('--interpolate-single-factors', type=int, nargs=2)
     parser.add_argument(
         '--interpolate-factors-from-images', action='store_true')
-    parser.add_argument('--store-interpolation-frames', action='store_true')
+    parser.add_argument('--save-interpolation-frames', action='store_true')
     parser.add_argument(
         '--interpolation-method',
         default='linear',

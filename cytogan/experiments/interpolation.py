@@ -1,17 +1,20 @@
 import numpy as np
 
 
-def points_for_treatment(treatment_profiles, compound, concentration):
-    com = treatment_profiles['compound'] == compound
-    con = treatment_profiles['concentration'] == float(concentration)
-    treatment = np.array(list(treatment_profiles[com & con]['profile']))
+def points_for_treatment(dataset, compound, concentration, sample_size=None):
+    com = dataset['compound'] == compound
+    con = dataset['concentration'] == float(concentration)
+    treatment = dataset[com & con]
 
-    dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
-    dmso = np.array(list(dmso['profile']))
+    if sample_size:
+        treatment = treatment.sample(sample_size)
 
-    print(dmso, treatment)
+    treatment_vector = treatment['profile'].mean(axis=0)
 
-    return dmso.squeeze(), treatment.squeeze()
+    dmso = dataset[dataset['compound'] == 'DMSO']
+    dmso_vector = dmso['profile'].mean(axis=0)
+
+    return dmso_vector, treatment_vector
 
 
 def points_from_images(model, cell_data, pool_size=100):

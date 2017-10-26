@@ -148,7 +148,7 @@ def interpolation(model,
                   end,
                   interpolation_length,
                   method,
-                  store_interpolation_frames=False,
+                  save_interpolation_frames=False,
                   number_of_interpolations=1,
                   conditional=None,
                   gray=False,
@@ -175,7 +175,7 @@ def interpolation(model,
     if _is_grayscale(images):
         images = _make_rgb(images)
 
-    if store_interpolation_frames:
+    if save_interpolation_frames:
         assert save_to is not None
         for n, series in enumerate(np.split(images, k)):
             folder = os.path.join(save_to, 'interpolation', str(n))
@@ -186,11 +186,9 @@ def interpolation(model,
                 path = os.path.join(folder, '{0}.png'.format(i))
                 scipy.misc.imsave(path, image)
 
-    plot.figure(figsize=(8, k))
+    plot.figure(figsize=(10, 5))
     for index, image in enumerate(images):
         _plot_image_tile(k, interpolation_length, index, image, gray)
-
-    plot.subplots_adjust(left=0.1, right=0.9, top=0.6, bottom=0.2)
 
     if save_to is not None:
         filename = '{0}{1}-interpolation.png'.format(file_prefix, method)
