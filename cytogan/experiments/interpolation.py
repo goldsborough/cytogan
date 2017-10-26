@@ -10,17 +10,16 @@ def points_for_treatment(dataset, compound, concentration, sample_size=None):
     con = dataset['concentration'] == float(concentration)
     treatment = dataset[com & con]
 
+    dmso = dataset[dataset['compound'] == 'DMSO']
+
     if sample_size:
-        treatment = treatment.sample(sample_size)
         log.info('Sampling %d treatments from %d at random', sample_size,
-                 len(treatment))
+        len(treatment))
+        treatment = treatment.sample(sample_size)
+        dmso = dmso.sample(sample_size)
 
     treatment_vector = treatment['profile'].mean(axis=0)
-
-    dmso = dataset[dataset['compound'] == 'DMSO']
     dmso_vector = dmso['profile'].mean(axis=0)
-
-    print(treatment_vector, dmso_vector)
 
     return dmso_vector, treatment_vector
 
