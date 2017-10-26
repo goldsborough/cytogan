@@ -363,8 +363,9 @@ def image_algebra(model,
         vector_labels = np.repeat([1, 2, 3, 4], number_of_equations)
         transformed = sklearn.manifold.TSNE(
             n_components=2, perplexity=2, init='pca').fit_transform(vectors)
+        print(vector_labels, transformed)
         plot.figure(figsize=(5, 5))
-        plot.scatter(transformed[:, 0], transformed[:, 1], c=vector_labels)
+        plot.scatter(transformed[:, 0], transformed[:, 1], c=vector_labels, cmap='plasma')
         colorbar = plot.colorbar(ticks=[0, 1, 2, 3])
         colorbar.ax.set_yticklabels(['lhs', 'rhs', 'base', 'result'])
         if save_to is not None:
