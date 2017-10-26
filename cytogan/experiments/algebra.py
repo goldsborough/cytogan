@@ -131,27 +131,29 @@ class ConcentrationDistance(Experiment):
     def __init__(self, number_of_experiments):
         super(ConcentrationDistance, self).__init__(number_of_experiments)
         self.name = 'Concentration Distance'
-        self.target_compound = 'emetine'
+        self.start_compound = 'emetine'
         self.target_concentration = 1.0
-        self.source_concentration = 0.1
-        self.base_compound = 'ALLN'
-        self.target_treatment = '{0}/{1}'.format(self.target_compound,
-                                                 self.target_concentration)
-        self.source_treatment = '{0}/{1}'.format(self.target_compound,
-                                                 self.source_concentration)
+        self.start_concentration = 0.1
+        self.target_compound = 'ALLN'
+        self.lhs_treatment = '{0}/{1}'.format(self.start_compound,
+                                              self.target_concentration)
+        self.rhs_treatment = '{0}/{1}'.format(self.start_compound,
+                                              self.start_concentration)
+        self.base_treatment = '{0}/{1}'.format(self.target_compound,
+                                               self.start_concentration)
 
     def keys(self, cell_data, maximum_amount):
-        com = cell_data.metadata['compound'] == self.target_compound
+        com = cell_data.metadata['compound'] == self.start_compound
         con = cell_data.metadata['concentration'] == self.target_concentration
         lhs = cell_data.metadata[com & con]
         assert len(lhs) > 0
 
-        con = cell_data.metadata['concentration'] == self.source_concentration
+        con = cell_data.metadata['concentration'] == self.start_concentration
         rhs = cell_data.metadata[com & con]
         assert len(rhs) > 0
 
-        com = cell_data.metadata['compound'] == self.base_compound
-        con = cell_data.metadata['concentration'] == self.source_concentration
+        com = cell_data.metadata['compound'] == self.target_compound
+        con = cell_data.metadata['concentration'] == self.start_concentration
         base = cell_data.metadata[com & con]
         assert len(rhs) > 0
 
@@ -188,9 +190,9 @@ class ConcentrationDistance(Experiment):
         log.info('Top treatments for %s experiment (correct: %s): %s',
                  self.name, self.target_treatment, top_k_string)
 
-        lhs = np.expand_dims([self.target_treatment] * len(result), axis=1)
-        rhs = np.expand_dims([self.source_treatment] * len(lhs), axis=1)
-        base = np.expand_dims([self.base_treatment] * len(lhs), axis=1)
+        lhs = np.expand_dims([self.lhs_treatment] * len(result), axis=1)
+        rhs = np.expand_dims([self.rhs_treatment] * len(result), axis=1)
+        base = np.expand_dims([self.base_treatment] * len(result), axis=1)
         result = ['{0}/{1}'.format(com, con) for com, con in result.values]
         labels = np.concatenate([lhs, rhs, base, result], axis=1)
 
