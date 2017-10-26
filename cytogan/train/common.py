@@ -7,6 +7,7 @@ import time
 
 import keras.backend as K
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from cytogan.extra import logs
@@ -137,6 +138,8 @@ def get_session(gpus, random_seed=42):
     session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     K.set_session(session)
     K.manual_variable_initialization(True)
+
+    pd.set_option('display.max_colwidth', -1)
 
     np.random.seed(random_seed)
     tf.set_random_seed(random_seed)
