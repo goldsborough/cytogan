@@ -1,19 +1,16 @@
 import numpy as np
 
-def points_for_treatment(cell_data, compound, concentration, sample_size=None):
-    com = cell_data.metadata['compound'] == compound
-    con = cell_data.metadata['concentration'] == float(concentration)
-    treatment = cell_data.metadata[com & con]
 
-    if sample_size:
-        treatment = treatment.sample(sample_size)
+def points_for_treatment(treatment_profiles, compound, concentration):
+    com = treatment_profiles['compound'] == compound
+    con = treatment_profiles['concentration'] == float(concentration)
+    treatment_vector = treatment_profiles[com & con]['profile'].mean(axis=0)
 
-    treatment_vector = treatment['profile'].mean(axis=0)
-
-    dmso = cell_data.metadata[cell_data.metadata['compound'] == 'DMSO']
+    dmso = treatment_profiles[treatment_profiles['compound'] == 'DMSO']
     dmso_vector = dmso['profile'].mean(axis=0)
 
     return dmso_vector, treatment_vector
+
 
 def points_from_images(model, cell_data, pool_size=100):
     image_pool = cell_data.next_batch(pool_size)

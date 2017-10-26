@@ -26,7 +26,6 @@ parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--images', required=True)
 parser.add_argument('--interpolate-treatment', nargs=2)
 parser.add_argument('--interpolate-treatment-length', type=int, default=16)
-parser.add_argument('--interpolate-treatment-sample-size', type=int)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 parser.add_argument('--labels', required=True)
 parser.add_argument('--latent-compounds', action='store_true')
@@ -49,6 +48,7 @@ parser.add_argument('-p', '--pattern', action='append')
 options = common.parse_args(parser)
 
 if options.save_profiles:
+    assert options.workspace is not None, 'Need workspace to store profiles'
     options.profiles_dir = os.path.join(options.workspace, 'profiles')
     if not os.path.exists(options.profiles_dir):
         os.makedirs(options.profiles_dir)
@@ -249,9 +249,8 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
         if not options.load_treatment_profiles:
             log.info('Collapsing profiles across treatments')
-            # The DMSO (control) should not participate in the MOA classification.
             treatment_profiles = profiling.reduce_profiles_across_treatments(
-                dataset[dataset['compound'] != 'DMSO'])
+                dataset)
             log.info(
                 'Reduced dataset from %d to %d profiles for each treatment',
                 len(dataset), len(treatment_profiles))
@@ -259,8 +258,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
             if options.save_profiles:
                 save_profiles(treatment_profiles, 'treatments')
 
+        # The DMSO (control) should not participate in the MOA classification.
         confusion_matrix, accuracy = profiling.score_profiles(
-            treatment_profiles)
+            treatment_profiles[treatment_profiles['compound'] != 'DMSO'])
         log.info('Final Accuracy: %.3f', accuracy)
 
         if options.confusion_matrix:
@@ -382,10 +382,9 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.interpolate_treatment is not None:
         dmso, treatment = interpolation.points_for_treatment(
-            cell_data,
+            treatment_profiles,
             compound=options.interpolate_treatment[0],
-            concentration=options.interpolate_treatment[1],
-            sample_size=options.interpolate_treatment_sample_size)
+            concentration=options.interpolate_treatment[1])
         visualize.interpolation(
             model,
             dmso,
