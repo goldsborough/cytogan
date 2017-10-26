@@ -25,6 +25,7 @@ parser.add_argument('--image-algebra-sample-size', type=int, default=100)
 parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--images', required=True)
 parser.add_argument('--interpolate-treatment', nargs=2)
+parser.add_argument('--interpolate-treatment-length', type=int, default=16)
 parser.add_argument('--interpolate-treatment-sample-size', type=int)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
 parser.add_argument('--labels', required=True)
@@ -210,7 +211,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.load_treatment_profiles:
         treatment_profiles = profiling.load_profiles(
-            options.load_treatment_profiles)
+            options.load_treatment_profiles, index=0)
         log.info('Found %d treatment profiles', len(treatment_profiles))
 
     if not options.skip_evaluation:
@@ -367,10 +368,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
 
     if options.interpolate_single_factors is not None:
         if options.interpolate_factors_from_images:
-            image_pool = cell_data.next_batch(100)
-            indices = np.random.randint(0, 100, 2)
-            images = np.array(image_pool)[indices]
-            start, end = model.encode(images)
+            start, end = interpolation.points_from_images(model, cell_data)
         else:
             start, end = np.random.randn(2, model.noise_size)
         visualize.single_factors(
@@ -383,8 +381,6 @@ with common.get_session(options.gpus, options.random_seed) as session:
             save_to=options.figure_dir)
 
     if options.interpolate_treatment is not None:
-        assert options.interpolate_samples is not None, (
-            'Interpolation length not specified!')
         dmso, treatment = interpolation.points_for_treatment(
             cell_data,
             compound=options.interpolate_treatment[0],
@@ -394,7 +390,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             model,
             dmso,
             treatment,
-            options.interpolate_samples[0],
+            options.interpolate_treatment_length,
             options.interpolation_method,
             options.store_interpolation_frames,
             save_to=options.figure_dir)
