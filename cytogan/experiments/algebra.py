@@ -80,9 +80,10 @@ class MoaCanceling(Experiment):
 
     def evaluate(self, result_vectors, treatment_profiles):
         assert len(result_vectors) == self.size
+        mean_result_vector = result_vectors.mean(axis=0)
         np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
-            result_vectors, treatment_profiles['profile'])
+            [mean_result_vector], treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
         assert len(moas) == self.size, len(moas)
 
