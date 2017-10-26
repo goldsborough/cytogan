@@ -8,7 +8,24 @@ from cytogan.metrics import profiling
 log = logs.get_logger(__name__)
 
 
+def select_top_k(treatment_profiles, nearest_neighbors, columns):
+    count_map = {n: 0 for n in nearest_neighbors}
+    for neighbor in nearest_neighbors:
+        count_map[neighbor] += 1
+    print(count_map)
+    counts = list(count_map.items())
+    counts.sort(key=lambda p: p[1], reverse=True)
+    top_k_indices, top_k_counts = list(zip(*counts[:3]))
+    top_k = treatment_profiles[columns].iloc[list(top_k_indices)]
+
+    return top_k, top_k_counts
+
+
 class Experiment(abc.ABC):
+    def __init__(self, number_of_experiments):
+        self.size = None
+        self.number_of_experiments = number_of_experiments
+
     @abc.abstractmethod
     def keys(self, cell_data, amount):
         pass
@@ -57,11 +74,10 @@ class Experiment(abc.ABC):
 
 class MoaCanceling(Experiment):
     def __init__(self, number_of_experiments):
+        super(MoaCanceling, self).__init__(number_of_experiments)
         self.name = 'MOA canceling'
         self.compound = 'emetine'
         self.concentration = 1.0
-        self.number_of_experiments = number_of_experiments
-        self.size = None
 
     def keys(self, cell_data, maximum_amount):
         com = cell_data.metadata['compound'] == self.compound
@@ -82,7 +98,6 @@ class MoaCanceling(Experiment):
         assert len(result_vectors) == self.size
         groups = np.split(result_vectors, self.number_of_experiments, axis=0)
         mean_result_vectors = np.array([g.mean(axis=0) for g in groups])
-        np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             mean_result_vectors, treatment_profiles['profile'])
         moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
@@ -96,18 +111,12 @@ class MoaCanceling(Experiment):
         accuracy = np.mean(moas == target_moa)
         log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
 
-        count_map = {n: 0 for n in nearest_neighbors}
-        for neighbor in nearest_neighbors:
-            count_map[neighbor] += 1
-        counts = list(count_map.items())
-        counts.sort(key=lambda p: p[1], reverse=True)
-        top_k_indices, top_k_counts = list(zip(*counts[:3]))
-        top_k_moas = treatment_profiles['moa'].iloc[list(top_k_indices)]
-
+        top_k_moas, top_k_counts = select_top_k(treatment_profiles,
+                                                nearest_neighbors, 'moa')
         top_k_pairs = ((m, str(c)) for m, c in zip(top_k_moas, top_k_counts))
         top_k_string = ', '.join('{} ({})'.format(*i) for i in top_k_pairs)
 
-        log.info('Top 3 MOAs for MOA canceling experiment (correct: %s): %s',
+        log.info('Top MOAs for MOA canceling experiment (correct: %s): %s',
                  target_moa, top_k_string)
 
         lhs = np.expand_dims([target_moa] * len(moas), axis=1)
@@ -119,21 +128,30 @@ class MoaCanceling(Experiment):
 
 
 class ConcentrationDistance(Experiment):
-    def __init__(self):
-        self.name = 'concentration Distance'
+    def __init__(self, number_of_experiments):
+        super(ConcentrationDistance, self).__init__(number_of_experiments)
+        self.name = 'Concentration Distance'
+        self.target_compound = 'emetine'
+        self.target_concentration = 1.0
+        self.source_concentration = 0.1
+        self.base_compound = 'ALLN'
+        self.target_treatment = '{0}/{1}'.format(self.target_compound,
+                                                 self.target_concentration)
+        self.source_treatment = '{0}/{1}'.format(self.target_compound,
+                                                 self.source_concentration)
 
     def keys(self, cell_data, maximum_amount):
-        com = cell_data.metadata['compound'] == 'emetine'
-        con = cell_data.metadata['concentration'] == 1.0
+        com = cell_data.metadata['compound'] == self.target_compound
+        con = cell_data.metadata['concentration'] == self.target_concentration
         lhs = cell_data.metadata[com & con]
         assert len(lhs) > 0
 
-        con = cell_data.metadata['concentration'] == 0.1
+        con = cell_data.metadata['concentration'] == self.source_concentration
         rhs = cell_data.metadata[com & con]
         assert len(rhs) > 0
 
-        com = cell_data.metadata['compound'] == 'ALLN'
-        con = cell_data.metadata['concentration'] == 0.1
+        com = cell_data.metadata['compound'] == self.base_compound
+        con = cell_data.metadata['concentration'] == self.source_concentration
         base = cell_data.metadata[com & con]
         assert len(rhs) > 0
 
@@ -146,44 +164,43 @@ class ConcentrationDistance(Experiment):
         assert len(result_vectors) == self.size
         groups = np.split(result_vectors, self.number_of_experiments, axis=0)
         mean_result_vectors = np.array([g.mean(axis=0) for g in groups])
-        np.savetxt('result.csv', result_vectors, delimiter=',')
         _, nearest_neighbors = profiling.get_nearest_neighbors(
             mean_result_vectors, treatment_profiles['profile'])
-        moas = np.array(treatment_profiles['moa'].iloc[nearest_neighbors])
-        print(moas)
 
-        com = treatment_profiles['compound'] == self.compound
-        con = treatment_profiles['concentration'] == self.concentration
-        target_moa = treatment_profiles[com & con].iloc[0]['moa']
-        log.info('Target MOA for MOA canceling experiment is: %s', target_moa)
+        result = treatment_profiles[['compound',
+                                     'concentration']].iloc[nearest_neighbors]
+        print(result)
 
-        accuracy = np.mean(moas == target_moa)
-        log.info('Accuracy for MOA canceling experiment: %.3f', accuracy)
+        com = result['compound'] == self.target_compound
+        con = result['concentration'] == self.target_concentration
+        correct = result[com & con]
 
-        count_map = {n: 0 for n in nearest_neighbors}
-        for neighbor in nearest_neighbors:
-            count_map[neighbor] += 1
-        counts = list(count_map.items())
-        counts.sort(key=lambda p: p[1], reverse=True)
-        top_k_indices, top_k_counts = list(zip(*counts[:3]))
-        top_k_moas = treatment_profiles['moa'].iloc[list(top_k_indices)]
+        accuracy = len(correct) / len(result)
+        log.info('Accuracy for %s experiment: %.3f', self.name, accuracy)
 
-        top_k_pairs = ((m, str(c)) for m, c in zip(top_k_moas, top_k_counts))
-        top_k_string = ', '.join('{} ({})'.format(*i) for i in top_k_pairs)
+        top_k, top_k_counts = select_top_k(treatment_profiles,
+                                           nearest_neighbors,
+                                           ['compound', 'concentration'])
+        top_k = ('{0}/{1}'.format(com, con) for com, con in top_k.values)
+        top_k_pairs = ((m, str(c)) for m, c in zip(top_k, top_k_counts))
+        top_k_string = ', '.join('{0} ({1})'.format(*i) for i in top_k_pairs)
 
-        log.info('Top 3 MOAs for MOA canceling experiment (correct: %s): %s',
-                 target_moa, top_k_string)
+        log.info('Top treatments for %s experiment (correct: %s): %s',
+                 self.name, self.target_treatment, top_k_string)
 
-        lhs = np.expand_dims([target_moa] * len(moas), axis=1)
-        rhs = base = np.expand_dims(['DMSO'] * len(lhs), axis=1)
-        moas = np.expand_dims(moas, axis=1)
-        labels = np.concatenate([lhs, rhs, base, moas], axis=1)
+        lhs = np.expand_dims([self.target_treatment] * len(result), axis=1)
+        rhs = np.expand_dims([self.source_treatment] * len(lhs), axis=1)
+        base = np.expand_dims([self.base_treatment] * len(lhs), axis=1)
+        result = ['{0}/{1}'.format(com, con) for com, con in result.values]
+        labels = np.concatenate([lhs, rhs, base, result], axis=1)
 
         return labels
 
 
-EXPERIMENT_MAP = dict(
-    moa_canceling=MoaCanceling, concentration_distance=ConcentrationDistance)
+EXPERIMENT_MAP = {
+    'moa-canceling': MoaCanceling,
+    'concentration-distance': ConcentrationDistance,
+}
 EXPERIMENTS = list(EXPERIMENT_MAP.keys())
 
 
