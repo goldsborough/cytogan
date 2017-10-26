@@ -46,6 +46,7 @@ class Experiment(abc.ABC):
             lhs = lhs.sample(maximum_amount)
             rhs = rhs.sample(maximum_amount)
             base = base.sample(maximum_amount)
+            print(lhs.head(), rhs.head(), base.head())
 
         assert len(lhs) == len(rhs) == len(base), (len(lhs), len(rhs),
                                                    len(base))
