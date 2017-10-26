@@ -202,6 +202,15 @@ with common.get_session(options.gpus, options.random_seed) as session:
     if not options.skip_training:
         trainer.train(model, cell_data.next_batch)
 
+    if options.load_profiles:
+        dataset = profiling.load_profiles(options.load_profiles)
+        log.info('Found %s profiles', len(dataset))
+
+    if options.load_treatment_profiles:
+        treatment_profiles = profiling.load_profiles(
+            options.load_treatment_profiles)
+        log.info('Found %d treatment profiles', len(treatment_profiles))
+
     if not options.skip_evaluation:
         log.info('Starting Evaluation')
 
@@ -229,21 +238,13 @@ with common.get_session(options.gpus, options.random_seed) as session:
                 log.info('Storing profiles to disk')
                 save_profiles(dataset, 'profiles')
 
-        if options.load_profiles:
-            dataset = profiling.load_profiles(options.load_profiles)
-            log.info('Found %s profiles', len(dataset))
-
         if options.whiten_profiles:
             profiling.whiten(dataset)
             log.info('Whitened data')
             if options.save_profiles:
                 save_profiles(dataset, 'whitened')
 
-        if options.load_treatment_profiles:
-            treatment_profiles = profiling.load_profiles(
-                options.load_treatment_profiles)
-            log.info('Found %d treatment profiles', len(treatment_profiles))
-        else:
+        if not options.load_treatment_profiles:
             log.info('Collapsing profiles across treatments')
             # The DMSO (control) should not participate in the MOA classification.
             dataset = dataset[dataset['compound'] != 'DMSO']

@@ -20,7 +20,8 @@ class Experiment(abc.ABC):
     def calculate(self, model, lhs, rhs, base):
         assert len(lhs) == len(rhs) == len(base) == self.size, (len(lhs),
                                                                 len(rhs),
-                                                                len(base))
+                                                                len(base),
+                                                                self.size)
         images = np.concatenate([lhs, rhs, base], axis=0)
         vectors = model.encode(images.squeeze())
 
