@@ -156,7 +156,6 @@ class ConcentrationDistance(Experiment):
         constrained = self.constrain_size(lhs, rhs, base, maximum_amount)
         lhs, rhs, base, self.size = constrained
 
-        print(lhs.index)
         return list(np.concatenate([lhs.index, rhs.index, base.index]))
 
     def evaluate(self, result_vectors, treatment_profiles):
