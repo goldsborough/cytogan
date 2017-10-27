@@ -344,7 +344,6 @@ def image_algebra(model,
                   title='Image Algebra'):
     assert model.is_generative, model.name + ' is not generative'
     assert len(lhs) == len(rhs) == len(base) == len(result)
-    print(lhs.shape, rhs.shape, base.shape, result.shape)
 
     if _is_grayscale(result):
         result = _make_rgb(result)

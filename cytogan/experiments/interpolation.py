@@ -14,7 +14,7 @@ def points_for_treatment(dataset, compound, concentration, sample_size=None):
 
     if sample_size:
         log.info('Sampling %d treatments from %d at random', sample_size,
-        len(treatment))
+                 len(treatment))
         treatment = treatment.sample(sample_size)
         dmso = dmso.sample(sample_size)
 
