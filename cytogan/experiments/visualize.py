@@ -153,6 +153,7 @@ def interpolation(model,
                   gray=False,
                   save_to=None,
                   file_prefix='',
+                  multi_point_interpolation_on_one_row=True,
                   title='Latent Interpolation'):
     assert model.is_generative, model.name + ' is not generative'
     assert np.ndim(points[0]) > 0, 'points must not be scalars'
@@ -160,8 +161,7 @@ def interpolation(model,
 
     number_of_lines = len(points) - 1
     k = number_of_interpolations
-    log.info('Interpolating between %d points, %d times',
-             len(points), k)
+    log.info('Interpolating between %d points, %d times', len(points), k)
 
     point_to_point = []
     for start, end in zip(points, points[1:]):
@@ -200,10 +200,15 @@ def interpolation(model,
                 path = os.path.join(folder, '{0}.png'.format(i))
                 scipy.misc.imsave(path, image)
 
-    number_of_columns = interpolation_length * number_of_lines
+    number_of_rows = k
+    number_of_columns = interpolation_length
+    if multi_point_interpolation_on_one_row:
+        number_of_columns *= number_of_lines
+    else:
+        number_of_rows *= number_of_lines
     plot.figure(figsize=(10, 5))
     for index, image in enumerate(images):
-        _plot_image_tile(k, number_of_columns, index, image, gray)
+        _plot_image_tile(number_of_rows, number_of_columns, index, image, gray)
 
     if save_to is not None:
         filename = '{0}{1}-interpolation.png'.format(file_prefix, method)
