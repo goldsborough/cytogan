@@ -7,7 +7,8 @@ from keras.layers import (Activation, Concatenate, Conv2D, Dense, Flatten,
                           Input, LeakyReLU, Reshape, UpSampling2D)
 from keras.models import Model
 
-from cytogan.extra.layers import AddNoise, BatchNorm, RandomNormal
+from cytogan.extra.layers import (AddNoise, BatchNorm, RandomNormal,
+                                  RandomUniform)
 from cytogan.metrics import losses
 from cytogan.models import gan
 
@@ -22,6 +23,7 @@ Hyper = collections.namedtuple('Hyper', [
     'initial_shape',
     'conditional_shape',
     'conditional_embedding',
+    'noise_kind',
 ])
 
 
@@ -76,7 +78,10 @@ class DCGAN(gan.GAN):
 
         with K.name_scope('G'):
             self.batch_size = Input(batch_shape=[1], name='batch_size')
-            self.noise = RandomNormal(self.noise_size)(self.batch_size)
+            if self.noise_kind == 'normal':
+                self.noise = RandomNormal(self.noise_size)(self.batch_size)
+            else:
+                self.noise = RandomUniform(self.noise_size)(self.batch_size)
             conditional = self._get_conditional_embedding('G')
             self.fake_images = self._define_generator(self.noise, conditional)
 

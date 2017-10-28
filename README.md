@@ -160,3 +160,10 @@ Launched:
   - BiGAN with 7e-5
 - gpu-vm-5:
   - InfoGAN with 1e-5 7e-5 7e-5
+
+### Friday, 27/10/2017
+
+TODO:
+- Interpolate between concentrations of the same compound
+- Train BiGAN with uniform distribution
+- Train BiGAN without dropout?

@@ -23,6 +23,7 @@ Hyper = collections.namedtuple('Hyper', [
     'discriminator_strides',
     'latent_size',
     'initial_shape',
+    'noise_kind',
 ])
 
 
@@ -30,6 +31,10 @@ class BiGAN(gan.GAN):
     def __init__(self, hyper, learning, session):
         self.noise_size = hyper.latent_size
         super(BiGAN, self).__init__(hyper, learning, session)
+        if self.noise_kind == 'normal':
+            self.noise_distribution = np.random.normal
+        else:
+            self.noise_distribution = np.random.uniform
 
     def encode(self, images, rescale=True):
         if rescale:
@@ -240,7 +245,7 @@ class BiGAN(gan.GAN):
                     self.loss['E'], var_list=self.encoder.trainable_weights)
 
     def _sample_noise(self, size):
-        return np.random.randn(size, self.noise_size)
+        return self.noise_distribution(size=(size, self.noise_size))
 
     def _get_summary_nodes(self):
         return {scope: util.merge_summaries(scope) for scope in 'DGE'}

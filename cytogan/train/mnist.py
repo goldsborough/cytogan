@@ -10,8 +10,6 @@ from cytogan.models import (ae, began, bigan, conv_ae, dcgan, infogan, lsgan,
 from cytogan.train import common, trainer
 from cytogan.experiments import visualize
 
-print(experiments.algebra)
-
 parser = common.make_parser('cytogan-mnist')
 options = common.parse_args(parser)
 
@@ -65,7 +63,8 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         noise_size=100,
         initial_shape=(7, 7),
         conditional_shape=conditional_shape,
-        conditional_embedding=None)
+        conditional_embedding=None,
+        noise_kind='normal')
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
@@ -132,7 +131,8 @@ elif options.model == 'bigan':
         discriminator_filters=[(256, 128, 64, 32), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
-        initial_shape=(7, 7))
+        initial_shape=(7, 7),
+        noise_kind='uniform')
     Model = bigan.BiGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))

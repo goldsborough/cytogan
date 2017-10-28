@@ -41,6 +41,9 @@ class GAN(model.Model):
         for index, field in enumerate(hyper._fields):
             setattr(self, field, hyper[index])
 
+        if hasattr(self, 'noise_kind'):
+            assert self.noise_kind in ('normal', 'uniform'), self.noise_kind
+
         self.image_shape = list(hyper.image_shape)
         self.number_of_channels = hyper.image_shape[-1]
         self.flat_image_shape = np.prod(hyper.image_shape)

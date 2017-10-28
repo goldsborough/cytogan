@@ -165,7 +165,29 @@ class RandomNormal(Layer):
                 mean=self.mean,
                 stddev=self.stddev)
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self, _):
+        return (None, self.noise_size)
+
+
+class RandomUniform(Layer):
+    def __init__(self, noise_size, low=-1.0, high=+1.0, **kwargs):
+        self.noise_size = noise_size
+        self.low = low
+        self.high = high
+        super(RandomUniform, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        super(RandomUniform, self).build(input_shape)
+
+    def call(self, batch_size):
+        with K.name_scope('random_uniform'):
+            batch_size = tf.squeeze(tf.cast(batch_size, tf.int32))
+            return tf.random_uniform(
+                shape=(batch_size, self.noise_size),
+                minval=self.low,
+                maxval=self.high)
+
+    def compute_output_shape(self, _):
         return (None, self.noise_size)
 
 

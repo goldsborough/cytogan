@@ -113,7 +113,8 @@ elif options.model in ('dcgan', 'lsgan', 'wgan'):
         noise_size=100,
         initial_shape=(12, 12),
         conditional_shape=conditional_shape,
-        conditional_embedding=embedding_size)
+        conditional_embedding=embedding_size,
+        noise_kind='normal')
     models = dict(dcgan=dcgan.DCGAN, lsgan=lsgan.LSGAN, wgan=wgan.WGAN)
     Model = models[options.model]
 elif options.model == 'began':
@@ -168,7 +169,8 @@ elif options.model == 'bigan':
         discriminator_filters=[(128, 64, 32, 16), (1024, 1024, 256)],
         discriminator_strides=(1, 2, 2, 2),
         latent_size=100,
-        initial_shape=(12, 12))
+        initial_shape=(12, 12),
+        noise_kind='uniform')
     Model = bigan.BiGAN
 
 log.debug('Hyperparameters:\n%s', misc.namedtuple_to_string(hyper))
