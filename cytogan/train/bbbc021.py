@@ -26,9 +26,7 @@ parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--images', required=True)
 parser.add_argument('--interpolate-treatment-compound')
 parser.add_argument(
-    '--interpolate-treatment-concentrations',
-    nargs='+',
-    type=float)
+    '--interpolate-treatment-concentrations', nargs='+', type=float)
 parser.add_argument('--interpolate-treatment-length', type=int, default=16)
 parser.add_argument('--interpolate-treatment-sample-size', type=int)
 parser.add_argument('--interpolation-range', type=float, default=2.0)

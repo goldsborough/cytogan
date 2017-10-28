@@ -159,7 +159,7 @@ def interpolation(model,
     assert method in ('linear', 'slerp'), method
 
     k = number_of_interpolations
-    images = []
+    point_blocks = []
     for start, end in zip(points, points[1:]):
         if method == 'linear':
             samples = _linear_interpolation(start, end, interpolation_length)
@@ -173,15 +173,11 @@ def interpolation(model,
         if conditional is not None:
             samples.append(conditional)
 
-        image_block = model.generate(*samples).reshape(-1, *model.image_shape)
-        images.append(image_block)
+        block = model.generate(*samples).reshape(-1, *model.image_shape)
+        point_blocks.append(np.split(block, k, axis=0))
 
-    # Get blocks for each interpolation side-by-side
-    images = np.concatenate(images, axis=1)
-    print(images.shape)
-    # Flatten them out into a "list" of images
-    images = images.reshape(-1, *model.image_shape)
-    print(images.shape)
+    images = [image.squeeze() for point in point_blocks for image in point]
+    images = np.concatenate(images, axis=0)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
