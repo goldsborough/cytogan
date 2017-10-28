@@ -16,8 +16,11 @@ def points_for_treatment(dataset, compound, concentrations, sample_size=None):
     for concentration in concentrations:
         concentration_index = dataset['concentration'] == concentration
         treatment = dataset[compound_index & concentration_index]
+        original_sample_size = len(treatment)
         if sample_size:
             treatment = treatment.sample(min(len(treatment), sample_size))
+        log.info('Forming point out of %d/%d profiles for %s/%s',
+                 len(treatment), original_sample_size, compound, concentration)
         points.append(treatment['profile'].mean(axis=0))
 
     assert all(p.shape == points[0].shape for p in points), points[1].shape

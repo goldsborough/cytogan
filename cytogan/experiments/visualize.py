@@ -161,7 +161,7 @@ def interpolation(model,
 
     number_of_lines = len(points) - 1
     k = number_of_interpolations
-    log.info('Interpolating between %d points, %d times', len(points), k)
+    log.info('Interpolating between %d points', len(points))
 
     point_to_point = []
     for start, end in zip(points, points[1:]):
@@ -178,13 +178,10 @@ def interpolation(model,
             samples.append(conditional)
 
         block = model.generate(*samples).reshape(-1, *model.image_shape)
-        print(block.shape)
         point_to_point.append(np.split(block, k, axis=0))
 
     images = [line[block] for block in range(k) for line in point_to_point]
-    print([i.shape for i in images])
     images = np.concatenate(images, axis=0)
-    print(images.shape)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
