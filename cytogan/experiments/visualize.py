@@ -158,8 +158,12 @@ def interpolation(model,
     assert np.ndim(points[0]) > 0, 'points must not be scalars'
     assert method in ('linear', 'slerp'), method
 
+    number_of_lines = len(points) - 1
     k = number_of_interpolations
-    point_blocks = []
+    log.info('Interpolating between %d points, %d times',
+             len(points), k)
+
+    point_to_point = []
     for start, end in zip(points, points[1:]):
         if method == 'linear':
             samples = _linear_interpolation(start, end, interpolation_length)
@@ -174,10 +178,13 @@ def interpolation(model,
             samples.append(conditional)
 
         block = model.generate(*samples).reshape(-1, *model.image_shape)
-        point_blocks.append(np.split(block, k, axis=0))
+        print(block.shape)
+        point_to_point.append(np.split(block, k, axis=0))
 
-    images = [image.squeeze() for point in point_blocks for image in point]
+    images = [line[block] for block in range(k) for line in point_to_point]
+    print([i.shape for i in images])
     images = np.concatenate(images, axis=0)
+    print(images.shape)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
@@ -193,7 +200,7 @@ def interpolation(model,
                 path = os.path.join(folder, '{0}.png'.format(i))
                 scipy.misc.imsave(path, image)
 
-    number_of_columns = interpolation_length * (len(points) - 1)
+    number_of_columns = interpolation_length * number_of_lines
     plot.figure(figsize=(10, 5))
     for index, image in enumerate(images):
         _plot_image_tile(k, number_of_columns, index, image, gray)

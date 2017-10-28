@@ -352,6 +352,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             model, np.stack(images, axis=0), save_to=options.figure_dir)
 
     if options.interpolation_samples is not None:
+        assert options.interpolation_points >= 2
         points = np.random.randn(options.interpolation_points,
                                  options.interpolation_samples[0],
                                  model.noise_size)
