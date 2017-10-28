@@ -24,7 +24,11 @@ parser.add_argument('--image-algebra-equations', type=int, default=1)
 parser.add_argument('--image-algebra-sample-size', type=int, default=100)
 parser.add_argument('--image-algebra', nargs='+', choices=algebra.EXPERIMENTS)
 parser.add_argument('--images', required=True)
-parser.add_argument('--interpolate-treatment', nargs=2)
+parser.add_argument('--interpolate-treatment-compound')
+parser.add_argument(
+    '--interpolate-treatment-concentration',
+    nargs='+',
+    type=float)
 parser.add_argument('--interpolate-treatment-length', type=int, default=16)
 parser.add_argument('--interpolate-treatment-sample-size', type=int)
 parser.add_argument('--interpolation-range', type=float, default=2.0)
@@ -349,23 +353,23 @@ with common.get_session(options.gpus, options.random_seed) as session:
         visualize.reconstructions(
             model, np.stack(images, axis=0), save_to=options.figure_dir)
 
-    if options.interpolate_samples is not None:
-        start, end = np.random.randn(2, options.interpolate_samples[0],
-                                     model.noise_size)
+    if options.interpolation_samples is not None:
+        points = np.random.randn(options.interpolation_points,
+                                 options.interpolation_samples[0],
+                                 model.noise_size)
         if conditional_shape:
-            labels = cell_data.sample_labels(options.interpolate_samples[0])
+            labels = cell_data.sample_labels(options.interpolation_samples[0])
             labels = np.array(list(labels))
-            labels = labels.repeat(options.interpolate_samples[1], axis=0)
+            labels = labels.repeat(options.interpolation_samples[1], axis=0)
         else:
             labels = None
         visualize.interpolation(
             model,
-            start,
-            end,
-            options.interpolate_samples[1],
+            points,
+            options.interpolation_samples[1],
             options.interpolation_method,
             options.save_interpolation_frames,
-            number_of_interpolations=len(start),
+            options.interpolation_samples[0],
             conditional=labels,
             save_to=options.figure_dir)
 
@@ -383,16 +387,16 @@ with common.get_session(options.gpus, options.random_seed) as session:
             options.interpolation_method,
             save_to=options.figure_dir)
 
-    if options.interpolate_treatment is not None:
-        dmso, treatment = interpolation.points_for_treatment(
+    if options.interpolate_treatment_compound is not None:
+        assert options.interpolate_treatment_concentrations is not None
+        points = interpolation.points_for_treatment(
             dataset,
-            compound=options.interpolate_treatment[0],
-            concentration=options.interpolate_treatment[1],
+            compound=options.interpolate_treatment_compound,
+            concentrations=options.interpolate_treatment_concentrations,
             sample_size=options.interpolate_treatment_sample_size)
         visualize.interpolation(
             model,
-            dmso,
-            treatment,
+            points,
             options.interpolate_treatment_length,
             options.interpolation_method,
             options.save_interpolation_frames,

@@ -144,8 +144,7 @@ def _slerp_interpolation(start, end, number_of_samples):
 
 
 def interpolation(model,
-                  start,
-                  end,
+                  points,
                   interpolation_length,
                   method,
                   save_interpolation_frames=False,
@@ -156,21 +155,33 @@ def interpolation(model,
                   file_prefix='',
                   title='Latent Interpolation'):
     assert model.is_generative, model.name + ' is not generative'
-    assert np.ndim(start) > 0, 'points must not be scalars'
-
-    if method == 'linear':
-        samples = _linear_interpolation(start, end, interpolation_length)
-    elif method == 'slerp':
-        samples = _slerp_interpolation(start, end, interpolation_length)
+    assert np.ndim(points[0]) > 0, 'points must not be scalars'
+    assert method in ('linear', 'slerp'), method
 
     k = number_of_interpolations
-    split = [x.squeeze().T for x in np.split(samples, k)]
-    samples = [np.concatenate(split, axis=0)]
+    images = []
+    for start, end in zip(points, points[1:]):
+        if method == 'linear':
+            samples = _linear_interpolation(start, end, interpolation_length)
+        elif method == 'slerp':
+            samples = _slerp_interpolation(start, end, interpolation_length)
 
-    if conditional is not None:
-        samples.append(conditional)
+        # Crazy rotation
+        split = [x.squeeze().T for x in np.split(samples, k)]
+        samples = [np.concatenate(split, axis=0)]
 
-    images = model.generate(*samples).reshape(-1, *model.image_shape)
+        if conditional is not None:
+            samples.append(conditional)
+
+        image_block = model.generate(*samples).reshape(-1, *model.image_shape)
+        images.append(image_block)
+
+    # Get blocks for each interpolation side-by-side
+    images = np.concatenate(images, axis=1)
+    print(images.shape)
+    # Flatten them out into a "list" of images
+    images = images.reshape(-1, *model.image_shape)
+    print(images.shape)
 
     if _is_grayscale(images):
         images = _make_rgb(images)
@@ -186,9 +197,10 @@ def interpolation(model,
                 path = os.path.join(folder, '{0}.png'.format(i))
                 scipy.misc.imsave(path, image)
 
+    number_of_columns = interpolation_length * (len(points) - 1)
     plot.figure(figsize=(10, 5))
     for index, image in enumerate(images):
-        _plot_image_tile(k, interpolation_length, index, image, gray)
+        _plot_image_tile(k, number_of_columns, index, image, gray)
 
     if save_to is not None:
         filename = '{0}{1}-interpolation.png'.format(file_prefix, method)

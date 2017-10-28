@@ -60,7 +60,8 @@ def make_parser(name):
     parser.add_argument('-r', '--reconstruction-samples', type=int)
     parser.add_argument('-l', '--latent-samples', type=int)
     parser.add_argument('-g', '--generative-samples', type=int)
-    parser.add_argument('-i', '--interpolate-samples', type=int, nargs=2)
+    parser.add_argument('-i', '--interpolation-samples', type=int, nargs=2)
+    parser.add_argument('--interpolation-points', type=int, default=2)
     parser.add_argument('--interpolate-single-factors', type=int, nargs=2)
     parser.add_argument(
         '--interpolate-factors-from-images', action='store_true')

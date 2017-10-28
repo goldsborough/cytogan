@@ -5,23 +5,24 @@ from cytogan.extra import logs
 log = logs.get_logger(__name__)
 
 
-def points_for_treatment(dataset, compound, concentration, sample_size=None):
-    com = dataset['compound'] == compound
-    con = dataset['concentration'] == float(concentration)
-    treatment = dataset[com & con]
-
+def points_for_treatment(dataset, compound, concentrations, sample_size=None):
     dmso = dataset[dataset['compound'] == 'DMSO']
-
     if sample_size:
-        log.info('Sampling %d treatments from %d at random', sample_size,
-                 len(treatment))
-        treatment = treatment.sample(sample_size)
         dmso = dmso.sample(sample_size)
 
-    treatment_vector = treatment['profile'].mean(axis=0)
-    dmso_vector = dmso['profile'].mean(axis=0)
+    points = [dmso['profile'].mean(axis=0)]
 
-    return dmso_vector, treatment_vector
+    compound_index = dataset['compound'] == compound
+    for concentration in concentrations:
+        concentration_index = dataset['concentration'] == concentration
+        treatment = dataset[compound_index & concentration_index]
+        if sample_size:
+            treatment = treatment.sample(min(len(treatment), sample_size))
+        points.append(treatment['profile'].mean(axis=0))
+
+    assert all(p.shape == points[0].shape for p in points), points[1].shape
+
+    return points
 
 
 def points_from_images(model, cell_data, pool_size=100):
