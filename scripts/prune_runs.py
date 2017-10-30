@@ -11,8 +11,6 @@ parser.add_argument('--keep-with-figures', action='store_true')
 parser.add_argument('--removed-only', action='store_true')
 options = parser.parse_args()
 
-print(options)
-
 assert os.path.exists(options.runs), 'Run path does not exist!'
 
 for run in os.listdir(options.runs):
@@ -20,7 +18,7 @@ for run in os.listdir(options.runs):
     contents = os.listdir(run_path)
 
     with_figures = options.keep_with_figures and 'figures' in contents
-    if 'checkpoints' in contents or 'summaries' in contents or with_figures:
+    if 'checkpoints' in contents or with_figures:
         if not options.removed_only:
             print('Keeping {0}'.format(run_path))
     else:
