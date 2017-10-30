@@ -348,6 +348,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
                                     len(image_pool),
                                     options.reconstruction_samples)
         images = np.array(image_pool)[indices]
+        assert len(images) == options.reconstruction_samples, len(images)
         visualize.reconstructions(
             model, np.stack(images, axis=0), save_to=options.figure_dir)
 
@@ -413,7 +414,6 @@ with common.get_session(options.gpus, options.random_seed) as session:
             lhs, rhs, base = np.split(np.array(images), 3, axis=0)
             vectors, result_images = experiment.calculate(
                 model, lhs, rhs, base)
-            np.savetxt('vectors.csv', vectors, delimiter=',')
             result_vectors = np.split(vectors, 4, axis=0)[3]
             assert len(result_vectors) == len(result_images)
             labels = experiment.evaluate(result_vectors, treatment_profiles)
