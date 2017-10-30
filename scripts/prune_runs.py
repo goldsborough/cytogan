@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import os
 import argparse
+import os
+import shutil
 
 parser = argparse.ArgumentParser()
 parser.add_argument('runs')
 parser.add_argument('--dry', action='store_true')
+parser.add_argument('--keep-with-figures', action='store_true')
+parser.add_argument('--removed-only', action='store_true')
 options = parser.parse_args()
 
 print(options)
@@ -16,9 +19,14 @@ for run in os.listdir(options.runs):
     run_path = os.path.join(options.runs, run)
     contents = os.listdir(run_path)
 
-    if 'checkpoints' in contents or 'summaries' in contents:
-        print('Keeping {0}'.format(run_path))
+    with_figures = options.keep_with_figures and 'figures' in contents
+    if 'checkpoints' in contents or 'summaries' in contents or with_figures:
+        if not options.removed_only:
+            print('Keeping {0}'.format(run_path))
     else:
-        print('rm -r {0}'.format(run_path))
+        if options.removed_only:
+            print(run_path)
+        else:
+            print('rm -r {0}'.format(run_path))
         if not options.dry:
-            os.rmdir(run_path)
+            shutil.rmtree(run_path)
