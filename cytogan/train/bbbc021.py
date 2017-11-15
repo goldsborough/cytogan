@@ -456,7 +456,7 @@ with common.get_session(options.gpus, options.random_seed) as session:
             labels = labels.repeat(options.generative_samples // 2, axis=0)
             samples.append(labels)
 
-        visualize.generative_samples(
+        images = visualize.generative_samples(
             model,
             samples,
             save_to=options.figure_dir,

@@ -236,6 +236,8 @@ def generative_samples(model,
     if save_to is not None:
         _save_figure(save_to, filename)
 
+    return images
+
 
 def confusion_matrix(matrix,
                      title='Confusion Matrix',
