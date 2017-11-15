@@ -393,6 +393,14 @@ def image_algebra(model,
         if save_to is not None:
             _save_figure(save_to, 'image-algebra-vectors.png')
 
+def save_images(images, directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    for n, image in enumerate(images):
+        path = os.path.join(directory, '{0}.png'.format(n))
+        scipy.misc.imsave(path, image)
+    log.info('Saved %d images to %s', len(images), directory)
+
 
 def disable_display():
     plot.switch_backend('Agg')

@@ -42,6 +42,7 @@ parser.add_argument('--no-latent-embedding', action='store_true')
 parser.add_argument('--noise-file')
 parser.add_argument('--normalize-luminance', action='store_true')
 parser.add_argument('--save-profiles', action='store_true')
+parser.add_argument('--save-generated-images', action='store_true')
 parser.add_argument('--skip-evaluation', action='store_true')
 parser.add_argument('--store-generated-noise', action='store_true')
 parser.add_argument('--tsne-perplexity', type=int)
@@ -477,14 +478,10 @@ with common.get_session(options.gpus, options.random_seed) as session:
             if np.ndim(noise) == 1:
                 noise = noise.reshape(1, -1)
             images = model.generate(noise)
-            directory = os.path.join(options.workspace, options.figure_dir,
-                                     'from-noise')
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            for n, image in enumerate(images):
-                path = os.path.join(directory, '{0}.png'.format(n))
-                scipy.misc.imsave(path, image)
-                log.info('Saved image generated from noise: %s', path)
+
+        if options.save_generated_images:
+            directory = os.path.join(options.figure_dir, 'generated')
+            visualize.save_images(images, directory)
 
 if options.show_figures:
     visualize.show()
