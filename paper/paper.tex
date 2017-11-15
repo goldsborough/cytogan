@@ -1,8 +1,8 @@
 \documentclass{article}
 
 % to compile a camera-ready version, add the [final] option, e.g.:
-\usepackage[final]{nips_2017}
-% \usepackage{nips_2017}
+% \usepackage[final]{nips_2017}
+\usepackage{nips_2017}
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -15,13 +15,21 @@
 \usepackage{microtype}      % microtypography
 \usepackage{todonotes}
 
+\graphicspath{{figures/}}
+
 %\PassOptionsToPackage{numbers}{natbib}
 %\usepackage[numbers]{natbib}
 %\usepackage[natbib, maxcitenames=3, style=numeric]{biblatex}
 %\setcitestyle{numbers}
 %\bibliographystyle{abbrvnat}
 
-\title{Generative Modeling of Cell Images}
+\title{CytoGAN: Generative Modeling of Cell Images}
+% * <anne@broadinstitute.org> 2017-10-15T19:01:17.646Z:
+%
+% > CytoGAN
+% Is it necessary to give it a name? This seems overly common to me, but then again maybe it's the convention and you just go with it.
+%
+% ^.
 
 \author{
   Peter Goldsborough\thanks{This work has been conducted as part of an internship at the Imaging Platform of the Broad Institute.}\\
@@ -48,191 +56,105 @@
 \maketitle
 
 \begin{abstract}
-We explore the application of Generative Adversarial Networks to the domain of morphological profiling of human cultured cells imaged by fluorescence microscopy. When evaluated for their ability to group cell images responding to treatment by chemicals of known classes, we find that adversarially learned representations are superior to autoencoder-based approaches. While currently inferior to classical computer vision and transfer learning, the adversarial framework enables useful and previously impossible interpretability of latent codes.
+We explore the application of Generative Adversarial Networks to the domain of morphological profiling of human cultured cells imaged by fluorescence microscopy. When evaluated for their ability to group cell images responding to treatment by chemicals of known classes, we find that adversarially learned representations are superior to autoencoder-based approaches. While currently inferior to classical computer vision and transfer learning, the adversarial framework enables useful visualization of the variation of cellular images due to their generative capabilities.
 \end{abstract}
 
 \section{Introduction}
-Advances in high-throughput microscopy systems have enabled acquisition of large
-volumes of high-resolution cell images \cite{Kraus2016}. This paves the way for
-novel computational methods that can leverage these large quantities of data to
-study biological systems. Our work focuses on the task of morphological
-profiling, which aims to map microscopy images of cells to representation
-vectors that capture salient features and axes of variation in an unsupervised
-manner \cite{caicedo_profiling}. These representations ideally divide the
-morphological space into clusters of cells with similar properties or, in the
-case of induced perturbations, similar function.
+Advances in high-throughput microscopy systems have enabled acquisition of large volumes of high-resolution cell images \cite{caicedo2017data}. This paves the way for novel computational methods that can leverage these large quantities of data to study biological systems. Our work focuses on the task of morphological profiling, which aims to map microscopy images of cells to representation vectors that capture salient features and axes of variation in an unsupervised manner \cite{caicedo_profiling}. These representations ideally divide the morphological space into clusters of cells with similar properties or, in the case of induced perturbations, similar function.
 
-Current techniques for morphological profiling broadly fall in two categories:
-a) Classical image processing, using specialized software like CellProfiler
-\cite{Carpenter2006}, to capture representations via manually-tuned segmentation
-and traditional computer vision pipelines, and b) transfer learning to extract
-features learned by deep convolutional neural networks originally trained to
-classify miscellaneous objects \cite{pawlowski2016automating,
-ando2017improving}. Classical computer vision approaches offer better
-interpretability of features but require more human tuning of the segmentation
-algorithms, and are limited by the feature set implemented in the image analysis
-software. Current transfer learning approaches have been shown to outperform
-classical methods in at least one dataset \cite{ando2017improving}. However,
-given that these networks were trained on natural images (in RGB), they do not
-discover the relations of the biologically meaningful image channels. Instead,
-their superior performance is likely due to the their ability to capture
-high-level vision features, which represent the overall structure of cells, but
-not necessarily intricate details of their morphological variations. Therefore,
-we hypothesized that learning representations specifically tuned to cell images
-would be valuable.
+Current techniques for morphological profiling broadly fall in two categories: a) classical image processing, using specialized software like CellProfiler \cite{Carpenter2006} to capture representations via manually-tuned segmentation and traditional computer vision pipelines, and b) transfer learning to extract features learned by deep convolutional neural networks originally trained to classify miscellaneous objects \cite{pawlowski2016automating, ando2017improving}. Classical computer vision approaches offer better interpretability of features but require more human tuning of the segmentation algorithms, and are limited by the feature set implemented in the image analysis software. Current transfer learning techniques have been shown to outperform classical methods in at least one dataset \cite{pawlowski2016automating,ando2017improving}. However, given that these networks were trained on natural images (in RGB), they do not discover the relations of the biologically meaningful image channels. Instead, their superior performance is likely due to their ability to extract high-level vision features, which appear to capture the overall structure of cells, but not necessarily all the intricate details of their morphological variations. Therefore, we hypothesized that learning representations specifically adapted to cell images would be valuable.
 
-We employ Generative Adversarial Networks (GANs) \cite{goodfellow2014generative}
-to build a generative model of cell images from the BBBC021 dataset
-\cite{Caie2010,Ljosa2012}.  We show that this generative model learns rich
-feature representations and synthesizes realistic images with interpretable
-properties. Our approach offers the following advantages:
-
+We employ Generative Adversarial Networks (GANs) \cite{goodfellow2014generative} to build a generative model of single cell images from the BBBC021 dataset \cite{Ljosa2012}. We show that this model learns rich feature representations and synthesizes realistic images that are useful for exploring morphological variation in cells. The main advantages of this method are:
 \begin{itemize}
-  \item \emph{Adaptability}: Unsupervised representation learning, which enables easy adaptation and incorporation of new data. This is important given that applications of morphological profiling do not have ground truth annotations, but instead aim to reveal the structure of the image collection.
-  \item \emph{Specialization}: Our method learns from training data and is able to extract inherent semantic relationships. Transfer learning approaches lack this ability and cannot capture the intrinsic relationships between the biologically meaningful channels.
-  \item \emph{Interpretability}: The generative abilities of this model enable previously impossible interpretbility by being able to visualize cells dependent on a given representation.
+  \item \emph{Adaptability}: Unsupervised representation learning, which can readily incorporate new data. This is important given that applications of morphological profiling usually lack ground truth annotations, but instead aim to reveal the structure of the image collection.
+  \item \emph{Specialization}: Because this method learns from its training data it is able to disentangle factors of variation and extract inherent semantic relationships. Transfer learning approaches lack this ability and cannot capture the intrinsic relations between the biologically meaningful channels.
+  \item \emph{Translating into biological phenotypes}: The generative abilities of this model enable useful visualizations of cells to help translate data variations into meaningful biological phenotypes.
 \end{itemize}
 
 \section{Related Work}
 
-Our work lies at the intersection of automated morphological profiling, and
-representation learning with deep neural networks, in particular generative
-architectures. Caicedo et al. \cite{caicedo2017data} recently outlined the state
-and challenges of the morphological profiling problem. Prior to this, Ljosa et
-al. \cite{Ljosa2013} compared the performance of various dimensionality
-reduction methods for CellProfiler features on the BBBC021 benchmark
-\cite{Caie2010,Ljosa2012}, consisting of MCF7 cells exposed to different
-chemical treatments. Singh et al. \cite{Singh2014} demonstrated the importance
-of illumination correction of those images. Pawlowski et al.
-\cite{pawlowski2016automating} for the first time reported a
-representation-learning method based on deep learning that is competitive with
-hand-engineered features at the task of MOA prediction. Ando et al.
-\cite{ando2017improving} also applied transfer learning with a different
-architecture and introducing a novel feature normalization method. Further
-related work on this dataset spans supervised classification \cite{Kraus2016a}
-or deep learning applications based on CellProfiler features
-\cite{Kandaswamy2016,Zamparo2015}
+Our work lies at the intersection of automated morphological profiling, and representation learning with deep neural networks, in particular generative architectures. Caicedo et al. \cite{caicedo2017data} recently outlined the state and challenges of the morphological profiling problem. Prior to this, Ljosa et al. \cite{Ljosa2013} compared the performance of various dimensionality reduction techniques for CellProfiler features on the BBBC021 benchmark \cite{Ljosa2012}, consisting of MCF7 cells exposed to different chemical treatments. Pawlowski et al. \cite{pawlowski2016automating} for the first time reported a representation-learning method based on deep learning that is competitive with hand-engineered features at the task of predicting mechanism-of-action (MOA) of chemicals. Ando et al. \cite{ando2017improving} also applied transfer learning with a different architecture and introduced a novel feature normalization method. Other related work on this dataset include supervised classification \cite{Kraus2016a}, transfer learning on CellProfiler features \cite{Kandaswamy2016}, and dimensionality reduction using autoencoders \cite{Zamparo2015}.
 
-Few works have applied unsupervised deep learning techniques to the task of
-feature extraction in morphological profiling. Pawlowski \cite{pawlowski2016msc}
-first investigated autoencoder-based approaches but reported results far
-inferior to hand-tuned features and transfer-learning approaches. Our model is
-more related to the work by Osokin et al. \cite{osokin2017gans} and Johnson et
-al. \cite{johnson2017generative}, wherein GANs were used to model cell
-images, although their applications did not include morphological profiling.
+Few published studies have applied unsupervised deep learning techniques to the task of feature extraction in morphological profiling. Pawlowski \cite{pawlowski2016msc} first investigated autoencoder-based methods but reported results far inferior to hand-tuned features or transfer-learning approaches. Our model is more related to the work by Osokin et al. \cite{osokin2017gans} and Johnson et al. \cite{johnson2017generative}, wherein GANs were used to model cell images, although their applications did not include morphological profiling.
 
-\section{Using GANs for Interpretable Representation Learning}
-
+\section{Using GANs for Representation Learning}
 Goodfellow et al. \cite{goodfellow2014generative} introduced GANs as a game of
-two \emph{players}: a \emph{generator} $G$ and a \emph{discriminator} $D$. The
-former receives samples $\mathbf{z}$ drawn from a noise prior $P(\mathbf{z})$
-which it maps to values $G(z)$ that should resemble elements of some data
-distribution $P_{\text{data}}$. The discriminator must learn to distinguish such
-synthetic samples from real values $\mathbf{x} \sim
-P_{\text{data}}(\mathbf{x})$. The critic's confidence in the realism of the
-generator's productions is used as feedback to $G$, guiding it to synthesize
-ever more realistic replicates of samples from the data prior. This procedure is
-formalized in a zero-sum game, solved in a nash equilibrium found by playing the
-minimax game
+two players: a \emph{generator} $G$ and a \emph{discriminator} or \emph{critic} $D$. The former receives samples $\mathbf{z}$ drawn from a noise prior $P_{\text{noise}}$ which it maps to values $G(\mathbf{z})$ that should resemble elements of some data distribution $P_{\text{data}}$. The discriminator must learn to distinguish such synthetic samples from real values $\mathbf{x} \sim P_{\text{data}}$. The critic's confidence in the realism of the generator's productions is used as feedback to $G$, guiding it to synthesize ever more realistic replicates of samples from the data prior. This procedure is formalized in a zero-sum game,
+\vspace{-1pt}
+$$\min_G \max_D V(G, D) = \mathbb{E}_{\mathbf{x} \sim P_{\text{data}}}[\log(D(\mathbf{x})] + \mathbb{E}_{\mathbf{z} \sim P_{\text{noise}}}[\log(1 - D(G(\mathbf{z}))].$$
+%\vspace{-1pt}
+Radford et al. \cite{radford2015unsupervised} first specialized GANs to image synthesis by introducing Deep Convolutional GANs (DCGANs). DCGANs implement the generator and discriminator based on convolutional operations. Derivations of DCGANs such as Least Squares GAN (LSGAN) \cite{mao2016least} or Wasserstein GAN (WGAN) \cite{arjovsky2017wasserstein} tackle instabilities in the training procedure of early generative adversarial models. In our experiments, we found LSGAN to be most stable, in part leading to higher quality generated images than both DCGAN and WGAN.
 
-$$\min_G \max_D V(G, D) = \mathbb{E}_{x \sim P_{data}}[\log(D(\mathbf{x})] + \mathbb{E}_{z \sim P_{noise}}[\log(1 - D(G(\mathbf{z}))].$$
+The original GAN framework does not include an explicit means of performing inference. As such, we require extensions that allow mapping of a sample $\mathbf{x}$ drawn from the data prior to a latent representation via some encoder transformation $E(\mathbf{x})$. A common approach is to interpret the penultimate layer of the discriminator as a latent space. The activations of this layer serve as a source of representation vectors. These latent codes are thought to be meaningful because the discriminator must develop a strong internal representation of its input to succeed at its discrimination task. Furthermore, this method imposes no computational overhead compared to vanilla GANs. More advanced encoders could tie this encoding to a corresponding noise vector.
 
-Radford et al. \cite{radford2015unsupervised} first specialized GANs to image
-synthesis by introducing Deep Convolutional GANs (DCGANs). DCGANs implement the
-generator and discriminator based on convolutional operations. Derivations of
-DCGANs such as Least Squares GAN (LSGAN) \cite{mao2016least} or Wasserstein GAN
-(WGAN) \cite{arjovsky2017wasserstein} tackle infamous instabilities in the
-training procedure of early generative models. In our experiments, we found
-LSGAN to be most stable, in part leading to higher quality generated images than
-both DCGAN and WGAN.
+\section{Exploring Biological Phenotypes Using Cell Image Synthesis}\label{synthesis}
+% Exploring Biological Phenotypes Using Cell Image Synthesis
+GANs have been proven to synthesize realistic images both within and beyond the biological domain \cite{goodfellow2014generative,radford2015unsupervised,osokin2017gans}. We examine if this ability transfers to cell images extracted from the BBBC021 dataset of human breast cancer cell lines. Each image in BBBC021 consists of three \emph{channels} corresponding to DNA, F-Actin and $\beta$-Tubulin, cellular components visualized by fluorescence microscopy. We stack these channels and treat them as RGB images via a simple $\text{DNA} \mapsto \text{R}, \text{$\beta$-Tubulin} \mapsto \text{G}, \text{F-Actin} \mapsto \text{B}$ mapping. We obtain ca. 1.3 million single cell images by segmenting the raw images using CellProfiler. Finally, we normalize the luminance of each channel to the range [0 -- 1].
 
-The original GAN framework does not include an explicit means of performing
-inference. As such, we require extensions that allow mapping of a sample
-$\mathbf{x}$ drawn from the data prior to a latent representation via some
-encoder transformation $E(\mathbf{x})$. A common approach is to interpret the
-penultimate layer of the discriminator as latent space. The activations of this
-layer serve as a source of representation vectors. These latent codes are
-thought to be meaningful because the discriminator must develop a strong
-internal representation of its input in order to succeed at its discrimination
-task. Furthermore, this method imposes no computational overhead compared to the
-vanilla GAN models.
-
-\section{Interpretable Synthesis of Cells}\label{synthesis}
-
-We examine if GAN models' reported ability to synthesize realistic images
-transfers to the domain of cell microscopy. Our data prior consists of images
-from the BBBC021 dataset of human breast cancer cells. Originally, each image
-consists of three \emph{channels} corresponding to DNA, F-Actin and B-Tubulin,
-cellular components visualized by fluorescence microscopy. We stack these
-channels and treat them as RGB images via a simple $\text{DNA} \mapsto \text{R},
-\text{$\beta$-Tubulin} \mapsto \text{G}, \text{F-Actin} \mapsto \text{B}$
-mapping. We obtain ca. 1.3 million single cell images by segmenting the raw
-images using CellProfiler software. Finally, we normalize the luminance of each
-channel to the range [0 -- 1].
+% Current approaches to morphological profiling extract features that are challenging to translate into biological meaning, such as Zernike moments. While other features capture readily understandable concepts such as the area occupied by the nucleus, even these are difficult to interpret when a given class of cells is defined by several such features in combination. For transfer learning it is nearly impossible to visualize the concept of a feature. GANs present a solution as they hold a generative model that enables the visualization of the impact of perturbations along a feature of the noise space. Further, more advanced GANs integrate an inference method to make the feature and noise space identical such that visualization of feature vectors becomes possible.
+%this issue by ,  we found that GAN representations are not yet competitive with those extracted by other approaches, we believe a major benefit provided by generative adversarial models is their interpretability. We showcase this in the following.
 
 Figure \ref{fig:generated} shows examples of images generated with LSGAN, WGAN
 and DCGAN architectures alongside real images. The synthetic images,
 particularly those produced by LSGAN, are not only highly detailed and
 realistic, but also consistent with their biological nature. For example, it is
-characteristic that B-Tubulin forms a circular halo cradling the nucleus of a
-cell. This property is maintained clearly in all generated images.
+characteristic that $\beta$-Tubulin forms a circular halo cradling the nucleus.
+This property is maintained clearly in all generated images.
 
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \tikzset{frame/.style={draw, semithick, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt}}
-
   	\draw (0, 0) node {\includegraphics[width=0.6\textwidth]{generated}};
 
-    \path (-3.3, 0) coordinate [frame] (r);
+    \path (-3.3, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (r);
     \draw (r)+(0, -2.2) node {\textbf{Real}};
 
-    \path (-1.07, 0) coordinate [frame] (l);
+    \path (-1.07, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (l);
     \draw (l)+(0, -2.2) node {\textbf{LSGAN}};
 
-    \path (1.14, 0) coordinate [frame] (w);
+    \path (1.14, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (w);
     \draw (w)+(0, -2.2) node {\textbf{WGAN}};
 
-    \path (3.35, 0) coordinate [frame] (d);
+    \path (3.35, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (d);
     \draw (d)+(0, -2.2) node {\textbf{DCGAN}};
   \end{tikzpicture}
-  \caption{Examples of real MCF7 cells from the BBBC021 dataset juxtaposed with synthetic cell images generated with LSGAN, WGAN and DCGAN. The generated images of LSGAN are most realistic and consistent with biological properties of cells.}
+  \caption{Examples of real BBBC021 cell images juxtaposed with synthetic cell images generated with LSGAN, WGAN and DCGAN. LSGAN synthesizes the most realistic images as judged by our expert biologists.}
   \label{fig:generated}
 \end{figure}
 
-Current approaches to morphological profiling capture representations that are
-often hard to interpret. While certain CellProfiler features such as nucleic
-area are easy to understand, others like Zernike moments are not intuitive. For
-transfer learning it is nearly impossible to visualize the captured concept. In
-contrast, the GAN noise space $P(z)$ has been shown to be highly interpretable
-and reveal rich semantic structure \cite{radford2015unsupervised}. We are able
-to demonstrate this for images of cells. Figure \ref{fig:interpolations}
-exhibits how interpolating between two noise samples $z_1, z_2 \sim P(z)$ leads
-to visually smooth transitions in synthesized cells. Figure \ref{fig:algebra}
-shows that $P(z)$ encodes semantic relationships, enabling algebra on
-interpretable properties of the images. While there is no way to encode images
-into $P(\mathbf{z})$ with the methods presented so far, we believe more advanced
-models that enable this will be highly valuable if they can maintain these rich
+Current approaches to morphological profiling extract features that are
+challenging to translate into biological meaning, such as Zernike moments. While
+other features capture readily understandable concepts such as the area occupied
+by the nucleus, even these are difficult to interpret when a given class of
+cells is defined by several such features in combination. For transfer learning
+it is nearly impossible to visualize the concept of a feature. In contrast, the
+noise space of GANs is known to be highly interpretable and reveal rich
+semantic structure \cite{radford2015unsupervised}. We are able to demonstrate
+this for images of cells. Figure \ref{fig:interpolations} exhibits how
+interpolating between two noise samples leads to smooth transitions in synthesized cells. This supports the fact that the generator learned a low-dimensional manifold of the images. Figure \ref{fig:algebra} shows
+that the noise space encodes semantic relationships, enabling algebra on
+interpretable properties of the images such as size of the nucleus or $\beta$-Tubulin content. While there is no way to encode images into $P_{\text{noise}}$ with the methods presented so far, we believe more advanced
+architectures that enable this will be highly valuable if they can maintain these remarkable
 semantic properties.
 
 \begin{figure}
   \centering
   \includegraphics[width=\textwidth, trim={0 0 0 2.5cm}, clip]{interpolation}
-  \caption{Interpolating between two points $\mathbf{z_1}, \mathbf{z_2} \sim P(\mathbf{z})$ results in visually smooth transitions in the corresponding synthesized images. Each row shows the transition from $\mathbf{z_1}$ to $\mathbf{z_2}$ from left to right.}
-  \vspace{-0.1cm}
+  \caption{Interpolating between two points $\mathbf{z}_1, \mathbf{z}_2 \sim P_{\text{noise}}$ results in smooth transitions in the synthesized cell images. Each row shows the transition from $\mathbf{z}_1$ to $\mathbf{z}_2$ from left to right.}
+  \label{fig:interpolations}
 \end{figure}
 
 \begin{figure}
   \centering
   \includegraphics[width=0.6\textwidth]{algebra-tubulin}
   \includegraphics[width=0.6\textwidth]{algebra-nucleus}
-  \caption{Vector algebra in the noise space translates to biologically valuable relationships in generated images. In the first row, subtracting the vector for a cell with small quantities of $\beta$-Tubulin (green stain) from one with high amounts yields a vector representation for "high $\beta$-Tubulin content". In the second row, the difference between a large and small nucleus encodes the semantic meaning of "larger nucleus", which can be added to vectors of other cell images to grow the size of the nucleus.}
+  \caption{Vector algebra in the noise space translates to biologically valuable relationships in generated images. In the first row, subtracting the vector for a cell with small quantities of $\beta$-Tubulin (green stain) from one with high amounts yields a vector representation for "higher $\beta$-Tubulin content". In the second row, the difference between a large and small nucleus encodes the semantic meaning of "larger nucleus", which can be added to vectors of other cell images to grow the size of the nucleus.}
   \label{fig:algebra}
 \end{figure}
+% We show the generative abilities of our models and the richness of the noise space on three ways: a) The model generates high quality cell images as shown in Figure \ref{fig:generated}. The LSGAN produces the most convincing images. b) The noise space is capable of smooth interpolations between two noise samples $z_1, z_2 \sim P(z)$, displayed in Figure \ref{fig:interpolations}. This supports the fact that the generator learned low-dimensional manifold of the images. c) $P(z)$ encodes semantic information that enables algebra based on semantically relevant properties of the images. Figure \ref{fig:algebra} presents examples of vector algebra in $P(z)$ with biologically interpretable results. We are able to leverage the linear relationships present in the latent space to influence the size of synthesized nuclei as well as $\beta$-Tubulin content.
 
 \section{Representation Learning for Morphological Profiling}\label{moa}
-We test the quality of representations extracted by the discriminator used to generate single cell images learned by testing their ability to cluster treatments of similar function or mechanism-of-action. We obtain treatment profiles by averaging the extracted single cell representations found as intermediate activations of the discriminator. Further, we follow the experimental protocol of \cite{Ljosa2013} and report an average mechanism-of-action classification accuracy of a leave-one-compound-out cross-validation using a one nearest neighbor classifier.
-
+We test the quality of representations extracted via the discriminator by evaluating their ability to cluster treatments of similar function, here the mechanism-of-action. We obtain treatment profiles by averaging the extracted single cell representations found as intermediate activations of the discriminator. Further, we follow the experimental protocol of \cite{Ljosa2013} and report an average MOA classification accuracy of a leave-one-compound-out cross-validation using a one nearest neighbor classifier.
 \begin{table}
   \centering
   \begin{tabular}{lllllll}
@@ -242,42 +164,22 @@ We test the quality of representations extracted by the discriminator used to ge
     43 \%& 45 \% & 63 \% & 49 \% & 90 \% & 91 \% & 96 \% \\
     \bottomrule \\
   \end{tabular}
-  \caption{Accuracy of various methods at the task of predicting the mechanism-of-action of treatments via nearest-neighbor classification in the BBBC021 dataset. CP refers to the results by Singh et al. \cite{Singh2014} using CellProfiler Features. The Deep Transfer methods correspond to Deep Feature Transfer as proposed by Pawlowski et al. \cite{pawlowski2016automating} and refined by Ando et al. \cite{ando2017improving}.}
+  \caption{Comparison of the mechanism-of-action classification accuracy. CP refers to the results by Singh et al. \cite{Singh2014} using CellProfiler features. The Deep Transfer methods correspond to Deep Feature Transfer as proposed by Pawlowski et al. \cite{pawlowski2016automating} and refined by Ando et al. \cite{ando2017improving}.}
   \label{moa-results}
+  \vspace{-0.5cm}
 \end{table}
 
-Table \ref{moa-results} compares the accuracy of our approach to classical CellProfiler features and transfer learning. We found that the quality of representations found by unsupervised learning is not yet competitive with other established methods. Nevertheless, we believe that the adversarial approach has significant benefits regarding its interpretability as outlined above. Additionally, this framework is able to adapt to the dataset at hand and extract inherent relations that are not captured by previous methods. We believe that further gains can be made, as the image quality corresponds to classification accuracy. As such the best performing method (LSGAN) also yields the highest image quality, as judged qualitatively by expert biologists and shown in Figure \ref{fig:generated}.
-
+Table \ref{moa-results} compares the accuracy of our technique to classical CellProfiler features and transfer learning. We found that the quality of representations extracted by our approach is not yet competitive with other methods. Nevertheless, we believe that the adversarial approach has significant benefits regarding its ability to translate into biological phenotypes as outlined above. Additionally, this framework is able to adapt to the dataset at hand and extract inherent relations that are not captured by previous techniques. We believe that further improvements are possible, as the quality of synthesized images correlates with classification accuracy. Accordingly, the best performing method (LSGAN) also yields the highest image quality, as judged qualitatively by expert biologists and shown in Figure \ref{fig:generated}.
 
 \section{Conclusion}
+This work investigates the use of GANs for the domain of cell microscopy imaging, in particular morphological profiling. First, we demonstrate the abilities of our generative model with the exploration of morphological phenotypes by synthesizing realistic images of cells and performing transformations on them such as interpolation and vector algebra. Second, we extend standard GANs with an encoder and assess the quality of learned representations by evaluating their mechanism-of-action classification performance following \cite{Ljosa2013}. Even though adversarially learned representations are currently inferior at this task, we argue that further enhancements to GANs and encoding schemes will lead to biologically richer latent representations and better MOA classification accuracy.
 
-This work investigates the use of GANs for the domain of cell microscopy
-imaging, particularly morphological profiling. First, we demonstrate that GANs
-are able to synthesize biologically realistic images of cells. In addition, we
-explain that GANs induce a rich semantic structure in their noise space,
-providing a powerful basis for interpretability of observed properties. Second,
-we add an encoding component to standard GANs and evaluate the quality of
-learned representations via their mechanism-of-action classification performance
-following \cite{Ljosa2013}. Even though adversarially learned representations
-are currently inferior at this task, we argue that further enhancements to GANs,
-especially biologically meaningful ones, will lead to higher quality latent
-representations.
+This work covers only a small fraction of possible applications of GANs to the domain of microscopy images. For example, we hope that future work investigates BiGANs\cite{donahue2016adversarial} or other novel solutions to infer latent features with GANs. We believe that improved inference, combined with the interpretable nature of the GAN framework, may enable simulated experiments by performing algebra with vectors corresponding to cell lines, diseases or other perturbations. Finally, we note that deep learning generally flourishes with larger amounts of data. Thus, we conjecture that the performance of the outlined approaches will improve with larger datasets.
+% forcing new page so that references are always on Page 5.
+\newpage
 
-We emphasize that this work covers only a very small fraction of possible
-applications of GANs to the domain of microscopical images. For example, we hope
-that future work investigates BiGANs \cite{donahue2016adversarial} or other
-novel solutions to infer latent features with GANs. We believe that improved
-inference, combined with the interpretable nature of the GAN framework, may
-enable simulated experiments by performing algebra with vectors corresponding to
-cell lines, diseases or other perturbations. Finally, we note that deep learning
-generally flourishes with larger amounts of data. As such, we conjecture that
-the performance of the outlined approaches will improve with the use of larger
-datasets.
-
-\section*{Acknowledgements}
-Nick Pawlowski is supported by Microsoft Research through its PhD Scholarship
-Program and the EPSRC Centre for Doctoral Training in High Performance
-Embedded and Distributed Systems (HiPEDS, Grant Reference EP/L016796/1).
+%\section*{Acknowledgements}
+%NP is supported by Microsoft Research through its PhD Scholarship Programme and the EPSRC Centre for Doctoral Training in High Performance Embedded and Distributed Systems (HiPEDS, Grant Reference EP/L016796/1).
 
 \bibliographystyle{plain}
 \bibliography{lit}

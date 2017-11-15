@@ -31,7 +31,10 @@ try:
     for path in tqdm.tqdm(options.images):
         if options.folder:
             path = os.path.join(options.folder, path)
-        image = scipy.misc.imread(path).astype(np.float32) / 255.0
+        try:
+            image = scipy.misc.imread(path).astype(np.float32) / 255.0
+        except:
+            continue
         normalized = normalize_luminance(image)
         out_path = os.path.join(options.out, os.path.basename(path))
         scipy.misc.imsave(out_path, normalized)
