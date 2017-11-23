@@ -1,9 +1,10 @@
 \documentclass{article}
 
 % to compile a camera-ready version, add the [final] option, e.g.:
-% \usepackage[final]{nips_2017}
-\usepackage{nips_2017}
+\usepackage[final]{nips_2017}
+% \usepackage{nips_2017}
 
+\usepackage[dvipsnames]{xcolor}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 \usepackage{hyperref}       % hyperlinks
@@ -15,39 +16,38 @@
 \usepackage{microtype}      % microtypography
 \usepackage{todonotes}
 
+\usepackage{tikz}
+\usetikzlibrary{3d}
+\usetikzlibrary{shapes}
+\usepgflibrary{fpu}
+
 \graphicspath{{figures/}}
 
-%\PassOptionsToPackage{numbers}{natbib}
-%\usepackage[numbers]{natbib}
-%\usepackage[natbib, maxcitenames=3, style=numeric]{biblatex}
-%\setcitestyle{numbers}
-%\bibliographystyle{abbrvnat}
+% \PassOptionsToPackage{numbers}{natbib}
+% \usepackage[numbers]{natbib}
+% \usepackage[natbib, maxcitenames=3, style=numeric]{biblatex}
+% \setcitestyle{numbers}
+% \bibliographystyle{abbrvnat}
 
 \title{CytoGAN: Generative Modeling of Cell Images}
-% * <anne@broadinstitute.org> 2017-10-15T19:01:17.646Z:
-%
-% > CytoGAN
-% Is it necessary to give it a name? This seems overly common to me, but then again maybe it's the convention and you just go with it.
-%
-% ^.
 
 \author{
   Peter Goldsborough\thanks{This work has been conducted as part of an internship at the Imaging Platform of the Broad Institute.}\\
-  %Imaging Platform \\
+  Imaging Platform \\
   Broad Institute of MIT and Harvard \\
-  %Cambridge, MA, USA \\
+  Cambridge, MA, USA \\
   \texttt{pgoldsbo@broadinstitute.org} \\
   \And
   Nick Pawlowski \\
-  %Department of Computing \\
+  Department of Computing \\
   Imperial College London \\
-  %London, UK \\
+  London, UK \\
   \texttt{n.pawlowski16@imperial.ac.uk} \\
   \AND
   Juan C Caicedo \& Shantanu Singh \& Anne E Carpenter\\
-  %Imaging Platform \\
+  Imaging Platform \\
   Broad Institute of MIT and Harvard \\
-  %Cambridge, MA, USA \\
+  Cambridge, MA, USA \\
   \texttt{\{jccaicedo, shsingh, anne\}@broadinstitute.org} \\
 }
 
@@ -82,17 +82,66 @@ Goodfellow et al. \cite{goodfellow2014generative} introduced GANs as a game of
 two players: a \emph{generator} $G$ and a \emph{discriminator} or \emph{critic} $D$. The former receives samples $\mathbf{z}$ drawn from a noise prior $P_{\text{noise}}$ which it maps to values $G(\mathbf{z})$ that should resemble elements of some data distribution $P_{\text{data}}$. The discriminator must learn to distinguish such synthetic samples from real values $\mathbf{x} \sim P_{\text{data}}$. The critic's confidence in the realism of the generator's productions is used as feedback to $G$, guiding it to synthesize ever more realistic replicates of samples from the data prior. This procedure is formalized in a zero-sum game,
 \vspace{-1pt}
 $$\min_G \max_D V(G, D) = \mathbb{E}_{\mathbf{x} \sim P_{\text{data}}}[\log(D(\mathbf{x})] + \mathbb{E}_{\mathbf{z} \sim P_{\text{noise}}}[\log(1 - D(G(\mathbf{z}))].$$
-%\vspace{-1pt}
+\vspace{-1pt}
 Radford et al. \cite{radford2015unsupervised} first specialized GANs to image synthesis by introducing Deep Convolutional GANs (DCGANs). DCGANs implement the generator and discriminator based on convolutional operations. Derivations of DCGANs such as Least Squares GAN (LSGAN) \cite{mao2016least} or Wasserstein GAN (WGAN) \cite{arjovsky2017wasserstein} tackle instabilities in the training procedure of early generative adversarial models. In our experiments, we found LSGAN to be most stable, in part leading to higher quality generated images than both DCGAN and WGAN.
 
-The original GAN framework does not include an explicit means of performing inference. As such, we require extensions that allow mapping of a sample $\mathbf{x}$ drawn from the data prior to a latent representation via some encoder transformation $E(\mathbf{x})$. A common approach is to interpret the penultimate layer of the discriminator as a latent space. The activations of this layer serve as a source of representation vectors. These latent codes are thought to be meaningful because the discriminator must develop a strong internal representation of its input to succeed at its discrimination task. Furthermore, this method imposes no computational overhead compared to vanilla GANs. More advanced encoders could tie this encoding to a corresponding noise vector.
+The original GAN framework does not include an explicit means of performing inference. As such, we require extensions that allow mapping of a sample $\mathbf{x}$ drawn from the data prior to a latent representation via some encoder transformation $E(\mathbf{x})$. A common approach is to interpret the penultimate layer of the discriminator as a latent space. The activations of this layer serve as a source of representation vectors. These latent codes are thought to be meaningful because the discriminator must develop a strong internal representation of its input to succeed at its discrimination task. Furthermore, this method imposes no computational overhead compared to vanilla GANs. Figure \ref{fig:gan} shows a simplified schematic of our GAN architecture. More advanced encoders could tie this encoding to a corresponding noise vector.
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[thick]
+    \tikzset{box/.style={
+      draw, rectangle, rounded corners=0.8pt,
+      text width=2.2cm, text height=0.75cm}}
+    \tikzset{node/.style={draw, circle, inner sep=0.35cm}}
+
+    % Model
+    \path (0, 0) coordinate [draw, circle, inner sep=5pt]
+          (z) node {$\mathbf{z}$};
+
+    \path (2, 0) coordinate [box] (G) node {Generator};
+
+    \path (4.3, -0.8) coordinate [node] (f) node {$\mathbf{x}$};
+    \path (4.3, +0.8) coordinate [node] (r) node {$G(\mathbf{z})$};
+
+    \path (9.5, 0) coordinate [draw, circle, inner sep=7pt]
+          (D) node {$\hspace{1pt}\mathbf{D}$};
+
+    % Anchor for real and fake arrows.
+    \path (5, 0) coordinate (_);
+
+    \foreach \x/\l in {0/Convolution,%
+                       1/Convolution,%
+                       2/Convolution,%
+                       3/{\hspace{1mm}Dense(\small$\ell$)\textsuperscript{\color{Red}\textdagger}},%
+                       4/{Dense({\small$1$})}%
+                       } {
+      \path ({5.8 + \x * 0.65}, 0)
+            coordinate [box, text width=0.3cm, text height=2cm] (l\x)
+            node [rotate=90] {\l};
+    }
+
+    % Footnote
+    \draw (7, -1.5)
+          node {\footnotesize{\color{Red}\textdagger} Representations};
+
+    % Edges
+    \draw (f) -- (_);
+    \draw (r) -- (_);
+    \draw [->] (_) -- (l0);
+    \draw [->] (l4) -- (D);
+    \draw [->] (z) -- (G);
+    \draw [->] (G) edge[out=0] (f);
+  \end{tikzpicture}
+  \caption{A simplified diagram of the modified DCGAN \cite{radford2015unsupervised} architecture we employ for our experiments. On a high level, the discriminator is a sequence of convolutional layers, leading to a fully connected (dense) layer with $\ell$ neurons. We interpret the activations of these $\ell$ neurons as latent vectors and further feed them into a final dense layer with just one activation, forming the discriminator's output. }
+  \label{fig:gan}
+\end{figure}
+
 
 \section{Exploring Biological Phenotypes Using Cell Image Synthesis}\label{synthesis}
 % Exploring Biological Phenotypes Using Cell Image Synthesis
 GANs have been proven to synthesize realistic images both within and beyond the biological domain \cite{goodfellow2014generative,radford2015unsupervised,osokin2017gans}. We examine if this ability transfers to cell images extracted from the BBBC021 dataset of human breast cancer cell lines. Each image in BBBC021 consists of three \emph{channels} corresponding to DNA, F-Actin and $\beta$-Tubulin, cellular components visualized by fluorescence microscopy. We stack these channels and treat them as RGB images via a simple $\text{DNA} \mapsto \text{R}, \text{$\beta$-Tubulin} \mapsto \text{G}, \text{F-Actin} \mapsto \text{B}$ mapping. We obtain ca. 1.3 million single cell images by segmenting the raw images using CellProfiler. Finally, we normalize the luminance of each channel to the range [0 -- 1].
 
-% Current approaches to morphological profiling extract features that are challenging to translate into biological meaning, such as Zernike moments. While other features capture readily understandable concepts such as the area occupied by the nucleus, even these are difficult to interpret when a given class of cells is defined by several such features in combination. For transfer learning it is nearly impossible to visualize the concept of a feature. GANs present a solution as they hold a generative model that enables the visualization of the impact of perturbations along a feature of the noise space. Further, more advanced GANs integrate an inference method to make the feature and noise space identical such that visualization of feature vectors becomes possible.
-%this issue by ,  we found that GAN representations are not yet competitive with those extracted by other approaches, we believe a major benefit provided by generative adversarial models is their interpretability. We showcase this in the following.
 
 Figure \ref{fig:generated} shows examples of images generated with LSGAN, WGAN
 and DCGAN architectures alongside real images. The synthetic images,
@@ -101,7 +150,7 @@ realistic, but also consistent with their biological nature. For example, it is
 characteristic that $\beta$-Tubulin forms a circular halo cradling the nucleus.
 This property is maintained clearly in all generated images.
 
-\begin{figure}
+\begin{figure}[b]
   \centering
   \begin{tikzpicture}
   	\draw (0, 0) node {\includegraphics[width=0.6\textwidth]{generated}};
@@ -161,7 +210,7 @@ We test the quality of representations extracted via the discriminator by evalua
   	\toprule
     DCGAN & WGAN & LSGAN & VAE \cite{pawlowski2016msc} & CP \cite{Singh2014} & Deep Transfer \cite{pawlowski2016automating}  & Deep Transfer \cite{ando2017improving} \\
     \midrule
-    43 \%& 45 \% & 63 \% & 49 \% & 90 \% & 91 \% & 96 \% \\
+    51 \%& 56 \% & 68 \% & 49 \% & 90 \% & 91 \% & 96 \% \\
     \bottomrule \\
   \end{tabular}
   \caption{Comparison of the mechanism-of-action classification accuracy. CP refers to the results by Singh et al. \cite{Singh2014} using CellProfiler features. The Deep Transfer methods correspond to Deep Feature Transfer as proposed by Pawlowski et al. \cite{pawlowski2016automating} and refined by Ando et al. \cite{ando2017improving}.}
@@ -175,11 +224,13 @@ Table \ref{moa-results} compares the accuracy of our technique to classical Cell
 This work investigates the use of GANs for the domain of cell microscopy imaging, in particular morphological profiling. First, we demonstrate the abilities of our generative model with the exploration of morphological phenotypes by synthesizing realistic images of cells and performing transformations on them such as interpolation and vector algebra. Second, we extend standard GANs with an encoder and assess the quality of learned representations by evaluating their mechanism-of-action classification performance following \cite{Ljosa2013}. Even though adversarially learned representations are currently inferior at this task, we argue that further enhancements to GANs and encoding schemes will lead to biologically richer latent representations and better MOA classification accuracy.
 
 This work covers only a small fraction of possible applications of GANs to the domain of microscopy images. For example, we hope that future work investigates BiGANs\cite{donahue2016adversarial} or other novel solutions to infer latent features with GANs. We believe that improved inference, combined with the interpretable nature of the GAN framework, may enable simulated experiments by performing algebra with vectors corresponding to cell lines, diseases or other perturbations. Finally, we note that deep learning generally flourishes with larger amounts of data. Thus, we conjecture that the performance of the outlined approaches will improve with larger datasets.
-% forcing new page so that references are always on Page 5.
-\newpage
 
-%\section*{Acknowledgements}
-%NP is supported by Microsoft Research through its PhD Scholarship Programme and the EPSRC Centre for Doctoral Training in High Performance Embedded and Distributed Systems (HiPEDS, Grant Reference EP/L016796/1).
+\section*{Acknowledgements}
+We thank Allen Goodman, Jane Hung, Claire McQuin, Kyle Karhohs, Beth Cimini, Tim Becker, Minh Doan, Jeanelle Ackerman and Ray Jones of the Broad Institute for fruitful discussion, guidance and support with our experimental setup. We also extend our gratitude to Mike Ando and Google for providing computational resources to accelerate our research.
+
+This work was supported in part by a grant from the US National Science Foundation (CAREER DBI 1148823 to AEC).
+
+Nick Pawlowski is supported by Microsoft Research through its PhD Scholarship Program and the EPSRC Centre for Doctoral Training in High Performance Embedded and Distributed Systems (HiPEDS, Grant Reference EP/L016796/1).
 
 \bibliographystyle{plain}
 \bibliography{lit}
