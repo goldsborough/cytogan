@@ -82,7 +82,7 @@ Goodfellow et al. \cite{goodfellow2014generative} introduced GANs as a game of
 two players: a \emph{generator} $G$ and a \emph{discriminator} or \emph{critic} $D$. The former receives samples $\mathbf{z}$ drawn from a noise prior $P_{\text{noise}}$ which it maps to values $G(\mathbf{z})$ that should resemble elements of some data distribution $P_{\text{data}}$. The discriminator must learn to distinguish such synthetic samples from real values $\mathbf{x} \sim P_{\text{data}}$. The critic's confidence in the realism of the generator's productions is used as feedback to $G$, guiding it to synthesize ever more realistic replicates of samples from the data prior. This procedure is formalized in a zero-sum game,
 \vspace{-1pt}
 $$\min_G \max_D V(G, D) = \mathbb{E}_{\mathbf{x} \sim P_{\text{data}}}[\log(D(\mathbf{x})] + \mathbb{E}_{\mathbf{z} \sim P_{\text{noise}}}[\log(1 - D(G(\mathbf{z}))].$$
-\vspace{-1pt}
+\vspace{-2pt}
 Radford et al. \cite{radford2015unsupervised} first specialized GANs to image synthesis by introducing Deep Convolutional GANs (DCGANs). DCGANs implement the generator and discriminator based on convolutional operations. Derivations of DCGANs such as Least Squares GAN (LSGAN) \cite{mao2016least} or Wasserstein GAN (WGAN) \cite{arjovsky2017wasserstein} tackle instabilities in the training procedure of early generative adversarial models. In our experiments, we found LSGAN to be most stable, in part leading to higher quality generated images than both DCGAN and WGAN.
 
 The original GAN framework does not include an explicit means of performing inference. As such, we require extensions that allow mapping of a sample $\mathbf{x}$ drawn from the data prior to a latent representation via some encoder transformation $E(\mathbf{x})$. A common approach is to interpret the penultimate layer of the discriminator as a latent space. The activations of this layer serve as a source of representation vectors. These latent codes are thought to be meaningful because the discriminator must develop a strong internal representation of its input to succeed at its discrimination task. Furthermore, this method imposes no computational overhead compared to vanilla GANs. Figure \ref{fig:gan} shows a simplified schematic of our GAN architecture. More advanced encoders could tie this encoding to a corresponding noise vector.
@@ -101,8 +101,8 @@ The original GAN framework does not include an explicit means of performing infe
 
     \path (2, 0) coordinate [box] (G) node {Generator};
 
-    \path (4.3, -0.8) coordinate [node] (f) node {$\mathbf{x}$};
-    \path (4.3, +0.8) coordinate [node] (r) node {$G(\mathbf{z})$};
+    \path (4.3, -0.8) coordinate [node] (f) node {$G(\mathbf{z})$};
+    \path (4.3, +0.8) coordinate [node] (r) node {$\mathbf{x}$};
 
     \path (9.5, 0) coordinate [draw, circle, inner sep=7pt]
           (D) node {$\hspace{1pt}\mathbf{D}$};
@@ -113,8 +113,8 @@ The original GAN framework does not include an explicit means of performing infe
     \foreach \x/\l in {0/Convolution,%
                        1/Convolution,%
                        2/Convolution,%
-                       3/{\hspace{1mm}Dense(\small$\ell$)\textsuperscript{\color{Red}\textdagger}},%
-                       4/{Dense({\small$1$})}%
+                       3/{\hspace{1mm}Dense$(\ell)$\textsuperscript{\textdagger}},%
+                       4/{Dense$(1)$}%
                        } {
       \path ({5.8 + \x * 0.65}, 0)
             coordinate [box, text width=0.3cm, text height=2cm] (l\x)
@@ -123,7 +123,7 @@ The original GAN framework does not include an explicit means of performing infe
 
     % Footnote
     \draw (7, -1.5)
-          node {\footnotesize{\color{Red}\textdagger} Representations};
+          node {\footnotesize{\textdagger} Representations};
 
     % Edges
     \draw (f) -- (_);
@@ -133,13 +133,12 @@ The original GAN framework does not include an explicit means of performing infe
     \draw [->] (z) -- (G);
     \draw [->] (G) edge[out=0] (f);
   \end{tikzpicture}
-  \caption{A simplified diagram of the modified DCGAN \cite{radford2015unsupervised} architecture we employ for our experiments. On a high level, the discriminator is a sequence of convolutional layers, leading to a fully connected (dense) layer with $\ell$ neurons. We interpret the activations of these $\ell$ neurons as latent vectors and further feed them into a final dense layer with just one activation, forming the discriminator's output. }
+  \caption{A simplified diagram of the modified DCGAN \cite{radford2015unsupervised} architecture we employ for our experiments. On a high level, the discriminator is a sequence of convolution layers, leading to a fully connected (dense) layer with $\ell$ neurons. We interpret the activations of these $\ell$ neurons as latent vectors and further feed them into a final dense layer with just one activation, forming the discriminator's output. }
   \label{fig:gan}
 \end{figure}
 
 
 \section{Exploring Biological Phenotypes Using Cell Image Synthesis}\label{synthesis}
-% Exploring Biological Phenotypes Using Cell Image Synthesis
 GANs have been proven to synthesize realistic images both within and beyond the biological domain \cite{goodfellow2014generative,radford2015unsupervised,osokin2017gans}. We examine if this ability transfers to cell images extracted from the BBBC021 dataset of human breast cancer cell lines. Each image in BBBC021 consists of three \emph{channels} corresponding to DNA, F-Actin and $\beta$-Tubulin, cellular components visualized by fluorescence microscopy. We stack these channels and treat them as RGB images via a simple $\text{DNA} \mapsto \text{R}, \text{$\beta$-Tubulin} \mapsto \text{G}, \text{F-Actin} \mapsto \text{B}$ mapping. We obtain ca. 1.3 million single cell images by segmenting the raw images using CellProfiler. Finally, we normalize the luminance of each channel to the range [0 -- 1].
 
 
@@ -149,6 +148,12 @@ particularly those produced by LSGAN, are not only highly detailed and
 realistic, but also consistent with their biological nature. For example, it is
 characteristic that $\beta$-Tubulin forms a circular halo cradling the nucleus.
 This property is maintained clearly in all generated images.
+
+To assess the quality of synthesized images we presented three expert biologists
+with 50 real cell images and 50 artifical cells generated with LSGAN. We
+randomized the order of images and asked the experts to judge whether each cell
+was real or fake. On average, 30\% of the time the synthetic cells were
+realistic enough to fool the human jurors into believing they were real.
 
 \begin{figure}[b]
   \centering
@@ -167,7 +172,7 @@ This property is maintained clearly in all generated images.
     \path (3.35, 0) coordinate [draw, rectangle, text width=1.7cm, text height=3.5cm, rounded corners=3pt] (d);
     \draw (d)+(0, -2.2) node {\textbf{DCGAN}};
   \end{tikzpicture}
-  \caption{Examples of real BBBC021 cell images juxtaposed with synthetic cell images generated with LSGAN, WGAN and DCGAN. LSGAN synthesizes the most realistic images as judged by our expert biologists.}
+  \caption{Examples of real BBBC021 cell images juxtaposed with synthetic cell images generated with LSGAN, WGAN and DCGAN.}
   \label{fig:generated}
 \end{figure}
 
