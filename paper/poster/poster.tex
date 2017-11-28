@@ -3,6 +3,8 @@
 % Packages
 
 \usepackage[utf8]{inputenc}
+\usepackage[american]{babel}
+
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -41,7 +43,8 @@
   maxbibnames=1,
   maxcitenames=1,
   mincitenames=1,
-  defernumbers=true]{biblatex}
+  defernumbers=true,
+  natbib=true]{biblatex}
 \addbibresource{../lit.bib}
 
 \AtEveryBibitem{%
@@ -70,15 +73,15 @@
 
 \background{
   \begin{tikzpicture}[remember picture,overlay]%
-    \draw (12.75, 7.5) node {\includegraphics[scale=1]{tiled}};
-    \draw (12.75, 24) node {\includegraphics[scale=1]{tiled}};
+    % \draw (12.75, 7.5) node {\includegraphics[scale=1]{tiled}};
+    % \draw (12.75, 24) node {\includegraphics[scale=1]{tiled}};
 
     \draw[white, fill=white, rounded corners=1pt]
          (current page.north west)+(1.5, -0.5)
           rectangle ++(20.5, -3.5);
 
     \draw[white, fill=white, rounded corners=1pt]
-         (current page.north east)+(-3.2, -0.5) rectangle ++(-0.3, -3.2);
+         (current page.north east)+(-3.3, -0.5) rectangle ++(-0.4, -3.2);
 
   \end{tikzpicture}
 }
@@ -114,7 +117,7 @@
   \vspace{2mm}
   {
     \smaller[1]
-    \textsuperscript{$\star$} Broad Institute of MIT and Harvard \hspace{3mm}%
+    \aff Broad Institute of MIT and Harvard \hspace{3mm}%
     \textdagger\hspace{2pt} Technical University Munich \hspace{3mm}%
     $\ddagger$ Imperial College London
   }
@@ -122,11 +125,11 @@
 % Logos
 {
   \begin{tabular}{l}
-    \includegraphics[width=0.1\textwidth]{broad-logo}\\
+    \includegraphics[width=0.11\textwidth]{broad-logo}\\
     \vspace{-2mm}\\
-    \includegraphics[width=0.1\textwidth]{imperial-logo}
+    \includegraphics[width=0.11\textwidth]{imperial-logo}
     \vspace{-2mm}\\
-    \includegraphics[width=0.1\textwidth]{tum-logo}\\
+    \includegraphics[width=0.11\textwidth]{tum-logo}\\
   \end{tabular}
 }
 
@@ -136,11 +139,11 @@
 
 \vspace{2mm}
 
-Current approaches are divided between a) classical image processing, requiring manual fine-tuning and expert knowledge b) transfer learning with deep CNNs trained on miscellaneous objects, allowing no domain-specific adaptation.
+Current approaches are divided between \textbf{a}) classical image processing, requiring manual fine-tuning and expert knowledge, and \textbf{b}) transfer learning with deep CNNs trained on miscellaneous objects, allowing little to no domain-specific adaptation.
 
 \vspace{2mm}
 
-Instead, we model cells with \emph{Generative Adversarial Networks} (GANs) for both representation learning and cell synthesis. Advantages of our approach are:
+Instead, we model cells with \emph{Generative Adversarial Networks} (GANs) for both representation learning and cell image synthesis. Advantages of our approach include:
 \vspace{2mm}
 \begin{itemize}
 \compresslist
@@ -171,15 +174,14 @@ Shown above are cells synthesized with LSGAN, WGAN, BEGAN and BiGAN
 architectures alongside a real cell. The synthesized images are not only highly
 detailed and realistic, but also consistent with their biological nature. For
 example, it is characteristic that $\beta$-Tubulin (green channel) forms a
-circular halo cradling the nucleus. This property is maintained clearly in all
+circular halo cradling the nucleus. This property is maintained clearly in most
 generated images. }
 
 \headerbox{Interpolating Cell Images in Noise and Latent Space}{name=interpol, span=2, column=1, row=1, below=synth}{
 
 GANs are known to learn low manifolds of their input priors, such that
 interpolation between two points $\mathbf{z}_1, \mathbf{z}_2$ drawn from the noise space $P_{\text{noise}}$ results in visually smooth
-transitions in generated images. We confirm that this property holds for
-microscopy cell images.
+transitions in generated images \cite{radford2015unsupervised}. We confirm that this property holds for microscopy cell images.
 
 \vspace{-1mm}
 \begin{center}
@@ -195,12 +197,12 @@ microscopy cell images.
 \end{center}
 \vspace{-2mm}
 
-Bidirectional GANs (BiGAN\cite{}) extend the vanilla DCGAN architecture with an
+Bidirectional GANs (BiGANs) \cite{donahue2016adversarial} extend the vanilla DCGAN \cite{radford2015unsupervised} architecture with an
 explicit encoder network that enables both synthesis of images from noise
 \emph{and} inference of latent representations, in such a way that the noise and
 latent space are fused. This means we can encode real cell images, perturb,
-transform or, in this case, interpolate between them, and re-synthesize the
-resulting vectors.
+transform or in this case interpolate between them and re-synthesize the
+resulting images.
 
 \vspace{-2mm}
 \begin{center}
@@ -239,8 +241,11 @@ We find that GANs partition the noise space into regions capturing different sem
 \end{center}
 \vspace{-3mm}
 
-When the noise and learned latent space are fused (BiGAN), algebra on real cell images becomes possible. This open the door to discovery of a whole new class of highly interpretable and biologically valuable relationships, such as:
+When the noise and learned latent space are fused (BiGAN), algebra on real cell
+images becomes possible. This opens the door to discovery of a whole new class
+of highly interpretable and biologically valuable relationships, such as:
 
+\vspace{1mm}
 \begin{tikzpicture}
   \draw (-8, 0);
   \draw (0, 0) node [text width=10cm] {
@@ -252,13 +257,12 @@ When the noise and learned latent space are fused (BiGAN), algebra on real cell 
   \end{itemize}
   };
 \end{tikzpicture}
-\vspace{2.5pt}
+\vspace{-2mm}
 }
-
 \headerbox{Representation Learning for Morphological Profiling}{name=rep, span=2, column=1, row=1, below=algebra}{
 
-We investigate the ability of GANs to learn vector representations of cell
-images and evaluate their quality quantitatively at the task of
+We investigate the ability of GANs to learn high quality vector representations
+of cell images and evaluate them quantitatively at the task of
 mechanism-of-action (MOA) prediction. We train a variety of GAN models on 1.3
 million microscopy images of cells perturbed with particular drug compounds,
 average signatures across treatments and predict the MOA via nearest-neighbor
@@ -268,12 +272,62 @@ classification.
 \begin{tikzpicture}
   \draw (-2, 0);
   \draw (0, 0.3) node {\includegraphics[scale=0.2, trim={4cm 3.5cm 8cm 3cm}, clip]{latent-space}};
-  \draw (7.75, 1.2) node [text width=11cm, align=justify] {
-  For WGAN and LSGAN we interpret the activations of the penultimate dense
-  layer as a source of representations. BEGAN an BiGAN architectures already have explicit inference modules. We find that while GANs
-  are superior to autoencoders, they are not yet competitive with existing
-  classical or deep transfer-learning techniques.
-  };
+  % \draw (7.75, 1.2) node [text width=11cm, align=justify] {
+  % For LSGAN we interpret the activations of the penultimate dense
+  % layer as a source of representations. BiGAN has an explicit inference module and requires no further modification. We find that while GANs
+  % are superior to autoencoders, they are not yet competitive with existing
+  % classical or deep transfer-learning techniques at this task.
+  % };
+
+  \draw (7.75, 1.2) node {\scalebox{0.8}{
+    \begin{tikzpicture}[thick]
+      \tikzset{box/.style={
+        draw, rectangle, rounded corners=0.8pt,
+        text width=2.2cm, text height=0.75cm}}
+      \tikzset{node/.style={draw, circle, inner sep=0.35cm}}
+
+      % Spacer
+      \draw (10.5, 0);
+
+      % Model
+      \path (0, 0) coordinate [draw, circle, inner sep=5pt]
+            (z) node {$\mathbf{z}$};
+
+      \path (2, 0) coordinate [box] (G) node {Generator};
+
+      \path (4.3, -0.8) coordinate [node] (f) node {$G(\mathbf{z})$};
+      \path (4.3, +0.8) coordinate [node] (r) node {$\mathbf{x}$};
+
+      \path (9.5, 0) coordinate [draw, circle, inner sep=7pt]
+            (D) node {$\hspace{1pt}\mathbf{D}$};
+
+      % Anchor for real and fake arrows.
+      \path (5, 0) coordinate (_);
+
+      \foreach \x/\l in {0/Convolution,%
+                         1/Convolution,%
+                         2/Convolution,%
+                         3/{\hspace{1mm}Dense$(\ell)$\textsuperscript{$\star$}},%
+                         4/{Dense$(1)$}%
+                         } {
+        \path ({5.8 + \x * 0.65}, 0)
+              coordinate [box, text width=0.5cm, text height=2cm] (l\x)
+              node [rotate=90] {\l};
+      }
+
+      % Footnote
+      \draw (7, -1.5)
+            node {\footnotesize{\textsuperscript{$\star$}}\hspace{-1pt} Representations};
+
+      % Edges
+      \draw (f) -- (_);
+      \draw (r) -- (_);
+      \draw [->] (_) -- (l0);
+      \draw [->] (l4) -- (D);
+      \draw [->] (z) -- (G);
+      \draw [->] (G) edge[out=0] (f);
+    \end{tikzpicture}
+  }};
 
   \draw (8, -1) node [text width=10.5cm] {
     \begin{tabular}{ccccc}
@@ -288,12 +342,27 @@ classification.
 \vspace{-6mm}
 }
 
-\headerbox{Code \& Data}{name=code, column=0, row=1, below=intro}{Code and experiments are available at \url{github.com/goldsborough/cytogan}. Our data is the BBBC021 dataset from the Broad BioImage Benchmark Collection (\url{data.broadinstitute.org/bbbc/BBBC021/}).}
+\headerbox{Code \& Data}{name=code, column=0, row=1, below=intro}{
+Code and experiments are available at \url{github.com/goldsborough/cytogan}. Our data is the BBBC021 dataset from the Broad BioImage Benchmark Collection (\url{data.broadinstitute.org/bbbc/BBBC021}).
+
+% REPLACE WITH PAPER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+\vspace{-3mm}
+\begin{center}
+  \includegraphics[scale=0.174]{qr-code}\hspace{1cm}\includegraphics[scale=0.174]{qr-code}
+
+  \vspace{-3mm}
+  \hspace{0.1cm}\texttt{Code}\hspace{2.6cm}\texttt{Paper}
+\end{center}
+
+% \includegraphics[scale=0.1]{qr-paper}
+}
 
 \headerbox{Acknowledgements}{name=ack, column=0, row=2, below=code}{
 We thank Mike Ando and Google, Inc. for providing computational resources to accelerate our research. We also thank all members of the Broad Imaging Platform for fruitful discussion and their continuous guidance and support.
 }
+
 \headerbox{References}{name=ref, column=0, row=3, below=ack}{
+\vspace{-5mm}
 \printbibliography
 }
 

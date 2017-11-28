@@ -48,7 +48,7 @@
   Imaging Platform \\
   Broad Institute of MIT and Harvard \\
   Cambridge, MA, USA \\
-  \texttt{\{jccaicedo, shsingh, anne\}@broadinstitute.org} \\
+  \texttt{\{jcaicedo, shsingh, anne\}@broadinstitute.org} \\
 }
 
 \begin{document}
@@ -113,7 +113,7 @@ The original GAN framework does not include an explicit means of performing infe
     \foreach \x/\l in {0/Convolution,%
                        1/Convolution,%
                        2/Convolution,%
-                       3/{\hspace{1mm}Dense$(\ell)$\textsuperscript{\textdagger}},%
+                       3/{\hspace{1mm}Dense$(\ell)$\textsuperscript{$\star$}},%
                        4/{Dense$(1)$}%
                        } {
       \path ({5.8 + \x * 0.65}, 0)
@@ -123,7 +123,7 @@ The original GAN framework does not include an explicit means of performing infe
 
     % Footnote
     \draw (7, -1.5)
-          node {\footnotesize{\textdagger} Representations};
+          node {\footnotesize{\textsuperscript{$\star$}}\hspace{-1pt} Representations};
 
     % Edges
     \draw (f) -- (_);
@@ -147,7 +147,7 @@ and DCGAN architectures alongside real images. The synthetic images,
 particularly those produced by LSGAN, are not only highly detailed and
 realistic, but also consistent with their biological nature. For example, it is
 characteristic that $\beta$-Tubulin forms a circular halo cradling the nucleus.
-This property is maintained clearly in all generated images.
+This property is maintained clearly in most generated images.
 
 To assess the quality of synthesized images we presented three expert biologists
 with 50 real cell images and 50 artifical cells generated with LSGAN. We
@@ -228,7 +228,7 @@ Table \ref{moa-results} compares the accuracy of our technique to classical Cell
 \section{Conclusion}
 This work investigates the use of GANs for the domain of cell microscopy imaging, in particular morphological profiling. First, we demonstrate the abilities of our generative model with the exploration of morphological phenotypes by synthesizing realistic images of cells and performing transformations on them such as interpolation and vector algebra. Second, we extend standard GANs with an encoder and assess the quality of learned representations by evaluating their mechanism-of-action classification performance following \cite{Ljosa2013}. Even though adversarially learned representations are currently inferior at this task, we argue that further enhancements to GANs and encoding schemes will lead to biologically richer latent representations and better MOA classification accuracy.
 
-This work covers only a small fraction of possible applications of GANs to the domain of microscopy images. For example, we hope that future work investigates BiGANs\cite{donahue2016adversarial} or other novel solutions to infer latent features with GANs. We believe that improved inference, combined with the interpretable nature of the GAN framework, may enable simulated experiments by performing algebra with vectors corresponding to cell lines, diseases or other perturbations. Finally, we note that deep learning generally flourishes with larger amounts of data. Thus, we conjecture that the performance of the outlined approaches will improve with larger datasets.
+This work covers only a small fraction of possible applications of GANs to the domain of microscopy images. For example, we hope that future work investigates BiGANs\cite{donahue2016adversarial} or other novel solutions to infer latent features with GANs. We believe that improved inference, combined with the interpretable nature of the GAN framework, may enable simulated experiments by performing algebra with vectors corresponding to cell lines, diseases or other perturbations.
 
 \section*{Acknowledgements}
 We thank Allen Goodman, Jane Hung, Claire McQuin, Kyle Karhohs, Beth Cimini, Tim Becker, Minh Doan, Jeanelle Ackerman and Ray Jones of the Broad Institute for fruitful discussion, guidance and support with our experimental setup. We also extend our gratitude to Mike Ando and Google for providing computational resources to accelerate our research.
