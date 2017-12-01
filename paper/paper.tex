@@ -60,14 +60,13 @@ We explore the application of Generative Adversarial Networks to the domain of m
 \end{abstract}
 
 \section{Introduction}
-Advances in high-throughput microscopy systems have enabled acquisition of large volumes of high-resolution cell images \cite{caicedo2017data}. This paves the way for novel computational methods that can leverage these large quantities of data to study biological systems. Our work focuses on the task of morphological profiling, which aims to map microscopy images of cells to representation vectors that capture salient features and axes of variation in an unsupervised manner \cite{caicedo_profiling}. These representations ideally divide the morphological space into clusters of cells with similar properties or, in the case of induced perturbations, similar function.
+Advances in high-throughput microscopy systems have enabled acquisition of large volumes of high-resolution cell images \cite{caicedo2017data}. This paves the way for novel computational methods that can leverage these large quantities of data to study biological systems. Our work focuses on the task of morphological profiling, which aims to map microscopy images of cells to representation vectors that capture salient features and axes of variation in an unsupervised manner \cite{caicedo_profiling}. These representations ideally divide the morphological space into clusters of cells with similar properties or, in the case of chemical or genetic treatments added to the cells, similar function.
 
 Current techniques for morphological profiling broadly fall in two categories: a) classical image processing, using specialized software like CellProfiler \cite{Carpenter2006} to capture representations via manually-tuned segmentation and traditional computer vision pipelines, and b) transfer learning to extract features learned by deep convolutional neural networks originally trained to classify miscellaneous objects \cite{pawlowski2016automating, ando2017improving}. Classical computer vision approaches offer better interpretability of features but require more human tuning of the segmentation algorithms, and are limited by the feature set implemented in the image analysis software. Current transfer learning techniques have been shown to outperform classical methods in at least one dataset \cite{pawlowski2016automating,ando2017improving}. However, given that these networks were trained on natural images (in RGB), they do not discover the relations of the biologically meaningful image channels. Instead, their superior performance is likely due to their ability to extract high-level vision features, which appear to capture the overall structure of cells, but not necessarily all the intricate details of their morphological variations. Therefore, we hypothesized that learning representations specifically adapted to cell images would be valuable.
 
 We employ Generative Adversarial Networks (GANs) \cite{goodfellow2014generative} to build a generative model of single cell images from the BBBC021 dataset \cite{Ljosa2012}. We show that this model learns rich feature representations and synthesizes realistic images that are useful for exploring morphological variation in cells. The main advantages of this method are:
 \begin{itemize}
-  \item \emph{Adaptability}: Unsupervised representation learning, which can readily incorporate new data. This is important given that applications of morphological profiling usually lack ground truth annotations, but instead aim to reveal the structure of the image collection.
-  \item \emph{Specialization}: Because this method learns from its training data it is able to disentangle factors of variation and extract inherent semantic relationships. Transfer learning approaches lack this ability and cannot capture the intrinsic relations between the biologically meaningful channels.
+  \item \emph{Adaptability}: Because this method learns from its training data it is able to disentangle factors of variation and extract inherent semantic relationships. Transfer learning approaches lack this ability and cannot capture the intrinsic relations between the biologically meaningful channels.
   \item \emph{Translating into biological phenotypes}: The generative abilities of this model enable useful visualizations of cells to help translate data variations into meaningful biological phenotypes.
 \end{itemize}
 
@@ -146,11 +145,11 @@ Figure \ref{fig:generated} shows examples of images generated with LSGAN, WGAN
 and DCGAN architectures alongside real images. The synthetic images,
 particularly those produced by LSGAN, are not only highly detailed and
 realistic, but also consistent with their biological nature. For example, it is
-characteristic that $\beta$-Tubulin forms a circular halo cradling the nucleus.
+characteristic that $\beta$-Tubulin (green) forms a circular halo cradling the nucleus.
 This property is maintained clearly in most generated images.
 
 To assess the quality of synthesized images we presented three expert biologists
-with 50 real cell images and 50 artifical cells generated with LSGAN. We
+with 50 real cell images and 50 artificial cells generated with LSGAN. We
 randomized the order of images and asked the experts to judge whether each cell
 was real or fake. On average, 30\% of the time the synthetic cells were
 realistic enough to fool the human jurors into believing they were real.
