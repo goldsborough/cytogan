@@ -147,15 +147,16 @@ Instead, we model cells with \emph{Generative Adversarial Networks} (GANs) for b
 \vspace{2mm}
 \begin{itemize}
 \compresslist
-\item \textbf{Unsupervised} representation learning, which can readily incorporate new data;
-\item \textbf{Specialization} to training data, allowing identification of the semantic relations between biologically meaningful channels;
-\item \textbf{Interpretability} of learned representations and useful visualization that help translate data variations into meaningful biological phenotypes.
+\item \textbf{Adaptability} to training data, allowing identification of the intrinsic semantic relationships between biologically meaningful channels,
+\item \textbf{Translation} of learned representations into biological phenotypes.
 \end{itemize}
 }
 
 \headerbox{Exploring Biological Phenotypes Using Cell Synthesis}{name=synth, span=2, column=1, row=0}{
 
-Besides learning salient representations of microscopy cell images, GANs allow us to synthesize cell images and explore variations in the noise and learned latent spaces. This allows biologically meaningful experiments and improves interpretability of our method.
+GANs enable us to synthesize cell images and explore variations in the noise and
+learned latent spaces. This allows biologically meaningful experiments and
+improves interpretability of our method.
 
 \vspace{-1mm}
 \begin{center}
@@ -253,7 +254,7 @@ of highly interpretable and biologically valuable relationships, such as:
     \compresslist
     \item $\text{emetine}_{1.0} - \text{emetine}_{0.3} + \text{taxol}_{0.3} \stackrel{?}{=} \text{taxol}_{1.0}$
     \item $\text{Protein Synthesis} - \text{Protein Degradation} \stackrel{?}{=} \text{DMSO}$
-    \item $\text{Kinase Inhibitor} - \text{DMSO} + \text{DMSO}' \stackrel{?}{=} \text{Kinase Inhibitor}$
+    \item $\text{Kinase Inhibitor} - \text{DMSO} + \text{DMSO}' \stackrel{?}{=} \text{Kinase Inhibitor}'$
   \end{itemize}
   };
 \end{tikzpicture}
@@ -261,25 +262,25 @@ of highly interpretable and biologically valuable relationships, such as:
 }
 \headerbox{Representation Learning for Morphological Profiling}{name=rep, span=2, column=1, row=1, below=algebra}{
 
-We investigate the ability of GANs to learn high quality vector representations
-of cell images and evaluate them quantitatively at the task of
-mechanism-of-action (MOA) prediction. We train a variety of GAN models on 1.3
-million microscopy images of cells perturbed with particular drug compounds,
-average signatures across treatments and predict the MOA via nearest-neighbor
-classification.
+% We investigate the ability of GANs to learn high quality vector representations
+% of cell images and evaluate them quantitatively at the task of
+% mechanism-of-action (MOA) prediction. We train a variety of GAN models on 1.3
+% million microscopy images of cells perturbed with particular drug compounds,
+% average signatures across treatments and predict the MOA via nearest-neighbor
+% classification.
 
-\vspace{2mm}
+We investigate the ability of GANs to learn high quality vector representations
+of cells perturbed with particular drug compounds. We want chemicals with
+similar effects on cells to have short distances in feature space. We train a variety of
+GAN models on 1.3 million cell images, average signatures across treatments, and
+predict the effect of unseen chemicals via nearest-neighbor classification.
+
+\vspace{-2mm}
 \begin{tikzpicture}
   \draw (-2, 0);
-  \draw (0, 0.3) node {\includegraphics[scale=0.2, trim={4cm 3.5cm 8cm 3cm}, clip]{latent-space}};
-  % \draw (7.75, 1.2) node [text width=11cm, align=justify] {
-  % For LSGAN we interpret the activations of the penultimate dense
-  % layer as a source of representations. BiGAN has an explicit inference module and requires no further modification. We find that while GANs
-  % are superior to autoencoders, they are not yet competitive with existing
-  % classical or deep transfer-learning techniques at this task.
-  % };
+  \draw (0, 0.6) node {\includegraphics[scale=0.2, trim={4cm 3.5cm 8cm 3cm}, clip]{latent-space}};
 
-  \draw (7.75, 1.2) node {\scalebox{0.8}{
+  \draw (7.75, -0.5) node {\scalebox{0.8}{
     \begin{tikzpicture}[thick]
       \tikzset{box/.style={
         draw, rectangle, rounded corners=0.8pt,
@@ -316,8 +317,8 @@ classification.
       }
 
       % Footnote
-      \draw (7, -1.5)
-            node {\footnotesize{\textsuperscript{$\star$}}\hspace{-1pt} Representations};
+      \draw (1.9, -1)
+            node {\small{\textsuperscript{$\star$}}\hspace{-1pt} Representations};
 
       % Edges
       \draw (f) -- (_);
@@ -329,7 +330,9 @@ classification.
     \end{tikzpicture}
   }};
 
-  \draw (8, -1) node [text width=10.5cm] {
+  \draw (8, 2) node [text width=10.5cm] {
+    \begin{center}\textbf{Prediction Accuracy}\end{center}
+      \vspace{-1mm}
     \begin{tabular}{ccccc}
       \toprule
       LSGAN & BiGAN & VAE \cite{pawlowski2016msc} & CP \cite{Singh2014} & Transfer Learning \cite{ando2017improving} \\
@@ -339,7 +342,7 @@ classification.
     \end{tabular}
   };
 
-  \draw (4.4, -1.7) node {\scriptsize\textdagger\hspace{0.5pt} Whitening Transform};
+  \draw (4.4, 0.7) node {\footnotesize\textdagger\hspace{0.5pt} Whitening Transform};
 \end{tikzpicture}
 \vspace{-6mm}
 }
@@ -348,19 +351,25 @@ classification.
 Code and experiments are available at \url{github.com/goldsborough/cytogan}. Our data is the BBBC021 dataset from the Broad BioImage Benchmark Collection (\url{data.broadinstitute.org/bbbc/BBBC021}).
 
 % REPLACE WITH PAPER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-\vspace{-3mm}
-\begin{center}
-  \includegraphics[scale=0.174]{qr-code}\hspace{1cm}\includegraphics[scale=0.174]{qr-code}
-
-  \vspace{-3mm}
-  \hspace{0.1cm}\texttt{Code}\hspace{2.6cm}\texttt{Paper}
-\end{center}
-
-% \includegraphics[scale=0.1]{qr-paper}
+% \vspace{-3mm}
+% \begin{center}
+%   \includegraphics[scale=0.08]{qr-code}\hspace{1cm}\includegraphics[scale=0.08]{qr-code}
+%
+%   \vspace{-3mm}
+%   \hspace{0.1cm}\texttt{Code}\hspace{2.6cm}\texttt{Paper}
+% \end{center}
 }
 
 \headerbox{Acknowledgements}{name=ack, column=0, row=2, below=code}{
 We thank Mike Ando and Google, Inc. for providing computational resources to accelerate our research. We also thank all members of the Broad Imaging Platform for fruitful discussion and their continuous guidance and support.
+
+\vspace{2mm}
+
+This work was supported in part by a grant from the US National Science Foundation (CAREER DBI 1148823 to AEC).
+
+\vspace{1mm}
+
+Nick Pawlowski is supported by Microsoft Research through its PhD Scholarship Program and the EPSRC Centre for Doctoral Training in High Performance Embedded and Distributed Systems (HiPEDS, Grant Reference EP/L016796/1).
 }
 
 \headerbox{References}{name=ref, column=0, row=3, below=ack}{
