@@ -15,7 +15,7 @@ linecache2==1.0.0
 Markdown==2.6.9
 matplotlib==2.0.2
 networkx==1.11
-numpy==1.13.1
+numpy==1.22.0
 olefile==0.44
 pandas==0.20.3
 pexpect==4.2.1
